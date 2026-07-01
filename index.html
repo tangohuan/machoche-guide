@@ -1,500 +1,1244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MtaaWatch — Real Spotter Network</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #FF6B35; --primary-dark: #E55A2B; --secondary: #1A1A2E;
-            --accent: #00D4AA; --danger: #FF3366; --warning: #FFB800; --success: #00D4AA;
-            --info: #4A90E2; --bg-dark: #0B0B15; --bg-card: #151525; --bg-card-hover: #1E1E35;
-            --text-primary: #FFFFFF; --text-secondary: #A0A0B8; --text-muted: #6B6B8A;
-            --border: #252540; --glass: rgba(21, 21, 37, 0.95);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow: hidden; height: 100vh; width: 100vw; }
-        #app { display: flex; flex-direction: column; height: 100vh; position: relative; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MtaaWatch — Real Spotter Network</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+  --primary:#FF6B35; --primary-dark:#E55A2B; --secondary:#1A1A2E;
+  --accent:#00D4AA; --danger:#FF3366; --warning:#FFB800; --success:#00D4AA;
+  --info:#4A90E2; --bg-dark:#0B0B15; --bg-card:#151525; --bg-card-hover:#1E1E35;
+  --text-primary:#FFFFFF; --text-secondary:#A0A0B8; --text-muted:#6B6B8A;
+  --border:#252540; --glass:rgba(21,21,37,0.95);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-primary);overflow:hidden;height:100vh;width:100vw}
+#app{display:flex;flex-direction:column;height:100vh;position:relative}
 
-        .header {
-            background: linear-gradient(135deg, var(--secondary) 0%, #0D1B2A 100%);
-            padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border); z-index: 1000; flex-shrink: 0;
-        }
-        .header-brand { display: flex; align-items: center; gap: 10px; }
-        .header-brand .logo-icon {
-            width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            font-size: 16px; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3); animation: pulse-glow 2s infinite;
-        }
-        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3); } 50% { box-shadow: 0 4px 25px rgba(255, 107, 53, 0.6); } }
-        .header-brand h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.5px; }
-        .header-brand span { display: block; font-size: 10px; color: var(--text-muted); font-weight: 500; margin-top: -2px; }
-        .header-actions { display: flex; gap: 8px; align-items: center; }
-        .header-btn { width: 34px; height: 34px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; font-size: 14px; }
-        .header-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
-        .header-btn .badge { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: var(--danger); border-radius: 50%; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid var(--secondary); }
-        .user-score { display: flex; align-items: center; gap: 6px; background: rgba(0, 212, 170, 0.12); border: 1px solid rgba(0, 212, 170, 0.25); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--accent); cursor: pointer; }
+.header{background:linear-gradient(135deg,var(--secondary) 0%,#0D1B2A 100%);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:1000;flex-shrink:0}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-brand .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 15px rgba(255,107,53,0.3);animation:pulse-glow 2s infinite}
+@keyframes pulse-glow{0%,100%{box-shadow:0 4px 15px rgba(255,107,53,0.3)}50%{box-shadow:0 4px 25px rgba(255,107,53,0.6)}}
+.header-brand h1{font-size:15px;font-weight:800;letter-spacing:-0.5px}
+.header-brand span{display:block;font-size:10px;color:var(--text-muted);font-weight:500;margin-top:-2px}
+.header-actions{display:flex;gap:8px;align-items:center}
+.header-btn{width:34px;height:34px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;position:relative;font-size:14px}
+.header-btn:hover{background:var(--bg-card-hover);color:var(--text-primary)}
+.header-btn .badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--danger);border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--secondary)}
+.user-score{display:flex;align-items:center;gap:6px;background:rgba(0,212,170,0.12);border:1px solid rgba(0,212,170,0.25);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer}
 
-        .route-selector { background: var(--bg-card); padding: 8px 14px; display: flex; gap: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .route-selector::-webkit-scrollbar { display: none; }
-        .route-chip { display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: var(--bg-dark); border-radius: 20px; border: 1px solid var(--border); white-space: nowrap; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
-        .route-chip:hover { border-color: var(--primary); color: var(--text-primary); }
-        .route-chip.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-color: var(--primary); }
-        .route-chip .dot { width: 6px; height: 6px; border-radius: 50%; }
-        .route-chip .dot.green { background: var(--success); box-shadow: 0 0 6px var(--success); }
-        .route-chip .dot.yellow { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
-        .route-chip .dot.red { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+.route-selector{background:var(--bg-card);padding:8px 14px;display:flex;gap:8px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.route-selector::-webkit-scrollbar{display:none}
+.route-chip{display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bg-dark);border-radius:20px;border:1px solid var(--border);white-space:nowrap;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-secondary)}
+.route-chip:hover{border-color:var(--primary);color:var(--text-primary)}
+.route-chip.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border-color:var(--primary)}
+.route-chip .dot{width:6px;height:6px;border-radius:50%}
+.route-chip .dot.green{background:var(--success);box-shadow:0 0 6px var(--success)}
+.route-chip .dot.yellow{background:var(--warning);box-shadow:0 0 6px var(--warning)}
+.route-chip .dot.red{background:var(--danger);box-shadow:0 0 6px var(--danger)}
 
-        .map-container { flex: 1; position: relative; min-height: 0; background: #0a0a14; }
-        #map { width: 100%; height: 100%; z-index: 1; }
-        /* ZOOM CONTROLS ENABLED */
-        .leaflet-control-zoom { display: block !important; }
-        .leaflet-control-zoom a { background: var(--bg-card) !important; color: white !important; border: 1px solid var(--border) !important; }
-        .leaflet-control-zoom a:hover { background: var(--bg-card-hover) !important; }
-        .leaflet-control-attribution { display: none !important; }
+.map-container{flex:1;position:relative;min-height:0;background:#0a0a14}
+#map{width:100%;height:100%;z-index:1}
+.leaflet-control-zoom{display:block!important}
+.leaflet-control-zoom a{background:var(--bg-card)!important;color:white!important;border:1px solid var(--border)!important}
+.leaflet-control-zoom a:hover{background:var(--bg-card-hover)!important}
+.leaflet-control-attribution{display:none!important}
 
-        .map-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; background: var(--bg-dark); gap: 12px; }
-        .map-loading.hidden { display: none; }
-        .map-loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+.map-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;background:var(--bg-dark);gap:12px}
+.map-loading.hidden{display:none}
+.map-loading-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-        .weather-widget { position: absolute; top: 60px; right: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(15px); border-radius: 14px; border: 1px solid var(--border); padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; }
-        .weather-widget i { font-size: 20px; color: var(--warning); }
-        .weather-widget .temp { font-weight: 700; font-size: 14px; }
-        .weather-widget .condition { color: var(--text-muted); font-size: 10px; }
+.weather-widget{position:absolute;top:60px;right:12px;z-index:500;background:var(--glass);backdrop-filter:blur(15px);border-radius:14px;border:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12px}
+.weather-widget i{font-size:20px;color:var(--warning)}
+.weather-widget .temp{font-weight:700;font-size:14px}
+.weather-widget .condition{color:var(--text-muted);font-size:10px}
 
-        .traffic-legend { position: absolute; bottom: 100px; left: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid var(--border); padding: 10px; font-size: 10px; }
-        .traffic-legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-        .traffic-legend-color { width: 20px; height: 4px; border-radius: 2px; }
+.traffic-legend{position:absolute;bottom:100px;left:12px;z-index:500;background:var(--glass);backdrop-filter:blur(10px);border-radius:12px;border:1px solid var(--border);padding:10px;font-size:10px}
+.traffic-legend-item{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.traffic-legend-color{width:20px;height:4px;border-radius:2px}
 
-        .spotter-panel { position: absolute; top: 110px; left: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(15px); border-radius: 16px; border: 1px solid var(--border); padding: 12px; max-width: 240px; display: none; max-height: 350px; overflow-y: auto; }
-        .spotter-panel h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
-        .spotter-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .spotter-item:last-child { border-bottom: none; }
-        .spotter-avatar { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
-        .spotter-info { flex: 1; }
-        .spotter-info .name { font-weight: 600; font-size: 11px; }
-        .spotter-info .location { font-size: 9px; color: var(--text-muted); }
-        .spotter-status { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .spotter-status.online { background: var(--success); box-shadow: 0 0 4px var(--success); }
-        .spotter-status.busy { background: var(--warning); }
-        .spotter-status.offline { background: var(--text-muted); }
+.spotter-panel{position:absolute;top:110px;left:12px;z-index:500;background:var(--glass);backdrop-filter:blur(15px);border-radius:16px;border:1px solid var(--border);padding:12px;max-width:240px;display:none;max-height:350px;overflow-y:auto}
+.spotter-panel h4{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.spotter-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.spotter-item:last-child{border-bottom:none}
+.spotter-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.spotter-info{flex:1}
+.spotter-info .name{font-weight:600;font-size:11px}
+.spotter-info .location{font-size:9px;color:var(--text-muted)}
+.spotter-status{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.spotter-status.online{background:var(--success);box-shadow:0 0 4px var(--success)}
+.spotter-status.busy{background:var(--warning)}
+.spotter-status.offline{background:var(--text-muted)}
 
-        .fab-container { position: absolute; bottom: 100px; right: 14px; z-index: 500; display: flex; flex-direction: column; gap: 10px; }
-        .fab { width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.4); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
-        .fab:active { transform: scale(0.9); }
-        .fab-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4); }
-        .fab-primary:hover { transform: scale(1.1); }
-        .fab-secondary { background: linear-gradient(135deg, var(--danger), #CC2952); box-shadow: 0 4px 20px rgba(255, 51, 102, 0.4); }
-        .fab-tertiary { background: linear-gradient(135deg, var(--accent), #00B894); box-shadow: 0 4px 20px rgba(0, 212, 170, 0.4); }
-        .fab-quaternary { background: linear-gradient(135deg, var(--info), #357ABD); box-shadow: 0 4px 20px rgba(74, 144, 226, 0.4); }
-        .fab-label { position: absolute; right: 60px; background: var(--glass); backdrop-filter: blur(10px); padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; opacity: 0; transform: translateX(10px); transition: all 0.2s; pointer-events: none; border: 1px solid var(--border); }
-        .fab:hover .fab-label { opacity: 1; transform: translateX(0); }
+.fab-container{position:absolute;bottom:100px;right:14px;z-index:500;display:flex;flex-direction:column;gap:10px}
+.fab{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:white;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);position:relative}
+.fab:active{transform:scale(0.9)}
+.fab-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));box-shadow:0 4px 20px rgba(255,107,53,0.4)}
+.fab-primary:hover{transform:scale(1.1)}
+.fab-secondary{background:linear-gradient(135deg,var(--danger),#CC2952);box-shadow:0 4px 20px rgba(255,51,102,0.4)}
+.fab-tertiary{background:linear-gradient(135deg,var(--accent),#00B894);box-shadow:0 4px 20px rgba(0,212,170,0.4)}
+.fab-quaternary{background:linear-gradient(135deg,var(--info),#357ABD);box-shadow:0 4px 20px rgba(74,144,226,0.4)}
+.fab-label{position:absolute;right:60px;background:var(--glass);backdrop-filter:blur(10px);padding:5px 10px;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;opacity:0;transform:translateX(10px);transition:all 0.2s;pointer-events:none;border:1px solid var(--border)}
+.fab:hover .fab-label{opacity:1;transform:translateX(0)}
 
-        .bottom-sheet { position: absolute; bottom: 0; left: 0; right: 0; background: var(--glass); backdrop-filter: blur(20px); border-radius: 24px 24px 0 0; border-top: 1px solid var(--border); z-index: 600; transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); max-height: 65vh; display: flex; flex-direction: column; }
-        .bottom-sheet.collapsed { transform: translateY(calc(100% - 55px)); }
-        .bottom-sheet-handle { width: 36px; height: 4px; background: var(--text-muted); border-radius: 2px; margin: 10px auto; cursor: pointer; }
-        .bottom-sheet-content { flex: 1; overflow-y: auto; padding: 0 14px 16px; -webkit-overflow-scrolling: touch; }
-        .bottom-sheet-content::-webkit-scrollbar { display: none; }
+.bottom-sheet{position:absolute;bottom:0;left:0;right:0;background:var(--glass);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;border-top:1px solid var(--border);z-index:600;transition:transform 0.4s cubic-bezier(0.32,0.72,0,1);max-height:65vh;display:flex;flex-direction:column}
+.bottom-sheet.collapsed{transform:translateY(calc(100% - 55px))}
+.bottom-sheet-handle{width:36px;height:4px;background:var(--text-muted);border-radius:2px;margin:10px auto;cursor:pointer}
+.bottom-sheet-content{flex:1;overflow-y:auto;padding:0 14px 16px;-webkit-overflow-scrolling:touch}
+.bottom-sheet-content::-webkit-scrollbar{display:none}
 
-        .route-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-        .route-header h2 { font-size: 16px; font-weight: 700; }
-        .route-header .route-direction { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
-        .eta-badge { background: linear-gradient(135deg, var(--accent), #00B894); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.route-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.route-header h2{font-size:16px;font-weight:700}
+.route-header .route-direction{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+.eta-badge{background:linear-gradient(135deg,var(--accent),#00B894);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700}
 
-        .ai-insight { background: linear-gradient(135deg, rgba(74, 144, 226, 0.12), rgba(74, 144, 226, 0.04)); border: 1px solid rgba(74, 144, 226, 0.25); border-radius: 14px; padding: 12px; margin: 12px 0; display: flex; align-items: flex-start; gap: 10px; }
-        .ai-insight i { color: var(--info); font-size: 16px; margin-top: 2px; flex-shrink: 0; }
-        .ai-insight-content h4 { font-size: 12px; color: var(--info); font-weight: 700; margin-bottom: 2px; }
-        .ai-insight-content p { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+.ai-insight{background:linear-gradient(135deg,rgba(74,144,226,0.12),rgba(74,144,226,0.04));border:1px solid rgba(74,144,226,0.25);border-radius:14px;padding:12px;margin:12px 0;display:flex;align-items:flex-start;gap:10px}
+.ai-insight i{color:var(--info);font-size:16px;margin-top:2px;flex-shrink:0}
+.ai-insight-content h4{font-size:12px;color:var(--info);font-weight:700;margin-bottom:2px}
+.ai-insight-content p{font-size:11px;color:var(--text-secondary);line-height:1.4}
 
-        .smart-route-card { background: linear-gradient(135deg, rgba(255,107,53,0.12), rgba(255,107,53,0.04)); border: 1px solid rgba(255,107,53,0.25); border-radius: 16px; padding: 14px; margin: 14px 0; position: relative; overflow: hidden; }
-        .smart-route-card::before { content: '💡'; position: absolute; top: 10px; right: 14px; font-size: 18px; opacity: 0.5; }
-        .smart-route-card h3 { font-size: 11px; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-        .smart-route-card .route-path { font-size: 12px; font-weight: 600; line-height: 1.5; margin-bottom: 8px; }
-        .smart-route-stats { display: flex; gap: 14px; flex-wrap: wrap; }
-        .smart-route-stat { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; }
-        .smart-route-stat i { color: var(--primary); font-size: 12px; }
+.smart-route-card{background:linear-gradient(135deg,rgba(255,107,53,0.12),rgba(255,107,53,0.04));border:1px solid rgba(255,107,53,0.25);border-radius:16px;padding:14px;margin:14px 0;position:relative;overflow:hidden}
+.smart-route-card::before{content:'💡';position:absolute;top:10px;right:14px;font-size:18px;opacity:0.5}
+.smart-route-card h3{font-size:11px;color:var(--primary);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.smart-route-card .route-path{font-size:12px;font-weight:600;line-height:1.5;margin-bottom:8px}
+.smart-route-stats{display:flex;gap:14px;flex-wrap:wrap}
+.smart-route-stat{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600}
+.smart-route-stat i{color:var(--primary);font-size:12px}
 
-        .timeline { position: relative; padding-left: 24px; }
-        .timeline::before { content: ''; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 3px; background: linear-gradient(to bottom, var(--success) 0%, var(--success) 30%, var(--warning) 50%, var(--danger) 70%, var(--success) 100%); border-radius: 3px; }
-        .timeline-item { position: relative; padding: 8px 0; cursor: pointer; transition: all 0.2s; }
-        .timeline-item:hover { background: rgba(255,255,255,0.03); margin: 0 -14px; padding: 8px 14px; border-radius: 12px; }
-        .timeline-dot { position: absolute; left: -21px; top: 12px; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid var(--bg-dark); z-index: 2; }
-        .timeline-dot.green { background: var(--success); }
-        .timeline-dot.yellow { background: var(--warning); }
-        .timeline-dot.red { background: var(--danger); }
-        .timeline-dot.decision { background: var(--primary); width: 16px; height: 16px; left: -23px; top: 10px; border: 2.5px solid var(--bg-dark); box-shadow: 0 0 10px var(--primary); }
-        .timeline-dot.start { background: var(--primary); border-color: white; }
-        .timeline-dot.end { background: var(--accent); border-color: white; }
-        .timeline-content { display: flex; justify-content: space-between; align-items: flex-start; }
-        .timeline-info h3 { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
-        .timeline-info p { font-size: 11px; color: var(--text-muted); line-height: 1.3; }
-        .timeline-status { display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: rgba(0,0,0,0.3); white-space: nowrap; }
-        .timeline-status.green { color: var(--success); }
-        .timeline-status.yellow { color: var(--warning); }
-        .timeline-status.red { color: var(--danger); }
-        .spotter-confirm { display: inline-flex; align-items: center; gap: 4px; background: rgba(0, 212, 170, 0.15); border: 1px solid rgba(0, 212, 170, 0.3); padding: 2px 8px; border-radius: 10px; font-size: 10px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+.timeline{position:relative;padding-left:24px}
+.timeline::before{content:'';position:absolute;left:7px;top:6px;bottom:6px;width:3px;background:linear-gradient(to bottom,var(--success) 0%,var(--success) 30%,var(--warning) 50%,var(--danger) 70%,var(--success) 100%);border-radius:3px}
+.timeline-item{position:relative;padding:8px 0;cursor:pointer;transition:all 0.2s}
+.timeline-item:hover{background:rgba(255,255,255,0.03);margin:0 -14px;padding:8px 14px;border-radius:12px}
+.timeline-dot{position:absolute;left:-21px;top:12px;width:12px;height:12px;border-radius:50%;border:2.5px solid var(--bg-dark);z-index:2}
+.timeline-dot.green{background:var(--success)}
+.timeline-dot.yellow{background:var(--warning)}
+.timeline-dot.red{background:var(--danger)}
+.timeline-dot.decision{background:var(--primary);width:16px;height:16px;left:-23px;top:10px;border:2.5px solid var(--bg-dark);box-shadow:0 0 10px var(--primary)}
+.timeline-dot.start{background:var(--primary);border-color:white}
+.timeline-dot.end{background:var(--accent);border-color:white}
+.timeline-content{display:flex;justify-content:space-between;align-items:flex-start}
+.timeline-info h3{font-size:13px;font-weight:600;margin-bottom:1px}
+.timeline-info p{font-size:11px;color:var(--text-muted);line-height:1.3}
+.timeline-status{display:flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.3);white-space:nowrap}
+.timeline-status.green{color:var(--success)}
+.timeline-status.yellow{color:var(--warning)}
+.timeline-status.red{color:var(--danger)}
+.spotter-confirm{display:inline-flex;align-items:center;gap:4px;background:rgba(0,212,170,0.15);border:1px solid rgba(0,212,170,0.3);padding:2px 8px;border-radius:10px;font-size:10px;color:var(--accent);font-weight:600;margin-top:4px}
 
-        .alt-routes-section { margin-top: 14px; }
-        .alt-routes-section h3 { font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-        .alt-route-card { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; position: relative; }
-        .alt-route-card:hover { border-color: var(--primary); background: var(--bg-card-hover); }
-        .alt-route-card.selected { border-color: var(--primary); background: rgba(255,107,53,0.08); }
-        .alt-route-card .route-name { font-size: 13px; font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
-        .alt-route-card .route-name .badge { font-size: 9px; padding: 2px 7px; border-radius: 10px; font-weight: 700; }
-        .badge-fastest { background: var(--success); color: var(--bg-dark); }
-        .badge-shortcut { background: var(--primary); color: white; }
-        .badge-avoid { background: var(--danger); color: white; }
-        .badge-secret { background: var(--accent); color: var(--bg-dark); }
-        .alt-route-details { display: flex; gap: 12px; font-size: 11px; color: var(--text-secondary); flex-wrap: wrap; }
-        .alt-route-details span { display: flex; align-items: center; gap: 3px; }
+.alt-routes-section{margin-top:14px}
+.alt-routes-section h3{font-size:11px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.alt-route-card{background:var(--bg-dark);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s;position:relative}
+.alt-route-card:hover{border-color:var(--primary);background:var(--bg-card-hover)}
+.alt-route-card.selected{border-color:var(--primary);background:rgba(255,107,53,0.08)}
+.alt-route-card .route-name{font-size:13px;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.alt-route-card .route-name .badge{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700}
+.badge-fastest{background:var(--success);color:var(--bg-dark)}
+.badge-shortcut{background:var(--primary);color:white}
+.badge-avoid{background:var(--danger);color:white}
+.badge-secret{background:var(--accent);color:var(--bg-dark)}
+.alt-route-details{display:flex;gap:12px;font-size:11px;color:var(--text-secondary);flex-wrap:wrap}
+.alt-route-details span{display:flex;align-items:center;gap:3px}
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); z-index: 2000; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-        .modal-overlay.active { opacity: 1; pointer-events: all; }
-        .modal { background: var(--bg-card); border-radius: 24px 24px 0 0; width: 100%; max-width: 500px; max-height: 85vh; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); display: flex; flex-direction: column; }
-        .modal-overlay.active .modal { transform: translateY(0); }
-        .modal-header { padding: 18px 18px 0; display: flex; align-items: center; justify-content: space-between; }
-        .modal-header h2 { font-size: 18px; font-weight: 700; }
-        .modal-close { width: 34px; height: 34px; border-radius: 50%; background: var(--bg-dark); border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-        .modal-body { padding: 18px; overflow-y: auto; flex: 1; }
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(5px);z-index:2000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.modal-overlay.active{opacity:1;pointer-events:all}
+.modal{background:var(--bg-card);border-radius:24px 24px 0 0;width:100%;max-width:500px;max-height:85vh;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.32,0.72,0,1);display:flex;flex-direction:column}
+.modal-overlay.active .modal{transform:translateY(0)}
+.modal-header{padding:18px 18px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-header h2{font-size:18px;font-weight:700}
+.modal-close{width:34px;height:34px;border-radius:50%;background:var(--bg-dark);border:none;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
+.modal-body{padding:18px;overflow-y:auto;flex:1}
 
-        .report-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
-        .report-option { background: var(--bg-dark); border: 2px solid var(--border); border-radius: 16px; padding: 18px; text-align: center; cursor: pointer; transition: all 0.2s; }
-        .report-option:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .report-option i { font-size: 24px; margin-bottom: 6px; display: block; }
-        .report-option span { font-size: 12px; font-weight: 600; }
-        .report-option.green { color: var(--success); }
-        .report-option.yellow { color: var(--warning); }
-        .report-option.red { color: var(--danger); }
-        .report-option.blue { color: var(--info); }
+.report-options{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+.report-option{background:var(--bg-dark);border:2px solid var(--border);border-radius:16px;padding:18px;text-align:center;cursor:pointer;transition:all 0.2s}
+.report-option:hover{border-color:var(--primary);transform:translateY(-2px)}
+.report-option i{font-size:24px;margin-bottom:6px;display:block}
+.report-option span{font-size:12px;font-weight:600}
+.report-option.green{color:var(--success)}
+.report-option.yellow{color:var(--warning)}
+.report-option.red{color:var(--danger)}
+.report-option.blue{color:var(--info)}
 
-        .voice-indicator { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 30px 0; }
-        .voice-wave { display: flex; align-items: center; gap: 4px; height: 60px; }
-        .voice-bar { width: 6px; background: var(--primary); border-radius: 3px; animation: voiceWave 1s ease-in-out infinite; }
-        .voice-bar:nth-child(1) { height: 20px; animation-delay: 0s; }
-        .voice-bar:nth-child(2) { height: 35px; animation-delay: 0.1s; }
-        .voice-bar:nth-child(3) { height: 50px; animation-delay: 0.2s; }
-        .voice-bar:nth-child(4) { height: 40px; animation-delay: 0.3s; }
-        .voice-bar:nth-child(5) { height: 25px; animation-delay: 0.4s; }
-        @keyframes voiceWave { 0%, 100% { transform: scaleY(0.5); opacity: 0.5; } 50% { transform: scaleY(1); opacity: 1; } }
+.voice-indicator{display:flex;flex-direction:column;align-items:center;gap:20px;padding:30px 0}
+.voice-wave{display:flex;align-items:center;gap:4px;height:60px}
+.voice-bar{width:6px;background:var(--primary);border-radius:3px;animation:voiceWave 1s ease-in-out infinite}
+.voice-bar:nth-child(1){height:20px;animation-delay:0s}
+.voice-bar:nth-child(2){height:35px;animation-delay:0.1s}
+.voice-bar:nth-child(3){height:50px;animation-delay:0.2s}
+.voice-bar:nth-child(4){height:40px;animation-delay:0.3s}
+.voice-bar:nth-child(5){height:25px;animation-delay:0.4s}
+@keyframes voiceWave{0%,100%{transform:scaleY(0.5);opacity:0.5}50%{transform:scaleY(1);opacity:1}}
 
-        .leaderboard-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-dark); border-radius: 12px; margin-bottom: 8px; }
-        .leaderboard-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
-        .leaderboard-rank.gold { background: linear-gradient(135deg, #FFD700, #FFA500); color: var(--bg-dark); }
-        .leaderboard-rank.silver { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: var(--bg-dark); }
-        .leaderboard-rank.bronze { background: linear-gradient(135deg, #CD7F32, #B87333); color: white; }
-        .leaderboard-rank.normal { background: var(--bg-card); color: var(--text-secondary); }
-        .leaderboard-info { flex: 1; }
-        .leaderboard-info h4 { font-size: 13px; font-weight: 600; }
-        .leaderboard-info p { font-size: 11px; color: var(--text-muted); }
-        .leaderboard-score { font-size: 14px; font-weight: 700; color: var(--accent); }
+.leaderboard-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-dark);border-radius:12px;margin-bottom:8px}
+.leaderboard-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.leaderboard-rank.gold{background:linear-gradient(135deg,#FFD700,#FFA500);color:var(--bg-dark)}
+.leaderboard-rank.silver{background:linear-gradient(135deg,#C0C0C0,#A0A0A0);color:var(--bg-dark)}
+.leaderboard-rank.bronze{background:linear-gradient(135deg,#CD7F32,#B87333);color:white}
+.leaderboard-rank.normal{background:var(--bg-card);color:var(--text-secondary)}
+.leaderboard-info{flex:1}
+.leaderboard-info h4{font-size:13px;font-weight:600}
+.leaderboard-info p{font-size:11px;color:var(--text-muted)}
+.leaderboard-score{font-size:14px;font-weight:700;color:var(--accent)}
 
-        .live-pulse { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--danger); }
-        .live-pulse::before { content: ''; width: 7px; height: 7px; background: var(--danger); border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
+.live-pulse{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--danger)}
+.live-pulse::before{content:'';width:7px;height:7px;background:var(--danger);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.2)}}
 
-        .toast-container { position: fixed; top: 75px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
-        .toast { background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; animation: toastIn 0.3s ease, toastOut 0.3s ease 3.5s forwards; max-width: 300px; pointer-events: all; }
-        @keyframes toastIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes toastOut { to { opacity: 0; transform: translateY(-15px); } }
+.toast-container{position:fixed;top:75px;left:50%;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--glass);backdrop-filter:blur(15px);border:1px solid var(--border);border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;animation:toastIn 0.3s ease,toastOut 0.3s ease 3.5s forwards;max-width:300px;pointer-events:all}
+@keyframes toastIn{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-15px)}}
 
-        /* ===== MAP MARKERS MATCHING LEGEND ===== */
-        .marker-green { background: var(--success); border: 3px solid white; border-radius: 50%; width: 18px; height: 18px; box-shadow: 0 0 10px var(--success); animation: marker-pulse-green 2s infinite; }
-        .marker-yellow { background: var(--warning); border: 3px solid white; border-radius: 50%; width: 18px; height: 18px; box-shadow: 0 0 10px var(--warning); animation: marker-pulse-yellow 2s infinite; }
-        .marker-red { background: var(--danger); border: 3px solid white; border-radius: 50%; width: 18px; height: 18px; box-shadow: 0 0 10px var(--danger); animation: marker-pulse-red 2s infinite; }
-        .marker-primary { background: var(--primary); border: 3px solid white; border-radius: 50%; width: 22px; height: 22px; box-shadow: 0 0 15px var(--primary); animation: marker-pulse-primary 1.5s infinite; }
-        .marker-accent { background: var(--accent); border: 3px solid white; border-radius: 50%; width: 18px; height: 18px; box-shadow: 0 0 10px var(--accent); }
+.marker-green{background:var(--success);border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 10px var(--success);animation:marker-pulse-green 2s infinite}
+.marker-yellow{background:var(--warning);border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 10px var(--warning);animation:marker-pulse-yellow 2s infinite}
+.marker-red{background:var(--danger);border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 10px var(--danger);animation:marker-pulse-red 2s infinite}
+.marker-primary{background:var(--primary);border:3px solid white;border-radius:50%;width:22px;height:22px;box-shadow:0 0 15px var(--primary);animation:marker-pulse-primary 1.5s infinite}
+.marker-accent{background:var(--accent);border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 10px var(--accent)}
 
-        @keyframes marker-pulse-green { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-        @keyframes marker-pulse-yellow { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-        @keyframes marker-pulse-red { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
-        @keyframes marker-pulse-primary { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+@keyframes marker-pulse-green{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+@keyframes marker-pulse-yellow{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+@keyframes marker-pulse-red{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+@keyframes marker-pulse-primary{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
 
-        .stage-label {
-            background: var(--bg-card); color: white; padding: 3px 8px; border-radius: 6px;
-            font-size: 10px; font-weight: 700; white-space: nowrap; border: 1px solid var(--border);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-        }
+.stage-label{background:var(--bg-card);color:white;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;white-space:nowrap;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.4)}
 
-        .vehicle-marker { width: 14px; height: 14px; background: var(--primary); border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); animation: vehicle-pulse 1.5s infinite; }
-        @keyframes vehicle-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
+.vehicle-marker{width:14px;height:14px;background:var(--primary);border-radius:50%;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);animation:vehicle-pulse 1.5s infinite}
+@keyframes vehicle-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0.7}}
 
-        @media (min-width: 768px) {
-            .bottom-sheet { max-width: 400px; left: auto; right: 12px; bottom: 12px; border-radius: 24px; max-height: 75vh; }
-            .bottom-sheet.collapsed { transform: translateY(calc(100% - 55px)); }
-            .fab-container { bottom: 100px; }
-        }
+@media(min-width:768px){
+  .bottom-sheet{max-width:400px;left:auto;right:12px;bottom:12px;border-radius:24px;max-height:75vh}
+  .bottom-sheet.collapsed{transform:translateY(calc(100% - 55px))}
+  .fab-container{bottom:100px}
+}
 
-        .fade-in { animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-        .route-info-bar { background: var(--bg-card); padding: 8px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .route-info-bar::-webkit-scrollbar { display: none; }
-        .route-pill { display: flex; align-items: center; gap: 5px; padding: 5px 10px; background: var(--bg-dark); border-radius: 20px; border: 1px solid var(--border); white-space: nowrap; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .route-pill:hover { border-color: var(--primary); }
-        .route-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
-        .route-pill .dot.green { background: var(--success); box-shadow: 0 0 6px var(--success); }
-        .route-pill .dot.yellow { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
-        .route-pill .dot.red { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+.route-info-bar{background:var(--bg-card);padding:8px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.route-info-bar::-webkit-scrollbar{display:none}
+.route-pill{display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg-dark);border-radius:20px;border:1px solid var(--border);white-space:nowrap;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s}
+.route-pill:hover{border-color:var(--primary)}
+.route-pill .dot{width:7px;height:7px;border-radius:50%}
+.route-pill .dot.green{background:var(--success);box-shadow:0 0 6px var(--success)}
+.route-pill .dot.yellow{background:var(--warning);box-shadow:0 0 6px var(--warning)}
+.route-pill .dot.red{background:var(--danger);box-shadow:0 0 6px var(--danger)}
 
-        .my-location-btn {
-            position: absolute; bottom: 100px; left: 12px; z-index: 500;
-            width: 44px; height: 44px; border-radius: 50%; background: var(--bg-card);
-            border: 1px solid var(--border); color: var(--info); display: flex;
-            align-items: center; justify-content: center; cursor: pointer;
-            font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .my-location-btn:hover { background: var(--bg-card-hover); }
+.my-location-btn{position:absolute;bottom:100px;left:12px;z-index:500;width:44px;height:44px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border);color:var(--info);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+.my-location-btn:hover{background:var(--bg-card-hover)}
 
-        .report-stage-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border: none; color: white; padding: 8px 16px; border-radius: 10px;
-            font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 8px;
-            display: inline-flex; align-items: center; gap: 5px;
-        }
-        .report-stage-btn:hover { opacity: 0.9; }
-    </style>
+.report-stage-btn{background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:none;color:white;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;display:inline-flex;align-items:center;gap:5px}
+.report-stage-btn:hover{opacity:0.9}
+
+.direction-toggle{display:flex;gap:4px;background:var(--bg-dark);border-radius:20px;padding:3px;border:1px solid var(--border);margin-right:8px}
+.direction-toggle button{padding:4px 10px;border-radius:16px;border:none;background:transparent;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.direction-toggle button.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white}
+
+.rush-badge{font-size:9px;padding:2px 6px;border-radius:6px;font-weight:700;margin-left:4px}
+.rush-badge.rush{background:var(--danger);color:white}
+.rush-badge.offpeak{background:var(--success);color:var(--bg-dark)}
+</style>
 <base target="_blank">
 </head>
 <body>
-    <div id="app">
-        <header class="header">
-            <div class="header-brand">
-                <div class="logo-icon"><i class="fas fa-bus"></i></div>
-                <div>
-                    <h1>MtaaWatch <span style="font-size:9px; color:var(--primary); background:rgba(255,107,53,0.15); padding:2px 6px; border-radius:6px; margin-left:4px;">LIVE</span></h1>
-                    <span id="routeDisplay">Route 39 — Kayole to CBD</span>
-                </div>
-            </div>
-            <div class="header-actions">
-                <div class="user-score" id="userScoreBtn"><i class="fas fa-fire"></i><span id="userScoreText">0 pts</span></div>
-                <button class="header-btn" id="spotterBtn"><i class="fas fa-users"></i><span class="badge" id="spotterBadge">1</span></button>
-                <button class="header-btn" id="notifBtn"><i class="fas fa-bell"></i></button>
-            </div>
-        </header>
+<div id="app">
+<header class="header">
+<div class="header-brand">
+<div class="logo-icon"><i class="fas fa-bus"></i></div>
+<div>
+<h1>MtaaWatch <span style="font-size:9px;color:var(--primary);background:rgba(255,107,53,0.15);padding:2px 6px;border-radius:6px;margin-left:4px">LIVE</span></h1>
+<span id="routeDisplay">Route 39 — Kayole to CBD</span>
+</div>
+</div>
+<div class="header-actions">
+<div class="direction-toggle" id="directionToggle">
+<button class="active" data-dir="to_cbd">To CBD</button>
+<button data-dir="from_cbd">From CBD</button>
+</div>
+<div class="user-score" id="userScoreBtn"><i class="fas fa-fire"></i><span id="userScoreText">0 pts</span></div>
+<button class="header-btn" id="spotterBtn"><i class="fas fa-users"></i><span class="badge" id="spotterBadge">1</span></button>
+<button class="header-btn" id="notifBtn"><i class="fas fa-bell"></i></button>
+</div>
+</header>
 
-        <div class="route-selector" id="routeSelector"></div>
-        <div class="route-info-bar" id="routeBar"></div>
+<div class="route-selector" id="routeSelector"></div>
+<div class="route-info-bar" id="routeBar"></div>
 
-        <div class="map-container">
-            <div id="map"></div>
-            <div class="map-loading" id="mapLoading"><div class="map-loading-spinner"></div><span style="color:var(--text-muted); font-size:13px;">Loading Nairobi map...</span></div>
+<div class="map-container">
+<div id="map"></div>
+<div class="map-loading" id="mapLoading"><div class="map-loading-spinner"></div><span style="color:var(--text-muted);font-size:13px">Loading Nairobi map...</span></div>
 
-            <div class="weather-widget"><i class="fas fa-cloud-sun"></i><div><div class="temp">24°C</div><div class="condition">Partly cloudy</div></div></div>
+<div class="weather-widget"><i class="fas fa-cloud-sun"></i><div><div class="temp">24°C</div><div class="condition">Partly cloudy</div></div></div>
 
-            <div class="traffic-legend">
-                <div style="font-weight:700; font-size:11px; margin-bottom:6px; color:var(--text-primary);">Traffic Status</div>
-                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--success)"></div><span>Clear (Moving)</span></div>
-                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--warning)"></div><span>Slow (Crawling)</span></div>
-                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--danger)"></div><span>Jam (Stopped)</span></div>
-                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--primary)"></div><span>Active Route</span></div>
-            </div>
+<div class="traffic-legend">
+<div style="font-weight:700;font-size:11px;margin-bottom:6px;color:var(--text-primary)">Traffic Status</div>
+<div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--success)"></div><span>Clear (Moving)</span></div>
+<div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--warning)"></div><span>Slow (Crawling)</span></div>
+<div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--danger)"></div><span>Jam (Stopped)</span></div>
+<div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--primary)"></div><span>Active Route</span></div>
+</div>
 
-            <div class="spotter-panel" id="spotterPanel">
-                <h4><i class="fas fa-broadcast-tower"></i> Live Spotters</h4>
-                <div id="spotterList"></div>
-            </div>
+<div class="spotter-panel" id="spotterPanel">
+<h4><i class="fas fa-broadcast-tower"></i> Live Spotters</h4>
+<div id="spotterList"></div>
+</div>
 
-            <button class="my-location-btn" id="myLocationBtn" title="My Location"><i class="fas fa-crosshairs"></i></button>
+<button class="my-location-btn" id="myLocationBtn" title="My Location"><i class="fas fa-crosshairs"></i></button>
 
-            <div class="fab-container">
-                <button class="fab fab-quaternary" id="voiceFab"><i class="fas fa-microphone"></i><span class="fab-label">Voice Report</span></button>
-                <button class="fab fab-tertiary" id="reportFab"><i class="fas fa-bullhorn"></i><span class="fab-label">Report Jam</span></button>
-                <button class="fab fab-secondary" id="navFab"><i class="fas fa-location-arrow"></i><span class="fab-label">Navigate</span></button>
-                <button class="fab fab-primary" id="routesFab"><i class="fas fa-route"></i><span class="fab-label">Routes</span></button>
-            </div>
-        </div>
+<div class="fab-container">
+<button class="fab fab-quaternary" id="voiceFab"><i class="fas fa-microphone"></i><span class="fab-label">Voice Report</span></button>
+<button class="fab fab-tertiary" id="reportFab"><i class="fas fa-bullhorn"></i><span class="fab-label">Report Jam</span></button>
+<button class="fab fab-secondary" id="navFab"><i class="fas fa-location-arrow"></i><span class="fab-label">Navigate</span></button>
+<button class="fab fab-primary" id="routesFab"><i class="fas fa-route"></i><span class="fab-label">Routes</span></button>
+</div>
+</div>
 
-        <div class="bottom-sheet" id="bottomSheet">
-            <div class="bottom-sheet-handle" id="sheetHandle"></div>
-            <div class="bottom-sheet-content">
-                <div class="route-header">
-                    <div>
-                        <h2 id="currentRouteName">Route 39 Live</h2>
-                        <div class="route-direction" style="margin-top:3px;"><span class="live-pulse">You are a spotter</span></div>
-                    </div>
-                    <div class="eta-badge" id="mainEta">⏱ 42 min</div>
-                </div>
-                <div class="ai-insight" id="aiInsight">
-                    <i class="fas fa-robot"></i>
-                    <div class="ai-insight-content">
-                        <h4>AI Prediction</h4>
-                        <p id="aiInsightText">Tap any stage on the map to report its condition. Your reports help other makangas.</p>
-                    </div>
-                </div>
-                <div class="smart-route-card fade-in" id="smartRouteCard">
-                    <h3>💡 Smart Route Recommended</h3>
-                    <div class="route-path" id="smartRoutePath">Kayole Jn → Saika → 18 Stage → Kwa Miti → Pheroz → Komarock → <strong style="color:var(--primary)">Caltex → LEFT → Buruburu → Juja Rd</strong> → City Stadium → NACCICO → Country Bus → OTC → Temple Rd</div>
-                    <div class="smart-route-stats">
-                        <div class="smart-route-stat"><i class="fas fa-clock"></i><span id="smartEta">42 min</span></div>
-                        <div class="smart-route-stat"><i class="fas fa-bolt"></i><span id="timeSaved">Save 23 min</span></div>
-                        <div class="smart-route-stat"><i class="fas fa-users"></i><span id="makangaCount">8 makangas</span></div>
-                        <div class="smart-route-stat"><i class="fas fa-road"></i><span id="distanceKm">18 km</span></div>
-                        <div class="smart-route-stat"><span class="spotter-confirm"><i class="fas fa-check-double" style="font-size:9px;"></i> 5 spotters confirm</span></div>
-                    </div>
-                </div>
-                <div class="timeline" id="routeTimeline"></div>
-                <div class="alt-routes-section">
-                    <h3>🔄 Alternative Routes</h3>
-                    <div id="altRoutesContainer"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="bottom-sheet" id="bottomSheet">
+<div class="bottom-sheet-handle" id="sheetHandle"></div>
+<div class="bottom-sheet-content">
+<div class="route-header">
+<div>
+<h2 id="currentRouteName">Route 39 Live</h2>
+<div class="route-direction" style="margin-top:3px"><span class="live-pulse">You are a spotter</span><span id="rushBadge" class="rush-badge offpeak">OFF-PEAK</span></div>
+</div>
+<div class="eta-badge" id="mainEta">⏱ 42 min</div>
+</div>
+<div class="ai-insight" id="aiInsight">
+<i class="fas fa-robot"></i>
+<div class="ai-insight-content">
+<h4>AI Prediction</h4>
+<p id="aiInsightText">Tap any stage on the map to report its condition. Your reports help other makangas.</p>
+</div>
+</div>
+<div class="smart-route-card fade-in" id="smartRouteCard">
+<h3>💡 Smart Route Recommended</h3>
+<div class="route-path" id="smartRoutePath">Kayole Jn → Saika → 18 Stage → Kwa Miti → Pheroz → Komarock → <strong style="color:var(--primary)">Caltex → LEFT → Buruburu → Juja Rd</strong> → City Stadium → NACCICO → Country Bus → OTC → Temple Rd</div>
+<div class="smart-route-stats">
+<div class="smart-route-stat"><i class="fas fa-clock"></i><span id="smartEta">42 min</span></div>
+<div class="smart-route-stat"><i class="fas fa-bolt"></i><span id="timeSaved">Save 23 min</span></div>
+<div class="smart-route-stat"><i class="fas fa-users"></i><span id="makangaCount">8 makangas</span></div>
+<div class="smart-route-stat"><i class="fas fa-road"></i><span id="distanceKm">18 km</span></div>
+<div class="smart-route-stat"><span class="spotter-confirm"><i class="fas fa-check-double" style="font-size:9px"></i> 5 spotters confirm</span></div>
+</div>
+</div>
+<div class="timeline" id="routeTimeline"></div>
+<div class="alt-routes-section">
+<h3>🔄 Alternative Routes</h3>
+<div id="altRoutesContainer"></div>
+</div>
+</div>
+</div>
+</div>
 
-    <div class="modal-overlay" id="reportModal">
-        <div class="modal">
-            <div class="modal-header"><h2 id="reportModalTitle">🚨 Report Condition</h2><button class="modal-close" id="closeReportModal"><i class="fas fa-times"></i></button></div>
-            <div class="modal-body">
-                <p id="reportModalDesc" style="color:var(--text-secondary); font-size:13px; margin-bottom:6px;">What is happening at this stage?</p>
-                <div class="report-options">
-                    <div class="report-option green" data-report="clear"><i class="fas fa-check-circle"></i><span>Road Clear</span></div>
-                    <div class="report-option yellow" data-report="slow"><i class="fas fa-exclamation-circle"></i><span>Moving Slow</span></div>
-                    <div class="report-option red" data-report="jam"><i class="fas fa-times-circle"></i><span>Heavy Jam</span></div>
-                    <div class="report-option blue" data-report="accident"><i class="fas fa-car-crash"></i><span>Accident / Police</span></div>
-                </div>
-                <div style="margin-top:16px;">
-                    <label style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Add Details (Optional)</label>
-                    <textarea id="reportDetails" style="width:100%; background:var(--bg-dark); border:1px solid var(--border); border-radius:12px; padding:10px; color:white; font-family:inherit; margin-top:6px; resize:none; font-size:13px;" rows="3" placeholder="e.g., Lorry imeharibika hapa Total..."></textarea>
-                </div>
-                <button id="submitReportBtn" style="width:100%; background:linear-gradient(135deg, var(--primary), var(--primary-dark)); border:none; color:white; padding:12px; border-radius:14px; font-size:15px; font-weight:700; margin-top:14px; cursor:pointer;"><i class="fas fa-paper-plane"></i> Send Report</button>
-            </div>
-        </div>
-    </div>
+<div class="modal-overlay" id="reportModal">
+<div class="modal">
+<div class="modal-header"><h2 id="reportModalTitle">🚨 Report Condition</h2><button class="modal-close" id="closeReportModal"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<p id="reportModalDesc" style="color:var(--text-secondary);font-size:13px;margin-bottom:6px">What is happening at this stage?</p>
+<div class="report-options">
+<div class="report-option green" data-report="clear"><i class="fas fa-check-circle"></i><span>Road Clear</span></div>
+<div class="report-option yellow" data-report="slow"><i class="fas fa-exclamation-circle"></i><span>Moving Slow</span></div>
+<div class="report-option red" data-report="jam"><i class="fas fa-times-circle"></i><span>Heavy Jam</span></div>
+<div class="report-option blue" data-report="accident"><i class="fas fa-car-crash"></i><span>Accident / Police</span></div>
+</div>
+<div style="margin-top:16px">
+<label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Add Details (Optional)</label>
+<textarea id="reportDetails" style="width:100%;background:var(--bg-dark);border:1px solid var(--border);border-radius:12px;padding:10px;color:white;font-family:inherit;margin-top:6px;resize:none;font-size:13px" rows="3" placeholder="e.g., Lorry imeharibika hapa Total..."></textarea>
+</div>
+<button id="submitReportBtn" style="width:100%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:none;color:white;padding:12px;border-radius:14px;font-size:15px;font-weight:700;margin-top:14px;cursor:pointer"><i class="fas fa-paper-plane"></i> Send Report</button>
+</div>
+</div>
+</div>
 
-    <div class="modal-overlay" id="voiceModal">
-        <div class="modal">
-            <div class="modal-header"><h2>🎙️ Voice Commands</h2><button class="modal-close" id="closeVoiceModal"><i class="fas fa-times"></i></button></div>
-            <div class="modal-body">
-                <div class="voice-indicator">
-                    <div class="voice-wave"><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div></div>
-                    <p style="color:var(--text-secondary); font-size:14px; text-align:center;">Say something like:</p>
-                </div>
-                <div style="background:var(--bg-dark); border-radius:16px; padding:16px; margin-top:10px;">
-                    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px;">"Jam hapa Caltex"</span></div>
-                    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px;">"Barabara safi mpaka CBD"</span></div>
-                    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px;">"Niende wapi?" (Which way?)</span></div>
-                    <div style="display:flex; align-items:center; gap:10px; padding:8px 0;"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px;">"Police hapa Jogoo Road"</span></div>
-                </div>
-                <button id="voiceBtn" style="width:100%; background:linear-gradient(135deg, var(--primary), var(--primary-dark)); border:none; color:white; padding:14px; border-radius:14px; font-size:16px; font-weight:700; margin-top:16px; cursor:pointer;"><i class="fas fa-microphone"></i> Tap to Speak</button>
-            </div>
-        </div>
-    </div>
+<div class="modal-overlay" id="voiceModal">
+<div class="modal">
+<div class="modal-header"><h2>🎙️ Voice Commands</h2><button class="modal-close" id="closeVoiceModal"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<div class="voice-indicator">
+<div class="voice-wave"><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div></div>
+<p style="color:var(--text-secondary);font-size:14px;text-align:center">Say something like:</p>
+</div>
+<div style="background:var(--bg-dark);border-radius:16px;padding:16px;margin-top:10px">
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px">"Jam hapa Caltex"</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px">"Barabara safi mpaka CBD"</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px">"Niende wapi?" (Which way?)</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px">"Police hapa Jogoo Road"</span></div>
+</div>
+<button id="voiceBtn" style="width:100%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:none;color:white;padding:14px;border-radius:14px;font-size:16px;font-weight:700;margin-top:16px;cursor:pointer"><i class="fas fa-microphone"></i> Tap to Speak</button>
+</div>
+</div>
+</div>
 
-    <div class="modal-overlay" id="leaderboardModal">
-        <div class="modal">
-            <div class="modal-header"><h2>🏆 Makanga Leaderboard</h2><button class="modal-close" id="closeLeaderboard"><i class="fas fa-times"></i></button></div>
-            <div class="modal-body">
-                <p style="color:var(--text-secondary); font-size:13px; margin-bottom:14px;">Top reporters this week. Earn points by sharing accurate road conditions!</p>
-                <div id="leaderboardList"></div>
-                <div style="margin-top:16px; padding:12px; background:var(--bg-dark); border-radius:12px; border:1px solid var(--border);">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:32px; height:32px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;">YOU</div>
-                        <div style="flex:1;"><h4 style="font-size:13px;">Your Rank: #--</h4><p style="font-size:11px; color:var(--text-muted);">0 pts • 0 reports</p></div>
-                        <span style="font-size:14px; font-weight:700; color:var(--accent);">Start reporting!</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="modal-overlay" id="leaderboardModal">
+<div class="modal">
+<div class="modal-header"><h2>🏆 Makanga Leaderboard</h2><button class="modal-close" id="closeLeaderboard"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px">Top reporters this week. Earn points by sharing accurate road conditions!</p>
+<div id="leaderboardList"></div>
+<div style="margin-top:16px;padding:12px;background:var(--bg-dark);border-radius:12px;border:1px solid var(--border)">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">YOU</div>
+<div style="flex:1"><h4 style="font-size:13px">Your Rank: #--</h4><p style="font-size:11px;color:var(--text-muted)">0 pts • 0 reports</p></div>
+<span style="font-size:14px;font-weight:700;color:var(--accent)">Start reporting!</span>
+</div>
+</div>
+</div>
+</div>
+</div>
 
-    <div class="toast-container" id="toastContainer"></div>
+<div class="toast-container" id="toastContainer"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-// ===== REAL STAGE DATA (Digital Matatus Verified) =====
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+
+// ===== PHASE 2: STAGE DATA =====
+// Each stage has correct coordinates based on actual Nairobi geography
+// type: start=origin terminus, end=destination terminus, stop=regular stage, 
+//       interchange=connection point, choke=known bottleneck, decision=route choice point
+
 const STAGES = {
-    temple_road: { name: "Temple Road / Bus Station", lat: -1.2833, lng: 36.8167, status: "green", type: "start", zone: "CBD", desc: "Main CBD terminus", spotterConfirm: 0 },
-    otc: { name: "OTC", lat: -1.2850, lng: 36.8210, status: "green", type: "start", zone: "CBD", desc: "Haile Selassie Ave stage", spotterConfirm: 0 },
-    muthurwa: { name: "Muthurwa Market", lat: -1.2880, lng: 36.8280, status: "green", type: "start", zone: "CBD", desc: "Landhies Road terminus", spotterConfirm: 0 },
-    landhies: { name: "Landhies Road", lat: -1.2900, lng: 36.8350, status: "green", type: "route", zone: "Eastlands", desc: "Transition to Jogoo Rd", spotterConfirm: 0 },
-    city_stadium: { name: "City Stadium", lat: -1.2920, lng: 36.8450, status: "yellow", type: "interchange", zone: "Eastlands", desc: "Major interchange", spotterConfirm: 0 },
-    shauri_moyo: { name: "Shauri Moyo", lat: -1.2880, lng: 36.8500, status: "green", type: "stop", zone: "Eastlands", desc: "Market area", spotterConfirm: 0 },
-    makadara: { name: "Makadara", lat: -1.2850, lng: 36.8550, status: "green", type: "stop", zone: "Eastlands", desc: "Residential hub", spotterConfirm: 0 },
-    maziwa: { name: "Maziwa / Rikana", lat: -1.2820, lng: 36.8600, status: "green", type: "stop", zone: "Eastlands", desc: "Local pickups", spotterConfirm: 0 },
-    hamza: { name: "Hamza", lat: -1.2780, lng: 36.8650, status: "yellow", type: "choke", zone: "Eastlands", desc: "Major choke point", note: "Expect delays", spotterConfirm: 0 },
-    donholm: { name: "Donholm", lat: -1.2750, lng: 36.8700, status: "green", type: "interchange", zone: "Eastlands", desc: "Interchange", spotterConfirm: 0 },
-    kangundo_jn: { name: "Kangundo Jn", lat: -1.2700, lng: 36.8750, status: "green", type: "interchange", zone: "Eastlands", desc: "Exit to Kangundo Rd", spotterConfirm: 0 },
-    saika: { name: "Saika / Naivas", lat: -1.2650, lng: 36.8800, status: "green", type: "stop", zone: "Eastlands", desc: "Heavy passengers", spotterConfirm: 0 },
-    kayole_jn: { name: "Kayole Junction", lat: -1.2600, lng: 36.8850, status: "green", type: "interchange", zone: "Kayole", desc: "Main Kayole entry", spotterConfirm: 0 },
-    solace: { name: "Solace", lat: -1.2550, lng: 36.8900, status: "green", type: "stop", zone: "Kayole", desc: "1st stop", spotterConfirm: 0 },
-    stage_18: { name: "18 Stage", lat: -1.2500, lng: 36.8950, status: "green", type: "decision", zone: "Kayole", desc: "STAY on Kangundo Rd", note: "Do NOT turn to Dandora", spotterConfirm: 0 },
-    kwa_miti: { name: "Kwa Miti", lat: -1.2450, lng: 36.9000, status: "green", type: "stop", zone: "Kayole", desc: "Moving well", spotterConfirm: 0 },
-    pheroz: { name: "Pheroz", lat: -1.2400, lng: 36.9050, status: "green", type: "stop", zone: "Kayole", desc: "Business district", spotterConfirm: 0 },
-    komarock: { name: "Komarock", lat: -1.2350, lng: 36.9100, status: "yellow", type: "interchange", zone: "Kayole", desc: "Lorry breakdown", note: "Slow moving", spotterConfirm: 0 },
-    caltex: { name: "Caltex Junction", lat: -1.2300, lng: 36.9150, status: "red", type: "decision", zone: "Kayole", desc: "Jogoo Rd jammed!", note: "Take LEFT to Buruburu", spotterConfirm: 0 },
-    buruburu: { name: "Buruburu", lat: -1.2800, lng: 36.8700, status: "green", type: "route_alt", zone: "Eastlands", desc: "Alternative via Juja Rd", spotterConfirm: 0 },
-    juja_rd: { name: "Juja Road", lat: -1.2750, lng: 36.8600, status: "green", type: "route_alt", zone: "Eastlands", desc: "Clear corridor", spotterConfirm: 0 },
-    manyanja: { name: "Manyanja", lat: -1.2680, lng: 36.8750, status: "green", type: "route_alt", zone: "Eastlands", desc: "Cut-through", spotterConfirm: 0 },
-    umoja: { name: "Umoja", lat: -1.2720, lng: 36.9000, status: "green", type: "route_alt", zone: "Eastlands", desc: "Estate stage", spotterConfirm: 0 },
-    fedha: { name: "Fedha Estate", lat: -1.2650, lng: 36.8950, status: "green", type: "route_alt", zone: "Eastlands", desc: "Secret backroad", note: "Muddy if rain", spotterConfirm: 0 },
-    pipeline: { name: "Pipeline", lat: -1.2700, lng: 36.8850, status: "green", type: "route_alt", zone: "Eastlands", desc: "Rejoins main flow", spotterConfirm: 0 },
-    outer_ring: { name: "Outer Ring", lat: -1.2850, lng: 36.8800, status: "green", type: "route_alt", zone: "Eastlands", desc: "Bypass route", spotterConfirm: 0 },
-    country_bus: { name: "Country Bus", lat: -1.2820, lng: 36.8200, status: "yellow", type: "end", zone: "CBD", desc: "Terminal congestion", spotterConfirm: 0 },
-    naccico: { name: "NACCICO", lat: -1.2800, lng: 36.8300, status: "green", type: "end", zone: "CBD", desc: "Industrial area", spotterConfirm: 0 },
+  // === CBD TERMINI (Different routes end at different places) ===
+  temple_road:   {name:"Temple Road / Bus Station", lat:-1.2833, lng:36.8167, status:"green", type:"start", zone:"CBD", desc:"Main CBD terminus near Railways", spotterConfirm:0},
+  otc:           {name:"OTC / Haile Selassie Ave",  lat:-1.2850, lng:36.8210, status:"green", type:"start", zone:"CBD", desc:"Eastlands pickup point", spotterConfirm:0},
+  muthurwa:      {name:"Muthurwa Market",           lat:-1.2880, lng:36.8280, status:"green", type:"start", zone:"CBD", desc:"Landhies Road terminus", spotterConfirm:0},
+  country_bus:   {name:"Country Bus Station",       lat:-1.2820, lng:36.8200, status:"yellow", type:"end", zone:"CBD", desc:"Terminal congestion zone", spotterConfirm:0},
+  naccico:       {name:"NACCICO / Industrial Area", lat:-1.2800, lng:36.8300, status:"green", type:"end", zone:"CBD", desc:"Industrial area stage", spotterConfirm:0},
+  kencom:        {name:"Kencom House",              lat:-1.2855, lng:36.8230, status:"green", type:"start", zone:"CBD", desc:"Western suburbs pickup", spotterConfirm:0},
+  odeon:         {name:"Odeon Cinema",              lat:-1.2835, lng:36.8220, status:"green", type:"start", zone:"CBD", desc:"Thika Road & Northern suburbs", spotterConfirm:0},
+  afya_center:   {name:"Afya Center",               lat:-1.2845, lng:36.8185, status:"green", type:"start", zone:"CBD", desc:"Upper Hill & Kilimani", spotterConfirm:0},
+  ambassador:    {name:"Ambassador / Archives",       lat:-1.2860, lng:36.8195, status:"green", type:"start", zone:"CBD", desc:"Kawangware, KNH, Satellite", spotterConfirm:0},
+  accra_rd:      {name:"Accra Road",                lat:-1.2840, lng:36.8235, status:"green", type:"start", zone:"CBD", desc:"Embakasi region pickup", spotterConfirm:0},
+  ronald_ngala:  {name:"Ronald Ngala Street",       lat:-1.2830, lng:36.8240, status:"green", type:"start", zone:"CBD", desc:"Eastlands & peri-urban", spotterConfirm:0},
+  ngara:         {name:"Ngara / Fig Tree",          lat:-1.2780, lng:36.8250, status:"green", type:"start", zone:"CBD", desc:"Northern suburbs terminus", spotterConfirm:0},
+  latema_rd:     {name:"Latema Road",               lat:-1.2828, lng:36.8238, status:"green", type:"start", zone:"CBD", desc:"Pangani, Ngara, Kasarani", spotterConfirm:0},
+  gpo:           {name:"GPO / General Post Office", lat:-1.2865, lng:36.8215, status:"green", type:"start", zone:"CBD", desc:"Ngong Road, Dagoretti", spotterConfirm:0},
+
+  // === JOGOO ROAD CORRIDOR ===
+  landhies:      {name:"Landhies Road",             lat:-1.2900, lng:36.8350, status:"green", type:"route", zone:"Eastlands", desc:"Transition to Jogoo Rd", spotterConfirm:0},
+  city_stadium:  {name:"City Stadium",              lat:-1.2920, lng:36.8450, status:"yellow", type:"interchange", zone:"Eastlands", desc:"Major interchange point", spotterConfirm:0},
+  shauri_moyo:   {name:"Shauri Moyo",               lat:-1.2880, lng:36.8500, status:"green", type:"stop", zone:"Eastlands", desc:"Market area", spotterConfirm:0},
+  makadara:      {name:"Makadara",                  lat:-1.2850, lng:36.8550, status:"green", type:"stop", zone:"Eastlands", desc:"Residential hub", spotterConfirm:0},
+  maziwa:        {name:"Maziwa / Rikana",           lat:-1.2820, lng:36.8600, status:"green", type:"stop", zone:"Eastlands", desc:"Local pickups", spotterConfirm:0},
+  hamza:         {name:"Hamza",                     lat:-1.2780, lng:36.8650, status:"yellow", type:"choke", zone:"Eastlands", desc:"Major choke point", note:"Expect delays", spotterConfirm:0},
+  donholm:       {name:"Donholm",                   lat:-1.2750, lng:36.8700, status:"green", type:"interchange", zone:"Eastlands", desc:"Interchange to Buruburu", spotterConfirm:0},
+  donholm_caltex:{name:"Donholm Caltex",            lat:-1.2740, lng:36.8720, status:"green", type:"interchange", zone:"Eastlands", desc:"Fuel & turnaround", spotterConfirm:0},
+
+  // === KANGUNDO ROAD (Kayole) ===
+  kangundo_jn:   {name:"Kangundo Junction",         lat:-1.2700, lng:36.8750, status:"green", type:"interchange", zone:"Eastlands", desc:"Exit to Kangundo Rd", spotterConfirm:0},
+  saika:         {name:"Saika / Naivas",            lat:-1.2650, lng:36.8800, status:"green", type:"stop", zone:"Eastlands", desc:"Heavy passenger area", spotterConfirm:0},
+  kayole_jn:     {name:"Kayole Junction",           lat:-1.2600, lng:36.8850, status:"green", type:"interchange", zone:"Kayole", desc:"Main Kayole entry", spotterConfirm:0},
+  solace:        {name:"Solace",                    lat:-1.2550, lng:36.8900, status:"green", type:"stop", zone:"Kayole", desc:"1st Kayole stop", spotterConfirm:0},
+  stage_18:      {name:"18 Stage",                  lat:-1.2500, lng:36.8950, status:"green", type:"decision", zone:"Kayole", desc:"STAY on Kangundo Rd", note:"Do NOT turn to Dandora", spotterConfirm:0},
+  kwa_miti:      {name:"Kwa Miti",                  lat:-1.2450, lng:36.9000, status:"green", type:"stop", zone:"Kayole", desc:"Moving well", spotterConfirm:0},
+  pheroz:        {name:"Pheroz",                    lat:-1.2400, lng:36.9050, status:"green", type:"stop", zone:"Kayole", desc:"Business district", spotterConfirm:0},
+  komarock:      {name:"Komarock",                  lat:-1.2350, lng:36.9100, status:"yellow", type:"interchange", zone:"Kayole", desc:"Lorry breakdown common", note:"Slow moving", spotterConfirm:0},
+  caltex:        {name:"Caltex Junction",           lat:-1.2300, lng:36.9150, status:"red", type:"decision", zone:"Kayole", desc:"Jogoo Rd jammed!", note:"Take LEFT to Buruburu", spotterConfirm:0},
+  mama_lucy:     {name:"Mama Lucy Hospital",        lat:-1.2580, lng:36.8880, status:"green", type:"stop", zone:"Kayole", desc:"Hospital area", spotterConfirm:0},
+  mwiki:         {name:"Mwiki",                     lat:-1.2180, lng:36.9280, status:"green", type:"stop", zone:"Kayole", desc:"Eastern outskirts", spotterConfirm:0},
+
+  // === BURUBURU / JUJA RD ALTERNATIVE ===
+  buruburu:      {name:"Buruburu",                  lat:-1.2800, lng:36.8700, status:"green", type:"route_alt", zone:"Eastlands", desc:"Alternative via Juja Rd", spotterConfirm:0},
+  juja_rd:       {name:"Juja Road",                 lat:-1.2750, lng:36.8600, status:"green", type:"route_alt", zone:"Eastlands", desc:"Clear corridor to CBD", spotterConfirm:0},
+  manyanja:      {name:"Manyanja",                  lat:-1.2680, lng:36.8750, status:"green", type:"route_alt", zone:"Eastlands", desc:"Cut-through route", spotterConfirm:0},
+  umoja:         {name:"Umoja",                     lat:-1.2720, lng:36.9000, status:"green", type:"route_alt", zone:"Eastlands", desc:"Estate stage", spotterConfirm:0},
+  umoja_inner:   {name:"Umoja Inner",               lat:-1.2700, lng:36.9050, status:"green", type:"route_alt", zone:"Eastlands", desc:"Inner estate", spotterConfirm:0},
+
+  // === FEDHA / PIPELINE BACKROADS ===
+  fedha:         {name:"Fedha Estate",              lat:-1.2650, lng:36.8950, status:"green", type:"route_alt", zone:"Eastlands", desc:"Secret backroad", note:"Muddy if rain", spotterConfirm:0},
+  pipeline:      {name:"Pipeline",                  lat:-1.2700, lng:36.8850, status:"green", type:"route_alt", zone:"Eastlands", desc:"Rejoins main flow", spotterConfirm:0},
+  pipeline_taj:  {name:"Pipeline / Taj Mall",         lat:-1.2680, lng:36.8830, status:"green", type:"route_alt", zone:"Eastlands", desc:"Shopping area", spotterConfirm:0},
+  embakasi:      {name:"Embakasi",                  lat:-1.3150, lng:36.8850, status:"green", type:"route_alt", zone:"Eastlands", desc:"Airport zone", spotterConfirm:0},
+
+  // === OUTER RING BYPASS ===
+  outer_ring:    {name:"Outer Ring Road",           lat:-1.2850, lng:36.8800, status:"green", type:"route_alt", zone:"Eastlands", desc:"Bypass route", spotterConfirm:0},
+  allsops:       {name:"Allsops",                   lat:-1.2650, lng:36.8600, status:"green", type:"route_alt", zone:"Eastlands", desc:"Thika Rd connection", spotterConfirm:0},
+  roysambu:      {name:"Roysambu",                  lat:-1.2150, lng:36.8750, status:"green", type:"route_alt", zone:"Eastlands", desc:"Northern suburbs", spotterConfirm:0},
+  kasarani:      {name:"Kasarani",                  lat:-1.2200, lng:36.8950, status:"green", type:"route_alt", zone:"Eastlands", desc:"Sports complex area", spotterConfirm:0},
+  thika_rd:      {name:"Thika Road",                lat:-1.2100, lng:36.8800, status:"green", type:"route_alt", zone:"Eastlands", desc:"Major highway", spotterConfirm:0},
+
+  // === THIKA ROAD CORRIDOR ===
+  ngara_thika:   {name:"Ngara (Thika Rd)",        lat:-1.2780, lng:36.8250, status:"green", type:"start", zone:"Thika Road", desc:"Thika Rd terminus", spotterConfirm:0},
+  pangani:       {name:"Pangani",                   lat:-1.2700, lng:36.8300, status:"green", type:"stop", zone:"Thika Road", desc:"Roundabout area", spotterConfirm:0},
+  muthaiga:      {name:"Muthaiga",                  lat:-1.2550, lng:36.8350, status:"green", type:"stop", zone:"Thika Road", desc:"Diplomatic zone", spotterConfirm:0},
+  garden_city:   {name:"Garden City",               lat:-1.2350, lng:36.8450, status:"green", type:"stop", zone:"Thika Road", desc:"Mall area", spotterConfirm:0},
+  roasters:      {name:"Roasters",                  lat:-1.2250, lng:36.8550, status:"green", type:"stop", zone:"Thika Road", desc:"Famous stop", spotterConfirm:0},
+  kahawa_sukari: {name:"Kahawa Sukari",             lat:-1.2050, lng:36.8650, status:"green", type:"stop", zone:"Thika Road", desc:"Estate area", spotterConfirm:0},
+  kahawa_wendani:{name:"Kahawa Wendani",            lat:-1.1950, lng:36.8750, status:"green", type:"stop", zone:"Thika Road", desc:"Residential", spotterConfirm:0},
+  githurai:      {name:"Githurai",                  lat:-1.1850, lng:36.8850, status:"green", type:"interchange", zone:"Thika Road", desc:"Major interchange", spotterConfirm:0},
+  ruiru:         {name:"Ruiru",                     lat:-1.1500, lng:36.9600, status:"green", type:"end", zone:"Thika Road", desc:"Town terminus", spotterConfirm:0},
+  thika_town:    {name:"Thika Town",                lat:-1.0350, lng:37.0700, status:"green", type:"end", zone:"Thika Road", desc:"Final destination", spotterConfirm:0},
+  juja:          {name:"Juja",                      lat:-1.1000, lng:37.0200, status:"green", type:"stop", zone:"Thika Road", desc:"University area", spotterConfirm:0},
+  ku:            {name:"Kenyatta University",       lat:-1.1800, lng:36.9250, status:"green", type:"stop", zone:"Thika Road", desc:"University stage", spotterConfirm:0},
+
+  // === WESTLANDS / WAIYAKI WAY ===
+  westlands:     {name:"Westlands",                 lat:-1.2680, lng:36.8050, status:"green", type:"start", zone:"Westlands", desc:"Business district", spotterConfirm:0},
+  sarit:         {name:"Sarit Centre",              lat:-1.2620, lng:36.8000, status:"green", type:"stop", zone:"Westlands", desc:"Shopping mall", spotterConfirm:0},
+  safaricom:     {name:"Safaricom House",           lat:-1.2580, lng:36.7950, status:"green", type:"stop", zone:"Westlands", desc:"Corporate area", spotterConfirm:0},
+  abc:           {name:"ABC Place",                 lat:-1.2550, lng:36.7900, status:"green", type:"stop", zone:"Westlands", desc:"Commercial", spotterConfirm:0},
+  lavington:     {name:"Lavington",                 lat:-1.2750, lng:36.7750, status:"green", type:"stop", zone:"Westlands", desc:"Upscale area", spotterConfirm:0},
+  valley_arcade: {name:"Valley Arcade",             lat:-1.2900, lng:36.7700, status:"green", type:"stop", zone:"Westlands", desc:"Shopping center", spotterConfirm:0},
+  yaya:          {name:"Yaya Centre",               lat:-1.2950, lng:36.7850, status:"green", type:"stop", zone:"Westlands", desc:"Hurlingham mall", spotterConfirm:0},
+  kawangware:    {name:"Kawangware",                lat:-1.2850, lng:36.7450, status:"green", type:"end", zone:"Westlands", desc:"Dense estate", spotterConfirm:0},
+  kabiria:       {name:"Kabiria",                   lat:-1.2900, lng:36.7350, status:"green", type:"end", zone:"Westlands", desc:"Western outskirts", spotterConfirm:0},
+  dagoretti:     {name:"Dagoretti",                 lat:-1.3000, lng:36.7250, status:"green", type:"end", zone:"Westlands", desc:"Market town", spotterConfirm:0},
+  kikuyu:        {name:"Kikuyu",                    lat:-1.2500, lng:36.6600, status:"green", type:"end", zone:"Westlands", desc:"Town terminus", spotterConfirm:0},
+  uthiru:        {name:"Uthiru",                    lat:-1.2650, lng:36.7000, status:"green", type:"stop", zone:"Westlands", desc:"Residential", spotterConfirm:0},
+  kangemi:       {name:"Kangemi",                   lat:-1.2700, lng:36.7100, status:"green", type:"stop", zone:"Westlands", desc:"Working class area", spotterConfirm:0},
+
+  // === LANGATA / NGONG ROAD ===
+  langata:       {name:"Langata",                   lat:-1.3300, lng:36.7850, status:"green", type:"start", zone:"Langata", desc:"Southern suburbs", spotterConfirm:0},
+  carnivore:     {name:"Carnivore",                 lat:-1.3250, lng:36.7800, status:"green", type:"stop", zone:"Langata", desc:"Restaurant landmark", spotterConfirm:0},
+  bomas:         {name:"Bomas of Kenya",            lat:-1.3200, lng:36.7750, status:"green", type:"stop", zone:"Langata", desc:"Cultural center", spotterConfirm:0},
+  langata_cemetery:{name:"Langata Cemetery",        lat:-1.3150, lng:36.7700, status:"green", type:"stop", zone:"Langata", desc:"KWS HQ nearby", spotterConfirm:0},
+  kws:           {name:"KWS HQ",                    lat:-1.3100, lng:36.7650, status:"green", type:"stop", zone:"Langata", desc:"Wildlife service", spotterConfirm:0},
+  galleria:      {name:"Galleria Mall",             lat:-1.3050, lng:36.7600, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
+  brookhouse:    {name:"Brookhouse School",         lat:-1.3000, lng:36.7550, status:"green", type:"stop", zone:"Langata", desc:"School zone", spotterConfirm:0},
+  langata_barracks:{name:"Langata Barracks",        lat:-1.2950, lng:36.7500, status:"green", type:"stop", zone:"Langata", desc:"Military area", spotterConfirm:0},
+  uchumi_langata:{name:"Uchumi Langata",            lat:-1.2900, lng:36.7450, status:"green", type:"stop", zone:"Langata", desc:"Supermarket", spotterConfirm:0},
+  tmall:         {name:"T-Mall",                    lat:-1.2850, lng:36.7400, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
+  strathmore:    {name:"Strathmore University",     lat:-1.3100, lng:36.8150, status:"green", type:"stop", zone:"Langata", desc:"University", spotterConfirm:0},
+  madaraka:      {name:"Madaraka",                  lat:-1.3050, lng:36.8100, status:"green", type:"stop", zone:"Langata", desc:"Estate", spotterConfirm:0},
+  south_b:       {name:"South B",                   lat:-1.3150, lng:36.8250, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
+  south_c:       {name:"South C",                   lat:-1.3200, lng:36.8300, status:"green", type:"stop", zone:"Langata", desc:"Airport view", spotterConfirm:0},
+  kpa:           {name:"KPA / Mombasa Rd",          lat:-1.3250, lng:36.8350, status:"green", type:"stop", zone:"Langata", desc:"Port authority", spotterConfirm:0},
+  nyayo:         {name:"Nyayo Stadium",             lat:-1.3050, lng:36.8200, status:"green", type:"stop", zone:"Langata", desc:"Sports complex", spotterConfirm:0},
+  highrise:      {name:"Highrise",                  lat:-1.2950, lng:36.8000, status:"green", type:"stop", zone:"Langata", desc:"Estate", spotterConfirm:0},
+  ngumo:         {name:"Ngumo",                     lat:-1.3000, lng:36.7950, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
+  karen:         {name:"Karen",                     lat:-1.3200, lng:36.7000, status:"green", type:"end", zone:"Langata", desc:"Leafy suburb", spotterConfirm:0},
+  hardy:         {name:"Hardy",                     lat:-1.3150, lng:36.7100, status:"green", type:"end", zone:"Langata", desc:"Karen extension", spotterConfirm:0},
+  rongai:        {name:"Rongai",                    lat:-1.3950, lng:36.7350, status:"green", type:"end", zone:"Langata", desc:"Fast-growing town", spotterConfirm:0},
+  kiserian:      {name:"Kiserian",                  lat:-1.4300, lng:36.6800, status:"green", type:"end", zone:"Langata", desc:"Market town", spotterConfirm:0},
+  ngong:         {name:"Ngong",                     lat:-1.3600, lng:36.6550, status:"green", type:"end", zone:"Langata", desc:"Hill town", spotterConfirm:0},
+  ongata_rongai: {name:"Ongata Rongai",             lat:-1.4000, lng:36.7300, status:"green", type:"end", zone:"Langata", desc:"Satellite town", spotterConfirm:0},
+  bomas_interchange:{name:"Bomas Interchange",      lat:-1.3180, lng:36.7720, status:"green", type:"interchange", zone:"Langata", desc:"Southern bypass link", spotterConfirm:0},
+
+  // === MOMBASA ROAD / SOUTHERN BYPASS ===
+  mombasa_rd:    {name:"Mombasa Road",              lat:-1.3200, lng:36.8500, status:"green", type:"start", zone:"Mombasa Road", desc:"Industrial area start", spotterConfirm:0},
+  syokimau:      {name:"Syokimau",                  lat:-1.3600, lng:36.9200, status:"green", type:"stop", zone:"Mombasa Road", desc:"SGR station", spotterConfirm:0},
+  katani:        {name:"Katani",                    lat:-1.3800, lng:36.9500, status:"green", type:"stop", zone:"Mombasa Road", desc:"Residential", spotterConfirm:0},
+  athi_river:    {name:"Athi River",                lat:-1.4500, lng:36.9800, status:"green", type:"end", zone:"Mombasa Road", desc:"Industrial town", spotterConfirm:0},
+  kitengela:     {name:"Kitengela",                 lat:-1.4700, lng:36.9600, status:"green", type:"end", zone:"Mombasa Road", desc:"Fast-growing town", spotterConfirm:0},
+  jkia:          {name:"JKIA Airport",              lat:-1.3200, lng:36.9250, status:"green", type:"stop", zone:"Mombasa Road", desc:"International airport", spotterConfirm:0},
+  cabanas:       {name:"Cabanas",                   lat:-1.3300, lng:36.9000, status:"green", type:"stop", zone:"Mombasa Road", desc:"Bypass junction", spotterConfirm:0},
+  imara_daima:   {name:"Imara Daima",               lat:-1.3250, lng:36.8800, status:"green", type:"stop", zone:"Mombasa Road", desc:"Estate", spotterConfirm:0},
+  enterprise_rd: {name:"Enterprise Road",             lat:-1.3100, lng:36.8600, status:"green", type:"stop", zone:"Mombasa Road", desc:"Industrial", spotterConfirm:0},
+  lungalunga:    {name:"Lunga Lunga",               lat:-1.3000, lng:36.8700, status:"green", type:"stop", zone:"Mombasa Road", desc:"Industrial area", spotterConfirm:0},
+
+  // === EASTLEIGH / DANDORA ===
+  eastleigh:     {name:"Eastleigh",                 lat:-1.2700, lng:36.8450, status:"green", type:"start", zone:"Eastleigh", desc:"Business hub", spotterConfirm:0},
+  pangani_east:  {name:"Pangani (East)",            lat:-1.2720, lng:36.8400, status:"green", type:"stop", zone:"Eastleigh", desc:"Transition zone", spotterConfirm:0},
+  kiambiu:       {name:"Kiambiu",                   lat:-1.2650, lng:36.8550, status:"green", type:"stop", zone:"Eastleigh", desc:"Informal settlement", spotterConfirm:0},
+  huruma:        {name:"Huruma",                    lat:-1.2550, lng:36.8650, status:"green", type:"stop", zone:"Eastleigh", desc:"Residential", spotterConfirm:0},
+  kariobangi_n:  {name:"Kariobangi North",          lat:-1.2600, lng:36.8750, status:"green", type:"stop", zone:"Eastleigh", desc:"Dense area", spotterConfirm:0},
+  kariobangi_s:  {name:"Kariobangi South",          lat:-1.2650, lng:36.8700, status:"green", type:"stop", zone:"Eastleigh", desc:"Market area", spotterConfirm:0},
+  dandora:       {name:"Dandora",                   lat:-1.2500, lng:36.8900, status:"green", type:"end", zone:"Eastleigh", desc:"Estate terminus", spotterConfirm:0},
+  dandora_dump:  {name:"Dandora Dump Site",         lat:-1.2450, lng:36.8950, status:"green", type:"stop", zone:"Eastleigh", desc:"Avoid area", spotterConfirm:0},
+  gikomba:       {name:"Gikomba Market",            lat:-1.2850, lng:36.8400, status:"green", type:"start", zone:"Eastleigh", desc:"Wholesale market", spotterConfirm:0},
+  jua_kali:      {name:"Jua Kali",                  lat:-1.2820, lng:36.8450, status:"green", type:"stop", zone:"Eastleigh", desc:"Artisan area", spotterConfirm:0},
+  baba_ndogo:    {name:"Baba Ndogo",                lat:-1.2400, lng:36.8550, status:"green", type:"stop", zone:"Eastleigh", desc:"Industrial", spotterConfirm:0},
+  lucky_summer:  {name:"Lucky Summer",              lat:-1.2350, lng:36.8600, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+  mwiki_east:    {name:"Mwiki (East)",              lat:-1.2200, lng:36.9300, status:"green", type:"end", zone:"Eastleigh", desc:"Eastern edge", spotterConfirm:0},
+  njiru:         {name:"Njiru",                     lat:-1.2300, lng:36.9400, status:"green", type:"end", zone:"Eastleigh", desc:"Rural-urban", spotterConfirm:0},
+  ruai:          {name:"Ruai",                      lat:-1.2600, lng:36.9600, status:"green", type:"end", zone:"Eastleigh", desc:"Satellite town", spotterConfirm:0},
+  utawala:       {name:"Utawala",                   lat:-1.2800, lng:36.9500, status:"green", type:"end", zone:"Eastleigh", desc:"New estate", spotterConfirm:0},
+  komarocks_east:{name:"Komarocks (East)",          lat:-1.2320, lng:36.9120, status:"green", type:"stop", zone:"Eastleigh", desc:"Eastern extension", spotterConfirm:0},
+  jacaranda:     {name:"Jacaranda",                 lat:-1.2400, lng:36.9200, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+
+  // === KIBERA ===
+  knh:           {name:"KNH / Kenyatta Hospital",   lat:-1.3020, lng:36.8060, status:"green", type:"start", zone:"Kibera", desc:"Hospital stage", spotterConfirm:0},
+  kibera:        {name:"Kibera",                    lat:-1.3150, lng:36.7800, status:"green", type:"end", zone:"Kibera", desc:"Largest informal settlement", spotterConfirm:0},
+  ayany:         {name:"Ayany",                     lat:-1.3100, lng:36.7750, status:"green", type:"stop", zone:"Kibera", desc:"Kibera zone", spotterConfirm:0},
+  mashimoni:     {name:"Mashimoni",                 lat:-1.3200, lng:36.7700, status:"green", type:"stop", zone:"Kibera", desc:"Deep Kibera", spotterConfirm:0},
+  silanga:       {name:"Silanga",                   lat:-1.3250, lng:36.7650, status:"green", type:"stop", zone:"Kibera", desc:"Kibera west", spotterConfirm:0},
+
+  // === KIAMBU ROAD ===
+  kiambu_town:   {name:"Kiambu Town",               lat:-1.1700, lng:36.8300, status:"green", type:"end", zone:"Kiambu", desc:"County headquarters", spotterConfirm:0},
+  githunguri:    {name:"Githunguri",                lat:-1.0600, lng:36.7750, status:"green", type:"end", zone:"Kiambu", desc:"Dairy town", spotterConfirm:0},
+  ndumberi:      {name:"Ndumberi",                  lat:-1.1400, lng:36.8200, status:"green", type:"stop", zone:"Kiambu", desc:"Trading center", spotterConfirm:0},
+  ridgeways:     {name:"Ridgeways",                 lat:-1.2100, lng:36.8400, status:"green", type:"stop", zone:"Kiambu", desc:"Residential", spotterConfirm:0},
+  runda:         {name:"Runda",                     lat:-1.2150, lng:36.8300, status:"green", type:"stop", zone:"Kiambu", desc:"Diplomatic zone", spotterConfirm:0},
+  two_rivers:    {name:"Two Rivers Mall",           lat:-1.2080, lng:36.8250, status:"green", type:"stop", zone:"Kiambu", desc:"Shopping", spotterConfirm:0},
+  village_mkt:   {name:"Village Market",            lat:-1.2280, lng:36.8150, status:"green", type:"stop", zone:"Kiambu", desc:"Mall", spotterConfirm:0},
+  united_nations:{name:"UN Gigiri",                 lat:-1.2350, lng:36.8200, status:"green", type:"stop", zone:"Kiambu", desc:"UN complex", spotterConfirm:0},
+  spring_valley: {name:"Spring Valley",             lat:-1.2500, lng:36.8050, status:"green", type:"stop", zone:"Kiambu", desc:"Upscale", spotterConfirm:0},
+  loresho:       {name:"Loresho",                   lat:-1.2450, lng:36.7900, status:"green", type:"stop", zone:"Kiambu", desc:"Estate", spotterConfirm:0},
+  kitisuru:      {name:"Kitisuru",                  lat:-1.2550, lng:36.7750, status:"green", type:"stop", zone:"Kiambu", desc:"Hill estate", spotterConfirm:0},
+
+  // === Additional stages for route completeness ===
+  prestige:      {name:"Prestige Plaza",            lat:-1.3000, lng:36.7900, status:"green", type:"stop", zone:"Langata", desc:"Ngong Rd mall", spotterConfirm:0},
+  junction:      {name:"The Junction Mall",         lat:-1.2980, lng:36.7620, status:"green", type:"stop", zone:"Langata", desc:"Ngong Rd shopping", spotterConfirm:0},
+  adams_arcade:  {name:"Adams Arcade",              lat:-1.2880, lng:36.7500, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
+  citam_valley:  {name:"CITAM Valley Road",         lat:-1.2950, lng:36.8050, status:"green", type:"stop", zone:"Langata", desc:"Church landmark", spotterConfirm:0},
+  nairobi_hospital:{name:"Nairobi Hospital",        lat:-1.2960, lng:36.8080, status:"green", type:"stop", zone:"Langata", desc:"Medical", spotterConfirm:0},
+  hurlingham:    {name:"Hurlingham",                lat:-1.2900, lng:36.7900, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
+  kilimani:      {name:"Kilimani",                  lat:-1.2880, lng:36.7850, status:"green", type:"stop", zone:"Langata", desc:"Upscale", spotterConfirm:0},
+  kileleshwa:    {name:"Kileleshwa",                lat:-1.2780, lng:36.7750, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
+  parklands:     {name:"Parklands",                 lat:-1.2600, lng:36.8150, status:"green", type:"stop", zone:"Westlands", desc:"Residential", spotterConfirm:0},
+  highridge:     {name:"Highridge",                 lat:-1.2550, lng:36.8100, status:"green", type:"stop", zone:"Westlands", desc:"Estate", spotterConfirm:0},
+  muthaiga_north:{name:"Muthaiga North",            lat:-1.2500, lng:36.8400, status:"green", type:"stop", zone:"Thika Road", desc:"Diplomatic", spotterConfirm:0},
+  thika_rd_mall: {name:"Thika Road Mall",           lat:-1.2150, lng:36.8500, status:"green", type:"stop", zone:"Thika Road", desc:"TRM", spotterConfirm:0},
+  mountain_view: {name:"Mountain View",             lat:-1.2650, lng:36.7350, status:"green", type:"stop", zone:"Westlands", desc:"Estate", spotterConfirm:0},
+  kawangware_46: {name:"Kawangware 46",             lat:-1.2820, lng:36.7420, status:"green", type:"stop", zone:"Westlands", desc:"Route 46", spotterConfirm:0},
+  satellite:     {name:"Satellite",                 lat:-1.2780, lng:36.7380, status:"green", type:"stop", zone:"Westlands", desc:"Estate", spotterConfirm:0},
+  waithaka:      {name:"Waithaka",                  lat:-1.2850, lng:36.7250, status:"green", type:"stop", zone:"Westlands", desc:"Dagoretti", spotterConfirm:0},
+  uthiru_market: {name:"Uthiru Market",             lat:-1.2620, lng:36.6980, status:"green", type:"stop", zone:"Westlands", desc:"Market", spotterConfirm:0},
+  kabete:        {name:"Kabete",                    lat:-1.2550, lng:36.7150, status:"green", type:"stop", zone:"Westlands", desc:"Veterinary", spotterConfirm:0},
+  lower_kabete:  {name:"Lower Kabete",              lat:-1.2450, lng:36.7250, status:"green", type:"stop", zone:"Westlands", desc:"Residential", spotterConfirm:0},
+  kingeero:      {name:"Kinge'ero",                 lat:-1.2350, lng:36.7050, status:"green", type:"stop", zone:"Westlands", desc:"Outskirts", spotterConfirm:0},
+  gathiga:       {name:"Gathiga",                   lat:-1.2250, lng:36.6950, status:"green", type:"stop", zone:"Westlands", desc:"Rural", spotterConfirm:0},
+  gichagi:       {name:"Gichagi",                   lat:-1.2150, lng:36.6850, status:"green", type:"stop", zone:"Westlands", desc:"Village", spotterConfirm:0},
+  marurui:       {name:"Marurui",                   lat:-1.2050, lng:36.7750, status:"green", type:"stop", zone:"Kiambu", desc:"Estate", spotterConfirm:0},
+  kahawa_west:   {name:"Kahawa West",               lat:-1.1900, lng:36.8850, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  ngumba:        {name:"Ngumba",                    lat:-1.2000, lng:36.8950, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  mwihoko:       {name:"Mwihoko",                   lat:-1.1950, lng:36.9050, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  lucky_summer_junction:{name:"Lucky Summer Jn",   lat:-1.2300, lng:36.8580, status:"green", type:"stop", zone:"Eastleigh", desc:"Junction", spotterConfirm:0},
+  baba_ndogo_junction:{name:"Baba Ndogo Jn",       lat:-1.2350, lng:36.8520, status:"green", type:"stop", zone:"Eastleigh", desc:"Industrial", spotterConfirm:0},
+  huruma_bridge: {name:"Huruma Bridge",             lat:-1.2520, lng:36.8680, status:"green", type:"stop", zone:"Eastleigh", desc:"Crossing", spotterConfirm:0},
+  kiambiu_bridge:{name:"Kiambiu Bridge",            lat:-1.2620, lng:36.8580, status:"green", type:"stop", zone:"Eastleigh", desc:"Crossing", spotterConfirm:0},
+  kariobangi_roundabout:{name:"Kariobangi Rndbt",   lat:-1.2580, lng:36.8720, status:"green", type:"interchange", zone:"Eastleigh", desc:"Roundabout", spotterConfirm:0},
+  outer_ring_market:{name:"Outer Ring Market",       lat:-1.2750, lng:36.8780, status:"green", type:"stop", zone:"Eastlands", desc:"Market", spotterConfirm:0},
+  total_petrol:  {name:"Total Petrol Station",      lat:-1.2780, lng:36.8820, status:"green", type:"stop", zone:"Eastlands", desc:"Fuel stop", spotterConfirm:0},
+  kwa_chief:     {name:"Kwa Chief",                 lat:-1.2350, lng:36.9080, status:"green", type:"stop", zone:"Kayole", desc:"Landmark", spotterConfirm:0},
+  kanisani:      {name:"Kanisani",                  lat:-1.2280, lng:36.9180, status:"green", type:"stop", zone:"Kayole", desc:"Church area", spotterConfirm:0},
+  masimba:       {name:"Masimba",                   lat:-1.2320, lng:36.9220, status:"green", type:"stop", zone:"Kayole", desc:"Estate", spotterConfirm:0},
+  bee_centre:    {name:"Bee Centre",                lat:-1.2380, lng:36.9250, status:"green", type:"stop", zone:"Kayole", desc:"Landmark", spotterConfirm:0},
+  ruai_bypass_junction:{name:"Ruai Bypass Jn",      lat:-1.2550, lng:36.9650, status:"green", type:"stop", zone:"Eastleigh", desc:"Bypass", spotterConfirm:0},
+  kamulu_junction:{name:"Kamulu Junction",          lat:-1.1750, lng:36.9750, status:"green", type:"stop", zone:"Thika Road", desc:"Junction", spotterConfirm:0},
+  joska_junction:{name:"Joska Junction",            lat:-1.1450, lng:36.9850, status:"green", type:"stop", zone:"Thika Road", desc:"Junction", spotterConfirm:0},
+  githurai_44:   {name:"Githurai 44",               lat:-1.1900, lng:36.8900, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  githurai_45:   {name:"Githurai 45",               lat:-1.1850, lng:36.8950, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  zimmerman_base:{name:"Zimmerman Base",            lat:-1.1980, lng:36.8880, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  seasons:       {name:"Seasons",                   lat:-1.2250, lng:36.8700, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  kariobangi_estate:{name:"Kariobangi Estate",      lat:-1.2630, lng:36.8680, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+  bahati:        {name:"Bahati",                    lat:-1.2900, lng:36.8650, status:"green", type:"stop", zone:"Eastlands", desc:"Estate", spotterConfirm:0},
+  uhuru_estate:  {name:"Uhuru Estate",              lat:-1.2950, lng:36.8600, status:"green", type:"stop", zone:"Eastlands", desc:"Estate", spotterConfirm:0},
+  hamza_uchumi:  {name:"Hamza Uchumi",              lat:-1.2760, lng:36.8630, status:"green", type:"stop", zone:"Eastlands", desc:"Supermarket", spotterConfirm:0},
+  donholm_stage: {name:"Donholm Stage",             lat:-1.2730, lng:36.8680, status:"green", type:"stop", zone:"Eastlands", desc:"Main stage", spotterConfirm:0},
+  greenspan:     {name:"Greenspan Mall",            lat:-1.2680, lng:36.8850, status:"green", type:"stop", zone:"Eastlands", desc:"Shopping", spotterConfirm:0},
+  savannah_estate:{name:"Savannah Estate",          lat:-1.2720, lng:36.9180, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+  chokaa_estate: {name:"Chokaa Estate",             lat:-1.2380, lng:36.9320, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+  ruai_town:     {name:"Ruai Town",                 lat:-1.2550, lng:36.9550, status:"green", type:"end", zone:"Eastleigh", desc:"Town center", spotterConfirm:0},
+  utawala_junction:{name:"Utawala Junction",        lat:-1.2780, lng:36.9450, status:"green", type:"stop", zone:"Eastleigh", desc:"Junction", spotterConfirm:0},
+  eastern_bypass_junction:{name:"Eastern Bypass Jn", lat:-1.2880, lng:36.9250, status:"green", type:"stop", zone:"Eastleigh", desc:"Highway", spotterConfirm:0},
+  mombasa_rd_junction:{name:"Mombasa Rd Jn",        lat:-1.3150, lng:36.8850, status:"green", type:"stop", zone:"Mombasa Road", desc:"Junction", spotterConfirm:0},
+  nairobi_dam:   {name:"Nairobi Dam",               lat:-1.3100, lng:36.7850, status:"green", type:"stop", zone:"Langata", desc:"Waterfront", spotterConfirm:0},
+  wilson_airport:{name:"Wilson Airport",            lat:-1.3200, lng:36.8150, status:"green", type:"stop", zone:"Langata", desc:"Domestic airport", spotterConfirm:0},
+  south_b_shopping:{name:"South B Shopping",        lat:-1.3120, lng:36.8220, status:"green", type:"stop", zone:"Langata", desc:"Shopping center", spotterConfirm:0},
+  hazina:        {name:"Hazina",                    lat:-1.2980, lng:36.8120, status:"green", type:"stop", zone:"Langata", desc:"Estate", spotterConfirm:0},
+  taj_mall:      {name:"Taj Mall / Eastleigh",      lat:-1.2680, lng:36.8480, status:"green", type:"stop", zone:"Eastleigh", desc:"Shopping", spotterConfirm:0},
+  josters:       {name:"Josters",                   lat:-1.2720, lng:36.8520, status:"green", type:"stop", zone:"Eastleigh", desc:"Business", spotterConfirm:0},
+  rikana:        {name:"Rikana",                    lat:-1.2750, lng:36.8580, status:"green", type:"stop", zone:"Eastleigh", desc:"Stage", spotterConfirm:0},
+  maringo:       {name:"Maringo",                   lat:-1.2850, lng:36.8620, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+  greenfield:    {name:"Greenfield Estate",         lat:-1.2550, lng:36.9050, status:"green", type:"stop", zone:"Eastleigh", desc:"New estate", spotterConfirm:0},
+  mowlem:        {name:"Mowlem",                    lat:-1.2450, lng:36.9100, status:"green", type:"stop", zone:"Eastleigh", desc:"Dandora edge", spotterConfirm:0},
+  clayworks:     {name:"Clayworks",                 lat:-1.2150, lng:36.8700, status:"green", type:"stop", zone:"Thika Road", desc:"Industrial", spotterConfirm:0},
+  drive_inn:     {name:"Drive Inn",                 lat:-1.2050, lng:36.8600, status:"green", type:"stop", zone:"Thika Road", desc:"Famous stage", spotterConfirm:0},
+  kca:           {name:"KCA University",            lat:-1.1950, lng:36.8550, status:"green", type:"stop", zone:"Thika Road", desc:"University", spotterConfirm:0},
+  zimmerman:     {name:"Zimmerman",                 lat:-1.2000, lng:36.8900, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  sunton:        {name:"Sunton",                    lat:-1.2100, lng:36.9000, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
+  mwiki_thika:   {name:"Mwiki (Thika Rd)",          lat:-1.2150, lng:36.9100, status:"green", type:"stop", zone:"Thika Road", desc:"Thika Rd extension", spotterConfirm:0},
+  kamulu:        {name:"Kamulu",                    lat:-1.1800, lng:36.9800, status:"green", type:"end", zone:"Thika Road", desc:"Eastern outskirts", spotterConfirm:0},
+  joska:         {name:"Joska",                     lat:-1.1500, lng:36.9900, status:"green", type:"end", zone:"Thika Road", desc:"Rural town", spotterConfirm:0},
+  malaa:         {name:"Malaa",                     lat:-1.1000, lng:37.0000, status:"green", type:"end", zone:"Thika Road", desc:"Trading center", spotterConfirm:0},
+  koma_rock_east:{name:"Koma Rock",                 lat:-1.2300, lng:36.9200, status:"green", type:"stop", zone:"Eastleigh", desc:"Rock landmark", spotterConfirm:0},
+  savannah:      {name:"Savannah",                  lat:-1.2700, lng:36.9200, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+  chokaa:        {name:"Chokaa",                    lat:-1.2400, lng:36.9300, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+  greater_dandora:{name:"Greater Dandora",          lat:-1.2480, lng:36.8980, status:"green", type:"stop", zone:"Eastleigh", desc:"Dandora area", spotterConfirm:0},
+  dandora_phase5:{name:"Dandora Phase 5",           lat:-1.2420, lng:36.9050, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
+  dandora_stadium:{name:"Dandora Stadium",          lat:-1.2380, lng:36.9100, status:"green", type:"stop", zone:"Eastleigh", desc:"Sports ground", spotterConfirm:0},
+  ruai_bypass:   {name:"Ruai Bypass",               lat:-1.2650, lng:36.9700, status:"green", type:"stop", zone:"Eastleigh", desc:"Bypass route", spotterConfirm:0},
+  eastern_bypass:{name:"Eastern Bypass",            lat:-1.2900, lng:36.9300, status:"green", type:"stop", zone:"Eastleigh", desc:"Highway link", spotterConfirm:0},
+  north_airport: {name:"North Airport Road",        lat:-1.3200, lng:36.9000, status:"green", type:"stop", zone:"Mombasa Road", desc:"Airport zone", spotterConfirm:0},
+  southern_bypass:{name:"Southern Bypass",          lat:-1.3500, lng:36.8000, status:"green", type:"stop", zone:"Langata", desc:"Fast route", spotterConfirm:0},
+  karen_hub:     {name:"Karen Hub",                 lat:-1.3220, lng:36.6950, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
+  gataka:        {name:"Gataka Road",               lat:-1.3300, lng:36.7100, status:"green", type:"stop", zone:"Langata", desc:"Karen route", spotterConfirm:0},
+  ngong_forest:  {name:"Ngong Road Forest",         lat:-1.3150, lng:36.7200, status:"green", type:"stop", zone:"Langata", desc:"Forest edge", spotterConfirm:0},
+  racecourse:    {name:"Racecourse",                lat:-1.2950, lng:36.7350, status:"green", type:"stop", zone:"Langata", desc:"Ngong Rd", spotterConfirm:0},
+  ngong_rd_mkt:  {name:"Ngong Rd Market",           lat:-1.2920, lng:36.7550, status:"green", type:"stop", zone:"Langata", desc:"Market", spotterConfirm:0},
+  chaka_place:   {name:"Chaka Place",               lat:-1.2980, lng:36.7980, status:"green", type:"stop", zone:"Langata", desc:"Kilimani", spotterConfirm:0},
+  westlands_link:{name:"Westlands Link Rd",         lat:-1.2650, lng:36.8000, status:"green", type:"stop", zone:"Westlands", desc:"Connector", spotterConfirm:0},
+  dagoretti_mkt: {name:"Dagoretti Market",          lat:-1.3020, lng:36.7380, status:"green", type:"stop", zone:"Langata", desc:"Market center", spotterConfirm:0},
+  rongai_tuskys: {name:"Rongai Tuskys",             lat:-1.3920, lng:36.7380, status:"green", type:"stop", zone:"Langata", desc:"Town center", spotterConfirm:0},
+  rongai_maasai: {name:"Rongai Maasai Lodge",       lat:-1.3850, lng:36.7250, status:"green", type:"stop", zone:"Langata", desc:"Landmark", spotterConfirm:0},
+  kiserian_mkt:  {name:"Kiserian Market",           lat:-1.4280, lng:36.6820, status:"green", type:"stop", zone:"Langata", desc:"Market day", spotterConfirm:0},
+  ngong_town:    {name:"Ngong Town",                lat:-1.3580, lng:36.6580, status:"green", type:"end", zone:"Langata", desc:"Hill station", spotterConfirm:0},
+  ngong_hills:   {name:"Ngong Hills",               lat:-1.4000, lng:36.6500, status:"green", type:"end", zone:"Langata", desc:"Wind farm", spotterConfirm:0},
+  magadi_rd:     {name:"Magadi Road",               lat:-1.3500, lng:36.7200, status:"green", type:"stop", zone:"Langata", desc:"Southern route", spotterConfirm:0},
+  olepolos:      {name:"Olepolos",                  lat:-1.4200, lng:36.6800, status:"green", type:"stop", zone:"Langata", desc:"Meat country", spotterConfirm:0},
+  isinya:        {name:"Isinya",                    lat:-1.6800, lng:36.8500, status:"green", type:"end", zone:"Mombasa Road", desc:"Kajiado town", spotterConfirm:0},
+  kiserian_ngong:{name:"Kiserian-Ngong Rd",         lat:-1.3900, lng:36.6700, status:"green", type:"stop", zone:"Langata", desc:"Connector", spotterConfirm:0},
+  mataara:       {name:"Mataara",                   lat:-1.3200, lng:36.6950, status:"green", type:"stop", zone:"Langata", desc:"Rural", spotterConfirm:0},
+  karen_crossing:{name:"Karen Crossing",            lat:-1.3250, lng:36.7050, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
+  bomas_gate:    {name:"Bomas Main Gate",           lat:-1.3200, lng:36.7750, status:"green", type:"stop", zone:"Langata", desc:"Cultural gate", spotterConfirm:0},
+  nairobi_west:  {name:"Nairobi West",              lat:-1.3050, lng:36.8150, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
+  karen_hardy:   {name:"Karen Hardy",               lat:-1.3180, lng:36.7080, status:"green", type:"stop", zone:"Langata", desc:"Karen edge", spotterConfirm:0}
 };
 
-const ROUTE_PATHS = {
-    main_jogoo: {
-        id: "main_jogoo", name: "Route 39 Jogoo Road", description: "Temple Rd → Landhies → Jogoo Rd → Kangundo Rd → Kayole",
-        color: "#FF6B35", badge: "PRIMARY", badgeClass: "badge-avoid", time: "65+ min", distance: "16 km", makangas: 0,
-        status: "Heavy jam confirmed", statusColor: "#FF3366", statusIcon: "fa-exclamation-triangle",
-        aiReason: "Jogoo Rd jammed — avoid during rush hour", coords: [
-            [-1.2833,36.8167], [-1.2880,36.8280], [-1.2900,36.8350], [-1.2920,36.8450],
-            [-1.2880,36.8500], [-1.2850,36.8550], [-1.2820,36.8600], [-1.2780,36.8650],
-            [-1.2750,36.8700], [-1.2700,36.8750], [-1.2650,36.8800], [-1.2600,36.8850],
-            [-1.2550,36.8900], [-1.2500,36.8950], [-1.2450,36.9000], [-1.2400,36.9050],
-            [-1.2350,36.9100], [-1.2300,36.9150]
-        ], stages: ["temple_road","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+
+// ===== PHASE 3A: ROUTES DATA (A-Line through E-Line) =====
+// Each route has bidirectional paths: to_cbd and from_cbd
+
+const ROUTES = {
+
+  // ===== A-LINE: KIAMBU ROAD =====
+  route_100_kiambu: {
+    id:"route_100_kiambu", name:"Route 100 Kiambu", color:"#E74C3C", badge:"A-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"kiambu_town", end:"ngara",
+      time_rush:"55 min", time_offpeak:"35 min", distance:"16 km", makangas:12,
+      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Kiambu Road corridor, clear in off-peak",
+      coords:[[-1.1700,36.8300],[-1.1650,36.8320],[-1.1600,36.8340],[-1.1550,36.8350],[-1.1500,36.8360],[-1.1450,36.8370],[-1.1400,36.8380],[-1.1350,36.8390],[-1.1300,36.8400],[-1.1250,36.8400],[-1.1200,36.8390],[-1.1150,36.8380],[-1.1100,36.8370],[-1.1050,36.8360],[-1.1000,36.8350],[-1.0950,36.8340],[-1.0900,36.8330],[-1.0850,36.8320],[-1.0800,36.8310],[-1.0750,36.8300],[-1.0700,36.8290],[-1.0650,36.8280],[-1.0600,36.8270],[-1.0550,36.8260],[-1.0500,36.8250],[-1.0450,36.8240],[-1.0400,36.8230],[-1.0350,36.8220],[-1.0300,36.8210],[-1.2780,36.8250]],
+      stages:["kiambu_town","ndumberi","ridgeways","runda","two_rivers","village_mkt","united_nations","spring_valley","ngara"]
     },
-    alt_buruburu: {
-        id: "alt_buruburu", name: "Buruburu → Juja Rd Shortcut", description: "Caltex → LEFT → Buruburu → Juja Rd → CBD",
-        color: "#00D4AA", badge: "FASTEST", badgeClass: "badge-fastest", time: "42 min", distance: "18 km", makangas: 8,
-        status: "Clear — 8 makangas using", statusColor: "#00D4AA", statusIcon: "fa-check-double",
-        aiReason: "Saves 23 min vs Jogoo Rd during rush", coords: [
-            [-1.2300,36.9150], [-1.2350,36.9100], [-1.2400,36.9050], [-1.2450,36.9000],
-            [-1.2500,36.8950], [-1.2550,36.8900], [-1.2600,36.8850], [-1.2650,36.8800],
-            [-1.2700,36.8750], [-1.2750,36.8700], [-1.2800,36.8700], [-1.2750,36.8600],
-            [-1.2700,36.8550], [-1.2680,36.8500], [-1.2650,36.8450], [-1.2600,36.8400],
-            [-1.2550,36.8350], [-1.2500,36.8300], [-1.2450,36.8250], [-1.2400,36.8200],
-            [-1.2350,36.8150], [-1.2833,36.8167]
-        ], stages: ["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","buruburu","juja_rd","manyanja","muthurwa","temple_road"]
-    },
-    alt_fedha: {
-        id: "alt_fedha", name: "Fedha Estate Backroads", description: "Secret route — muddy if rain",
-        color: "#FFB800", badge: "SECRET", badgeClass: "badge-secret", time: "35 min", distance: "17 km", makangas: 2,
-        status: "Muddy if rain — 2 makangas", statusColor: "#FFB800", statusIcon: "fa-cloud-rain",
-        aiReason: "Veteran route — fastest when dry", coords: [
-            [-1.2600,36.8850], [-1.2620,36.8870], [-1.2650,36.8950], [-1.2680,36.8970],
-            [-1.2700,36.8980], [-1.2720,36.9000], [-1.2700,36.8850], [-1.2680,36.8800],
-            [-1.2650,36.8750], [-1.2600,36.8700], [-1.2550,36.8650], [-1.2500,36.8600],
-            [-1.2450,36.8550], [-1.2400,36.8500], [-1.2350,36.8450], [-1.2300,36.8400],
-            [-1.2250,36.8350], [-1.2200,36.8300], [-1.2833,36.8167]
-        ], stages: ["kayole_jn","fedha","umoja","pipeline","donholm","temple_road"]
-    },
-    alt_outer_ring: {
-        id: "alt_outer_ring", name: "Outer Ring Bypass", description: "Longer but bypasses jams",
-        color: "#4A90E2", badge: "SHORTCUT", badgeClass: "badge-shortcut", time: "38 min", distance: "20 km", makangas: 3,
-        status: "Rough road — 3 makangas", statusColor: "#FFB800", statusIcon: "fa-info-circle",
-        aiReason: "Use when main route delay > 30 min", coords: [
-            [-1.2300,36.9150], [-1.2350,36.9100], [-1.2400,36.9050], [-1.2450,36.9000],
-            [-1.2500,36.8950], [-1.2550,36.8900], [-1.2600,36.8850], [-1.2650,36.8800],
-            [-1.2700,36.8750], [-1.2750,36.8700], [-1.2800,36.8750], [-1.2850,36.8800],
-            [-1.2900,36.8750], [-1.2950,36.8700], [-1.3000,36.8650], [-1.3050,36.8600],
-            [-1.3100,36.8550], [-1.3150,36.8500], [-1.3200,36.8450], [-1.3250,36.8400],
-            [-1.3300,36.8350], [-1.3350,36.8300], [-1.3400,36.8250], [-1.3450,36.8200],
-            [-1.2833,36.8167]
-        ], stages: ["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","outer_ring","temple_road"]
+    from_cbd: {
+      start:"ngara", end:"kiambu_town",
+      time_rush:"60 min", time_offpeak:"38 min", distance:"16 km", makangas:12,
+      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Kiambu Road traffic",
+      coords:[[-1.2780,36.8250],[-1.0300,36.8210],[-1.0350,36.8220],[-1.0400,36.8230],[-1.0450,36.8240],[-1.0500,36.8250],[-1.0550,36.8260],[-1.0600,36.8270],[-1.0650,36.8280],[-1.0700,36.8290],[-1.0750,36.8300],[-1.0800,36.8310],[-1.0850,36.8320],[-1.0900,36.8330],[-1.0950,36.8340],[-1.1000,36.8350],[-1.1050,36.8360],[-1.1100,36.8370],[-1.1150,36.8380],[-1.1200,36.8390],[-1.1250,36.8400],[-1.1300,36.8400],[-1.1350,36.8390],[-1.1400,36.8380],[-1.1450,36.8370],[-1.1500,36.8360],[-1.1550,36.8350],[-1.1600,36.8340],[-1.1650,36.8320],[-1.1700,36.8300]],
+      stages:["ngara","spring_valley","united_nations","village_mkt","two_rivers","runda","ridgeways","ndumberi","kiambu_town"]
     }
+  },
+
+  route_120_githunguri: {
+    id:"route_120_githunguri", name:"Route 120 Githunguri", color:"#C0392B", badge:"A-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"githunguri", end:"ngara",
+      time_rush:"75 min", time_offpeak:"50 min", distance:"28 km", makangas:8,
+      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Long distance route, fewer vehicles",
+      coords:[[-1.0600,36.7750],[-1.2780,36.8250]],
+      stages:["githunguri","ndumberi","ridgeways","runda","two_rivers","village_mkt","united_nations","spring_valley","ngara"]
+    },
+    from_cbd: {
+      start:"ngara", end:"githunguri",
+      time_rush:"80 min", time_offpeak:"55 min", distance:"28 km", makangas:8,
+      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening long distance",
+      coords:[[-1.2780,36.8250],[-1.0600,36.7750]],
+      stages:["ngara","spring_valley","united_nations","village_mkt","two_rivers","runda","ridgeways","ndumberi","githunguri"]
+    }
+  },
+
+  // ===== B-LINE: THIKA ROAD =====
+  route_17b_mwiki: {
+    id:"route_17b_mwiki", name:"Route 17B Mwiki", color:"#E67E22", badge:"B-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"mwiki", end:"muthurwa",
+      time_rush:"50 min", time_offpeak:"30 min", distance:"14 km", makangas:9,
+      status:"Moving — 9 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Eastern route to Mwiki",
+      coords:[[-1.2180,36.9280],[-1.2880,36.8280]],
+      stages:["mwiki","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa"]
+    },
+    from_cbd: {
+      start:"muthurwa", end:"mwiki",
+      time_rush:"55 min", time_offpeak:"32 min", distance:"14 km", makangas:9,
+      status:"Moving — 9 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening eastern route",
+      coords:[[-1.2880,36.8280],[-1.2180,36.9280]],
+      stages:["muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","mwiki"]
+    }
+  },
+
+  route_25_babandogo: {
+    id:"route_25_babandogo", name:"Route 25 Baba Ndogo", color:"#E74C3C", badge:"B-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"baba_ndogo", end:"ronald_ngala",
+      time_rush:"35 min", time_offpeak:"20 min", distance:"10 km", makangas:7,
+      status:"Moving — 7 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Northern Eastlands route",
+      coords:[[-1.2400,36.8550],[-1.2830,36.8240]],
+      stages:["baba_ndogo","lucky_summer","baba_ndogo_junction","huruma","kiambiu","eastleigh","pangani_east","ngara","ronald_ngala"]
+    },
+    from_cbd: {
+      start:"ronald_ngala", end:"baba_ndogo",
+      time_rush:"38 min", time_offpeak:"22 min", distance:"10 km", makangas:7,
+      status:"Moving — 7 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening northern Eastlands",
+      coords:[[-1.2830,36.8240],[-1.2400,36.8550]],
+      stages:["ronald_ngala","ngara","pangani_east","eastleigh","kiambiu","huruma","baba_ndogo_junction","lucky_summer","baba_ndogo"]
+    }
+  },
+
+  route_44_kahawawest: {
+    id:"route_44_kahawawest", name:"Route 44 Kahawa West", color:"#D35400", badge:"B-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"kahawa_west", end:"odeon",
+      time_rush:"45 min", time_offpeak:"28 min", distance:"12 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Thika Road northern suburbs",
+      coords:[[-1.1900,36.8850],[-1.2835,36.8220]],
+      stages:["kahawa_west","githurai_44","githurai_45","zimmerman_base","seasons","clayworks","drive_inn","kca","roasters","garden_city","muthaiga","pangani","ngara","odeon"]
+    },
+    from_cbd: {
+      start:"odeon", end:"kahawa_west",
+      time_rush:"48 min", time_offpeak:"30 min", distance:"12 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Thika Road north",
+      coords:[[-1.2835,36.8220],[-1.1900,36.8850]],
+      stages:["odeon","ngara","pangani","muthaiga","garden_city","roasters","kca","drive_inn","clayworks","seasons","zimmerman_base","githurai_45","githurai_44","kahawa_west"]
+    }
+  },
+
+  route_45_githurai: {
+    id:"route_45_githurai", name:"Route 45 Githurai", color:"#BA4A00", badge:"B-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"githurai", end:"odeon",
+      time_rush:"40 min", time_offpeak:"25 min", distance:"11 km", makangas:15,
+      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"High frequency Thika Rd route",
+      coords:[[-1.1850,36.8850],[-1.2835,36.8220]],
+      stages:["githurai","kahawa_wendani","kahawa_sukari","roasters","garden_city","muthaiga","pangani","ngara","odeon"]
+    },
+    from_cbd: {
+      start:"odeon", end:"githurai",
+      time_rush:"42 min", time_offpeak:"27 min", distance:"11 km", makangas:15,
+      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening high frequency",
+      coords:[[-1.2835,36.8220],[-1.1850,36.8850]],
+      stages:["odeon","ngara","pangani","muthaiga","garden_city","roasters","kahawa_sukari","kahawa_wendani","githurai"]
+    }
+  },
+
+  route_145_ruiru: {
+    id:"route_145_ruiru", name:"Route 145 Ruiru", color:"#A04000", badge:"B-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"ruiru", end:"odeon",
+      time_rush:"65 min", time_offpeak:"40 min", distance:"22 km", makangas:6,
+      status:"Moving — 6 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Long distance Thika Rd",
+      coords:[[-1.1500,36.9600],[-1.2835,36.8220]],
+      stages:["ruiru","juja","ku","githurai","kahawa_wendani","kahawa_sukari","roasters","garden_city","muthaiga","pangani","ngara","odeon"]
+    },
+    from_cbd: {
+      start:"odeon", end:"ruiru",
+      time_rush:"70 min", time_offpeak:"45 min", distance:"22 km", makangas:6,
+      status:"Moving — 6 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening long distance",
+      coords:[[-1.2835,36.8220],[-1.1500,36.9600]],
+      stages:["odeon","ngara","pangani","muthaiga","garden_city","roasters","kahawa_sukari","kahawa_wendani","githurai","ku","juja","ruiru"]
+    }
+  },
+
+  // ===== C-LINE: EASTLEIGH / DANDORA =====
+  route_6_eastleigh: {
+    id:"route_6_eastleigh", name:"Route 6 Eastleigh", color:"#8E44AD", badge:"C-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"eastleigh", end:"ronald_ngala",
+      time_rush:"20 min", time_offpeak:"12 min", distance:"4 km", makangas:20,
+      status:"Moving — 20 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"High frequency short route",
+      coords:[[-1.2700,36.8450],[-1.2830,36.8240]],
+      stages:["eastleigh","pangani_east","ngara","ronald_ngala"]
+    },
+    from_cbd: {
+      start:"ronald_ngala", end:"eastleigh",
+      time_rush:"22 min", time_offpeak:"14 min", distance:"4 km", makangas:20,
+      status:"Moving — 20 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening high frequency",
+      coords:[[-1.2830,36.8240],[-1.2700,36.8450]],
+      stages:["ronald_ngala","ngara","pangani_east","eastleigh"]
+    }
+  },
+
+  route_14_kariobangi: {
+    id:"route_14_kariobangi", name:"Route 14 Kariobangi N", color:"#9B59B6", badge:"C-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"kariobangi_n", end:"muthurwa",
+      time_rush:"30 min", time_offpeak:"18 min", distance:"8 km", makangas:12,
+      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Eastlands northern corridor",
+      coords:[[-1.2600,36.8750],[-1.2880,36.8280]],
+      stages:["kariobangi_n","kariobangi_s","kariobangi_estate","kariobangi_roundabout","huruma","kiambiu","eastleigh","pangani_east","ngara","muthurwa"]
+    },
+    from_cbd: {
+      start:"muthurwa", end:"kariobangi_n",
+      time_rush:"32 min", time_offpeak:"20 min", distance:"8 km", makangas:12,
+      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Eastlands north",
+      coords:[[-1.2880,36.8280],[-1.2600,36.8750]],
+      stages:["muthurwa","ngara","pangani_east","eastleigh","kiambiu","huruma","kariobangi_roundabout","kariobangi_estate","kariobangi_s","kariobangi_n"]
+    }
+  },
+
+  route_17a_kayole: {
+    id:"route_17a_kayole", name:"Route 17A Kayole", color:"#7D3C98", badge:"C-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"caltex", end:"gikomba",
+      time_rush:"55 min", time_offpeak:"32 min", distance:"16 km", makangas:14,
+      status:"Moving — 14 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Kayole via Gikomba",
+      coords:[[-1.2300,36.9150],[-1.2850,36.8400]],
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","gikomba"]
+    },
+    from_cbd: {
+      start:"gikomba", end:"caltex",
+      time_rush:"58 min", time_offpeak:"35 min", distance:"16 km", makangas:14,
+      status:"Moving — 14 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Kayole via Gikomba",
+      coords:[[-1.2850,36.8400],[-1.2300,36.9150]],
+      stages:["gikomba","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+    }
+  },
+
+  route_32_dandora: {
+    id:"route_32_dandora", name:"Route 32 Dandora", color:"#6C3483", badge:"C-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"dandora", end:"gikomba",
+      time_rush:"35 min", time_offpeak:"20 min", distance:"10 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Dandora direct route",
+      coords:[[-1.2500,36.8900],[-1.2850,36.8400]],
+      stages:["dandora","dandora_dump","mowlem","greenfield","chokaa","koma_rock_east","jacaranda","kiambiu","eastleigh","gikomba"]
+    },
+    from_cbd: {
+      start:"gikomba", end:"dandora",
+      time_rush:"38 min", time_offpeak:"22 min", distance:"10 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Dandora route",
+      coords:[[-1.2850,36.8400],[-1.2500,36.8900]],
+      stages:["gikomba","eastleigh","kiambiu","jacaranda","koma_rock_east","chokaa","greenfield","mowlem","dandora_dump","dandora"]
+    }
+  },
+
+  route_3738_ruai: {
+    id:"route_3738_ruai", name:"Route 37/38 Ruai", color:"#5B2C6F", badge:"C-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"ruai", end:"eastleigh",
+      time_rush:"50 min", time_offpeak:"30 min", distance:"18 km", makangas:8,
+      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Eastern outskirts route",
+      coords:[[-1.2600,36.9600],[-1.2700,36.8450]],
+      stages:["ruai","ruai_bypass_junction","ruai_town","utawala_junction","utawala","eastern_bypass_junction","savannah","chokaa_estate","kiambiu","eastleigh"]
+    },
+    from_cbd: {
+      start:"eastleigh", end:"ruai",
+      time_rush:"55 min", time_offpeak:"32 min", distance:"18 km", makangas:8,
+      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening eastern outskirts",
+      coords:[[-1.2700,36.8450],[-1.2600,36.9600]],
+      stages:["eastleigh","kiambiu","chokaa_estate","savannah","eastern_bypass_junction","utawala","utawala_junction","ruai_town","ruai_bypass_junction","ruai"]
+    }
+  },
+
+  // ===== D-LINE: WESTLANDS / WAIYAKI WAY =====
+  route_23_kawangware: {
+    id:"route_23_kawangware", name:"Route 23 Kawangware", color:"#2980B9", badge:"D-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"kawangware", end:"kencom",
+      time_rush:"40 min", time_offpeak:"25 min", distance:"10 km", makangas:18,
+      status:"Moving — 18 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"High frequency western route",
+      coords:[[-1.2850,36.7450],[-1.2855,36.8230]],
+      stages:["kawangware","kawangware_46","satellite","adams_arcade","prestige","yaya","hurlingham","kilimani","kileleshwa","westlands","sarit","kencom"]
+    },
+    from_cbd: {
+      start:"kencom", end:"kawangware",
+      time_rush:"42 min", time_offpeak:"27 min", distance:"10 km", makangas:18,
+      status:"Moving — 18 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening western high frequency",
+      coords:[[-1.2855,36.8230],[-1.2850,36.7450]],
+      stages:["kencom","sarit","westlands","kileleshwa","kilimani","hurlingham","yaya","prestige","adams_arcade","satellite","kawangware_46","kawangware"]
+    }
+  },
+
+  route_24_kikuyu: {
+    id:"route_24_kikuyu", name:"Route 24 Kikuyu", color:"#2471A3", badge:"D-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"kikuyu", end:"kencom",
+      time_rush:"55 min", time_offpeak:"35 min", distance:"18 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Western outskirts route",
+      coords:[[-1.2500,36.6600],[-1.2855,36.8230]],
+      stages:["kikuyu","gichagi","gathiga","kingeero","lower_kabete","kabete","uthiru","uthiru_market","kangemi","mountain_view","westlands","sarit","kencom"]
+    },
+    from_cbd: {
+      start:"kencom", end:"kikuyu",
+      time_rush:"58 min", time_offpeak:"38 min", distance:"18 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening western outskirts",
+      coords:[[-1.2855,36.8230],[-1.2500,36.6600]],
+      stages:["kencom","sarit","westlands","mountain_view","kangemi","uthiru_market","uthiru","kabete","lower_kabete","kingeero","gathiga","gichagi","kikuyu"]
+    }
+  },
+
+  route_46_dagoretti: {
+    id:"route_46_dagoretti", name:"Route 46 Dagoretti", color:"#1F618D", badge:"D-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"dagoretti", end:"gpo",
+      time_rush:"45 min", time_offpeak:"28 min", distance:"12 km", makangas:12,
+      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Dagoretti corridor",
+      coords:[[-1.3000,36.7250],[-1.2865,36.8215]],
+      stages:["dagoretti","waithaka","dagoretti_mkt","racecourse","ngong_rd_mkt","adams_arcade","prestige","chaka_place","nairobi_hospital","citam_valley","gpo"]
+    },
+    from_cbd: {
+      start:"gpo", end:"dagoretti",
+      time_rush:"48 min", time_offpeak:"30 min", distance:"12 km", makangas:12,
+      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Dagoretti corridor",
+      coords:[[-1.2865,36.8215],[-1.3000,36.7250]],
+      stages:["gpo","citam_valley","nairobi_hospital","chaka_place","prestige","adams_arcade","ngong_rd_mkt","racecourse","dagoretti_mkt","waithaka","dagoretti"]
+    }
+  },
+
+  // ===== E-LINE: LANGATA / NGONG ROAD =====
+  route_15_karen: {
+    id:"route_15_karen", name:"Route 15 Karen", color:"#27AE60", badge:"E-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"karen", end:"afya_center",
+      time_rush:"50 min", time_offpeak:"30 min", distance:"14 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Karen leafy suburb route",
+      coords:[[-1.3200,36.7000],[-1.2845,36.8185]],
+      stages:["karen","karen_hardy","karen_crossing","karen_hub","gataka","mataara","bomas_gate","bomas","carnivore","langata","madaraka","strathmore","highrise","hazina","afya_center"]
+    },
+    from_cbd: {
+      start:"afya_center", end:"karen",
+      time_rush:"52 min", time_offpeak:"32 min", distance:"14 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Karen route",
+      coords:[[-1.2845,36.8185],[-1.3200,36.7000]],
+      stages:["afya_center","hazina","highrise","strathmore","madaraka","langata","carnivore","bomas","bomas_gate","mataara","gataka","karen_hub","karen_crossing","karen_hardy","karen"]
+    }
+  },
+
+  route_125_rongai: {
+    id:"route_125_rongai", name:"Route 125 Rongai", color:"#229954", badge:"E-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"rongai", end:"afya_center",
+      time_rush:"65 min", time_offpeak:"40 min", distance:"22 km", makangas:8,
+      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Rongai satellite town route",
+      coords:[[-1.3950,36.7350],[-1.2845,36.8185]],
+      stages:["rongai","rongai_tuskys","rongai_maasai","ongata_rongai","magadi_rd","kiserian_ngong","ngong_forest","racecourse","ngong_rd_mkt","adams_arcade","prestige","chaka_place","nairobi_hospital","citam_valley","afya_center"]
+    },
+    from_cbd: {
+      start:"afya_center", end:"rongai",
+      time_rush:"70 min", time_offpeak:"45 min", distance:"22 km", makangas:8,
+      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Rongai route",
+      coords:[[-1.2845,36.8185],[-1.3950,36.7350]],
+      stages:["afya_center","citam_valley","nairobi_hospital","chaka_place","prestige","adams_arcade","ngong_rd_mkt","racecourse","ngong_forest","kiserian_ngong","magadi_rd","ongata_rongai","rongai_maasai","rongai_tuskys","rongai"]
+    }
+  },
+
+  route_111_ngong: {
+    id:"route_111_ngong", name:"Route 111 Ngong", color:"#1E8449", badge:"E-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"ngong", end:"gpo",
+      time_rush:"60 min", time_offpeak:"38 min", distance:"20 km", makangas:6,
+      status:"Moving — 6 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Ngong hill town route",
+      coords:[[-1.3600,36.6550],[-1.2865,36.8215]],
+      stages:["ngong","ngong_town","ngong_hills","kiserian_ngong","magadi_rd","ngong_forest","racecourse","ngong_rd_mkt","adams_arcade","prestige","chaka_place","nairobi_hospital","citam_valley","gpo"]
+    },
+    from_cbd: {
+      start:"gpo", end:"ngong",
+      time_rush:"65 min", time_offpeak:"42 min", distance:"20 km", makangas:6,
+      status:"Moving — 6 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Ngong route",
+      coords:[[-1.2865,36.8215],[-1.3600,36.6550]],
+      stages:["gpo","citam_valley","nairobi_hospital","chaka_place","prestige","adams_arcade","ngong_rd_mkt","racecourse","ngong_forest","magadi_rd","kiserian_ngong","ngong_hills","ngong_town","ngong"]
+    }
+  },
+
+  route_4_southb: {
+    id:"route_4_southb", name:"Route 4 South B", color:"#196F3D", badge:"E-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"south_b", end:"afya_center",
+      time_rush:"25 min", time_offpeak:"15 min", distance:"5 km", makangas:15,
+      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Short southern route",
+      coords:[[-1.3150,36.8250],[-1.2845,36.8185]],
+      stages:["south_b","south_b_shopping","wilson_airport","nairobi_west","nyayo","madaraka","highrise","hazina","afya_center"]
+    },
+    from_cbd: {
+      start:"afya_center", end:"south_b",
+      time_rush:"28 min", time_offpeak:"17 min", distance:"5 km", makangas:15,
+      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening short southern",
+      coords:[[-1.2845,36.8185],[-1.3150,36.8250]],
+      stages:["afya_center","hazina","highrise","madaraka","nyayo","nairobi_west","wilson_airport","south_b_shopping","south_b"]
+    }
+  },
+
+  // ===== F-LINE: MOMBASA ROAD =====
+  route_110_syokimau: {
+    id:"route_110_syokimau", name:"Route 110 Syokimau", color:"#F39C12", badge:"F-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"syokimau", end:"mombasa_rd",
+      time_rush:"45 min", time_offpeak:"28 min", distance:"16 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Mombasa Road corridor",
+      coords:[[-1.3600,36.9200],[-1.3200,36.8500]],
+      stages:["syokimau","katani","athi_river","cabanas","imara_daima","enterprise_rd","lungalunga","mombasa_rd"]
+    },
+    from_cbd: {
+      start:"mombasa_rd", end:"syokimau",
+      time_rush:"48 min", time_offpeak:"30 min", distance:"16 km", makangas:10,
+      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Mombasa Road",
+      coords:[[-1.3200,36.8500],[-1.3600,36.9200]],
+      stages:["mombasa_rd","lungalunga","enterprise_rd","imara_daima","cabanas","athi_river","katani","syokimau"]
+    }
+  },
+
+  route_33_athiriver: {
+    id:"route_33_athiriver", name:"Route 33 Athi River", color:"#D68910", badge:"F-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"athi_river", end:"mombasa_rd",
+      time_rush:"55 min", time_offpeak:"35 min", distance:"20 km", makangas:8,
+      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Industrial town route",
+      coords:[[-1.4500,36.9800],[-1.3200,36.8500]],
+      stages:["athi_river","kitengela","syokimau","katani","cabanas","imara_daima","enterprise_rd","lungalunga","mombasa_rd"]
+    },
+    from_cbd: {
+      start:"mombasa_rd", end:"athi_river",
+      time_rush:"60 min", time_offpeak:"38 min", distance:"20 km", makangas:8,
+      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening industrial town",
+      coords:[[-1.3200,36.8500],[-1.4500,36.9800]],
+      stages:["mombasa_rd","lungalunga","enterprise_rd","imara_daima","cabanas","katani","syokimau","kitengela","athi_river"]
+    }
+  },
+
+  // ===== G-LINE: KIBERA =====
+  route_32_kibera: {
+    id:"route_32_kibera", name:"Route 32 Kibera", color:"#E74C3C", badge:"G-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"kibera", end:"knh",
+      time_rush:"20 min", time_offpeak:"12 min", distance:"4 km", makangas:15,
+      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Kibera short route",
+      coords:[[-1.3150,36.7800],[-1.3020,36.8060]],
+      stages:["kibera","ayany","mashimoni","silanga","knh"]
+    },
+    from_cbd: {
+      start:"knh", end:"kibera",
+      time_rush:"22 min", time_offpeak:"14 min", distance:"4 km", makangas:15,
+      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Kibera",
+      coords:[[-1.3020,36.8060],[-1.3150,36.7800]],
+      stages:["knh","silanga","mashimoni","ayany","kibera"]
+    }
+  },
+
+  // ===== H-LINE: EXPRESS / SPECIAL =====
+  route_1960_kayole: {
+    id:"route_1960_kayole", name:"Route 1960 Kayole Express", color:"#FF3366", badge:"EXPRESS", badgeClass:"badge-fastest",
+    to_cbd: {
+      start:"caltex", end:"otc",
+      time_rush:"50 min", time_offpeak:"28 min", distance:"16 km", makangas:20,
+      status:"Express — 20 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Express service, fewer stops",
+      coords:[[-1.2300,36.9150],[-1.2850,36.8210]],
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","otc"]
+    },
+    from_cbd: {
+      start:"otc", end:"caltex",
+      time_rush:"55 min", time_offpeak:"30 min", distance:"16 km", makangas:20,
+      status:"Express — 20 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening express",
+      coords:[[-1.2850,36.8210],[-1.2300,36.9150]],
+      stages:["otc","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+    }
+  },
+
+  route_1961_kayole_fedha: {
+    id:"route_1961_kayole_fedha", name:"Route 1961 Kayole-Fedha", color:"#E91E63", badge:"EXPRESS", badgeClass:"badge-secret",
+    to_cbd: {
+      start:"caltex", end:"otc",
+      time_rush:"45 min", time_offpeak:"25 min", distance:"16 km", makangas:15,
+      status:"Fedha shortcut — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Uses Fedha backroads to skip Jogoo Rd",
+      coords:[[-1.2300,36.9150],[-1.2850,36.8210]],
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","fedha","umoja","pipeline","donholm","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","otc"]
+    },
+    from_cbd: {
+      start:"otc", end:"caltex",
+      time_rush:"48 min", time_offpeak:"28 min", distance:"16 km", makangas:15,
+      status:"Fedha shortcut — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Fedha escape",
+      coords:[[-1.2850,36.8210],[-1.2300,36.9150]],
+      stages:["otc","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","donholm","pipeline","umoja","fedha","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+    }
+  },
+
+  route_1962_kayole_outer: {
+    id:"route_1962_kayole_outer", name:"Route 1962 Outer Ring", color:"#9C27B0", badge:"EXPRESS", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"caltex", end:"temple_road",
+      time_rush:"40 min", time_offpeak:"22 min", distance:"18 km", makangas:12,
+      status:"Outer Ring — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Bypasses Jogoo Rd completely",
+      coords:[[-1.2300,36.9150],[-1.2833,36.8167]],
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","outer_ring","temple_road"]
+    },
+    from_cbd: {
+      start:"temple_road", end:"caltex",
+      time_rush:"42 min", time_offpeak:"25 min", distance:"18 km", makangas:12,
+      status:"Outer Ring — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Outer Ring bypass",
+      coords:[[-1.2833,36.8167],[-1.2300,36.9150]],
+      stages:["temple_road","outer_ring","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+    }
+  },
+
+  route_39_kayole: {
+    id:"route_39_kayole", name:"Route 39 Kayole", color:"#FF6B35", badge:"H-LINE", badgeClass:"badge-shortcut",
+    to_cbd: {
+      start:"caltex", end:"temple_road",
+      time_rush:"65 min", time_offpeak:"40 min", distance:"16 km", makangas:25,
+      status:"Moving — 25 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Main Kayole route via Jogoo Rd",
+      coords:[[-1.2300,36.9150],[-1.2833,36.8167]],
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","country_bus","temple_road"]
+    },
+    from_cbd: {
+      start:"temple_road", end:"caltex",
+      time_rush:"70 min", time_offpeak:"45 min", distance:"16 km", makangas:25,
+      status:"Moving — 25 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening main Kayole route",
+      coords:[[-1.2833,36.8167],[-1.2300,36.9150]],
+      stages:["temple_road","country_bus","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+    }
+  },
+
+  route_39b_buruburu: {
+    id:"route_39b_buruburu", name:"Route 39B Buruburu Shortcut", color:"#00D4AA", badge:"H-LINE", badgeClass:"badge-fastest",
+    to_cbd: {
+      start:"caltex", end:"temple_road",
+      time_rush:"42 min", time_offpeak:"25 min", distance:"18 km", makangas:8,
+      status:"Clear — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Saves 23 min vs Jogoo Rd during rush",
+      coords:[[-1.2300,36.9150],[-1.2833,36.8167]],
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","buruburu","juja_rd","manyanja","muthurwa","temple_road"]
+    },
+    from_cbd: {
+      start:"temple_road", end:"caltex",
+      time_rush:"45 min", time_offpeak:"28 min", distance:"18 km", makangas:8,
+      status:"Clear — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Buruburu shortcut",
+      coords:[[-1.2833,36.8167],[-1.2300,36.9150]],
+      stages:["temple_road","muthurwa","manyanja","juja_rd","buruburu","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+    }
+  }
 };
+
+
+// ===== PHASE 4: MAIN APP LOGIC =====
 
 // ===== YOU ARE THE SPOTTER =====
 const MY_SPOTTER_ID = "user_" + Math.random().toString(36).substr(2, 9);
@@ -504,7 +1248,8 @@ let myPoints = 0;
 
 // ===== APP STATE =====
 const appState = {
-    currentRoute: "alt_buruburu",
+    currentRoute: "route_39_kayole",
+    currentDirection: "to_cbd",
     bottomSheetCollapsed: false,
     spotterPanelVisible: false,
     map: null,
@@ -512,11 +1257,42 @@ const appState = {
     markers: {},
     vehicleMarkers: [],
     vehiclePositions: [0, 3, 6, 9, 12],
-    selectedStageForReport: null
+    selectedStageForReport: null,
+    isRushHour: false
 };
+
+// ===== RUSH HOUR DETECTION =====
+function checkRushHour() {
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    // Rush: Mon-Fri 6:30-9:00 and 16:30-20:00
+    const isWeekday = day >= 1 && day <= 5;
+    const isMorningRush = hour >= 6 && hour < 10;
+    const isEveningRush = hour >= 16 && hour < 21;
+    appState.isRushHour = isWeekday && (isMorningRush || isEveningRush);
+
+    const badge = document.getElementById("rushBadge");
+    if (badge) {
+        badge.textContent = appState.isRushHour ? "RUSH HOUR" : "OFF-PEAK";
+        badge.className = appState.isRushHour ? "rush-badge rush" : "rush-badge offpeak";
+    }
+}
+
+// ===== GET ACTIVE ROUTE DATA =====
+function getActiveRouteData() {
+    const route = ROUTES[appState.currentRoute];
+    if (!route) return null;
+    return appState.currentDirection === "to_cbd" ? route.to_cbd : route.from_cbd;
+}
+
+function getActiveRouteMeta() {
+    return ROUTES[appState.currentRoute];
+}
 
 // ===== INITIALIZE =====
 function initApp() {
+    checkRushHour();
     initMap();
     renderRouteSelector();
     renderRouteBar();
@@ -526,13 +1302,15 @@ function initApp() {
     bindEvents();
     updateRouteDisplay();
     showToast("🎉 Welcome! You are now a spotter. Tap any stage to report.");
+    // Check rush hour every minute
+    setInterval(checkRushHour, 60000);
 }
 
 // ===== MAP WITH ZOOM CONTROLS =====
 function initMap() {
     try {
         appState.map = L.map("map", {
-            zoomControl: true,  // ENABLED
+            zoomControl: true,
             attributionControl: false
         }).setView([-1.268, 36.87], 12);
 
@@ -540,7 +1318,6 @@ function initMap() {
             maxZoom: 19, subdomains: "abcd"
         }).addTo(appState.map);
 
-        // Custom zoom position
         appState.map.zoomControl.setPosition('bottomleft');
 
         document.getElementById("mapLoading").classList.add("hidden");
@@ -549,7 +1326,6 @@ function initMap() {
         setInterval(updateVehicles, 2000);
         updateVehicles();
 
-        // Get user location
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 pos => {
@@ -571,24 +1347,27 @@ function initMap() {
     }
 }
 
-// ===== DRAW ROUTES WITH LEGEND COLORS =====
+// ===== DRAW ROUTES =====
 function drawRoutes() {
-    Object.entries(ROUTE_PATHS).forEach(([id, route]) => {
+    Object.entries(ROUTES).forEach(([id, route]) => {
         const isActive = id === appState.currentRoute;
-        const opacity = isActive ? 0.9 : 0.2;
+        const opacity = isActive ? 0.9 : 0.15;
         const weight = isActive ? 5 : 2;
-        const dash = id === "main_jogoo" ? null : id === "alt_fedha" ? "5, 8" : id === "alt_outer_ring" ? "10, 8" : "8, 4";
+        const dash = isActive ? null : "8, 6";
+        const data = appState.currentDirection === "to_cbd" ? route.to_cbd : route.from_cbd;
+
         if (appState.routeLayers[id]) appState.map.removeLayer(appState.routeLayers[id]);
-        appState.routeLayers[id] = L.polyline(route.coords, {
-            color: route.color, weight: weight, opacity: opacity, dashArray: dash
-        }).addTo(appState.map);
+        if (data && data.coords) {
+            appState.routeLayers[id] = L.polyline(data.coords, {
+                color: route.color, weight: weight, opacity: opacity, dashArray: dash
+            }).addTo(appState.map);
+        }
     });
 }
 
-// ===== ADD STAGE MARKERS — COLORS MATCH LEGEND =====
+// ===== ADD STAGE MARKERS =====
 function addStageMarkers() {
     Object.entries(STAGES).forEach(([key, stage]) => {
-        // Marker color matches legend exactly
         let markerClass = "marker-green";
         let glowColor = "#00D4AA";
         if (stage.status === "yellow") { markerClass = "marker-yellow"; glowColor = "#FFB800"; }
@@ -604,7 +1383,6 @@ function addStageMarkers() {
 
         const marker = L.marker([stage.lat, stage.lng], { icon: markerIcon }).addTo(appState.map);
 
-        // Popup with report button
         const popupContent = `
             <div style="font-family:Inter,sans-serif; min-width:220px;">
                 <h3 style="margin:0 0 6px; font-size:14px; color:#1A1A2E; font-weight:700;">${stage.name}</h3>
@@ -636,9 +1414,9 @@ function reportStage(stageKey) {
 function updateVehicles() {
     appState.vehicleMarkers.forEach(m => appState.map.removeLayer(m));
     appState.vehicleMarkers = [];
-    const activeRoute = ROUTE_PATHS[appState.currentRoute];
-    if (!activeRoute) return;
-    const activePath = activeRoute.coords;
+    const route = getActiveRouteData();
+    if (!route || !route.coords) return;
+    const activePath = route.coords;
     appState.vehiclePositions.forEach(pos => {
         const idx = Math.floor(pos) % activePath.length;
         const nextIdx = (idx + 1) % activePath.length;
@@ -656,13 +1434,12 @@ function updateVehicles() {
 // ===== RENDER FUNCTIONS =====
 function renderRouteSelector() {
     const selector = document.getElementById("routeSelector");
-    const routes = [
-        { id: "main_jogoo", name: "Route 39 Jogoo", status: "red" },
-        { id: "alt_buruburu", name: "Buruburu Shortcut", status: "green" },
-        { id: "alt_fedha", name: "Fedha Backroads", status: "yellow" },
-        { id: "alt_outer_ring", name: "Outer Ring Bypass", status: "green" }
-    ];
-    selector.innerHTML = routes.map(r => {
+    const routeList = Object.values(ROUTES).map(r => ({
+        id: r.id,
+        name: r.name,
+        status: "green"
+    }));
+    selector.innerHTML = routeList.map(r => {
         const isActive = r.id === appState.currentRoute;
         return `<div class="route-chip ${isActive ? "active" : ""}" data-route="${r.id}"><span class="dot ${r.status}"></span> ${r.name}</div>`;
     }).join("");
@@ -670,9 +1447,9 @@ function renderRouteSelector() {
 
 function renderRouteBar() {
     const bar = document.getElementById("routeBar");
-    const activeRoute = ROUTE_PATHS[appState.currentRoute];
-    if (!activeRoute) return;
-    const pills = activeRoute.stages.map(stageKey => {
+    const route = getActiveRouteData();
+    if (!route || !route.stages) return;
+    const pills = route.stages.map(stageKey => {
         const stage = STAGES[stageKey];
         if (!stage) return "";
         return `<div class="route-pill" data-stage="${stageKey}"><span class="dot ${stage.status}"></span> ${stage.name.split(" ")[0]}</div>`;
@@ -682,7 +1459,6 @@ function renderRouteBar() {
 
 function renderSpotterList() {
     const list = document.getElementById("spotterList");
-    // Only show YOU as the real spotter
     list.innerHTML = `
         <div class="spotter-item" style="border:1px solid var(--primary); border-radius:8px; padding:8px; background:rgba(255,107,53,0.1);">
             <div class="spotter-avatar" style="background:linear-gradient(135deg, var(--primary), var(--primary-dark));">YOU</div>
@@ -701,9 +1477,9 @@ function renderSpotterList() {
 function renderTimeline() {
     const timeline = document.getElementById("routeTimeline");
     timeline.innerHTML = "";
-    const activeRoute = ROUTE_PATHS[appState.currentRoute];
-    if (!activeRoute) return;
-    activeRoute.stages.forEach(stageKey => {
+    const route = getActiveRouteData();
+    if (!route || !route.stages) return;
+    route.stages.forEach(stageKey => {
         const stage = STAGES[stageKey];
         if (!stage) return;
         let dotClass = stage.status;
@@ -731,7 +1507,18 @@ function renderTimeline() {
 function renderAltRoutes() {
     const container = document.getElementById("altRoutesContainer");
     container.innerHTML = "";
-    Object.values(ROUTE_PATHS).forEach(route => {
+    const currentRoute = ROUTES[appState.currentRoute];
+    if (!currentRoute) return;
+
+    // Find routes in same zone
+    const currentZone = STAGES[currentRoute.to_cbd.start]?.zone || "";
+    const altRoutes = Object.values(ROUTES).filter(r => {
+        const rZone = STAGES[r.to_cbd.start]?.zone || "";
+        return r.id !== appState.currentRoute && rZone === currentZone;
+    }).slice(0, 4);
+
+    altRoutes.forEach(route => {
+        const data = appState.currentDirection === "to_cbd" ? route.to_cbd : route.from_cbd;
         const card = document.createElement("div");
         card.className = `alt-route-card ${route.id === appState.currentRoute ? "selected" : ""}`;
         card.setAttribute("data-route", route.id);
@@ -740,27 +1527,37 @@ function renderAltRoutes() {
             `<span class="badge ${route.badgeClass}">${route.badge}</span>` +
             `</div>` +
             `<div class="alt-route-details">` +
-                `<span><i class="fas fa-clock"></i> ${route.time}</span>` +
-                `<span><i class="fas fa-road"></i> ${route.distance}</span>` +
-                (route.makangas > 0 ? `<span><i class="fas fa-users"></i> ${route.makangas} makangas</span>` : "") +
-                `<span style="color:${route.statusColor}"><i class="fas ${route.statusIcon}"></i> ${route.status}</span>` +
+                `<span><i class="fas fa-clock"></i> ${appState.isRushHour ? data.time_rush : data.time_offpeak}</span>` +
+                `<span><i class="fas fa-road"></i> ${data.distance}</span>` +
+                `<span><i class="fas fa-users"></i> ${data.makangas} makangas</span>` +
+                `<span style="color:${data.statusColor}"><i class="fas ${data.statusIcon}"></i> ${data.status}</span>` +
             `</div>`;
         container.appendChild(card);
     });
 }
 
 function updateRouteDisplay() {
-    const route = ROUTE_PATHS[appState.currentRoute];
-    if (!route) return;
-    document.getElementById("routeDisplay").textContent = `${route.name} — ${route.distance}`;
+    const route = getActiveRouteMeta();
+    const data = getActiveRouteData();
+    if (!route || !data) return;
+
+    const time = appState.isRushHour ? data.time_rush : data.time_offpeak;
+    const dirText = appState.currentDirection === "to_cbd" ? "→ CBD" : "← From CBD";
+
+    document.getElementById("routeDisplay").textContent = `${route.name} ${dirText}`;
     document.getElementById("currentRouteName").textContent = route.name;
-    document.getElementById("mainEta").textContent = `⏱ ${route.time}`;
-    document.getElementById("smartEta").textContent = route.time;
-    document.getElementById("timeSaved").textContent = route.id === "alt_buruburu" ? "Save 23 min" : route.id === "alt_fedha" ? "Save 30 min" : route.id === "alt_outer_ring" ? "Save 27 min" : "Standard route";
-    document.getElementById("makangaCount").textContent = route.makangas > 0 ? `${route.makangas} makangas` : "Avoided by all";
-    document.getElementById("distanceKm").textContent = route.distance;
-    document.getElementById("smartRoutePath").innerHTML = route.description;
-    document.getElementById("aiInsightText").textContent = route.aiReason;
+    document.getElementById("mainEta").textContent = `⏱ ${time}`;
+    document.getElementById("smartEta").textContent = time;
+    document.getElementById("timeSaved").textContent = appState.isRushHour ? "Rush hour active" : "Off-peak savings";
+    document.getElementById("makangaCount").textContent = `${data.makangas} makangas`;
+    document.getElementById("distanceKm").textContent = data.distance;
+    document.getElementById("smartRoutePath").innerHTML = data.stages.map((s, i) => {
+        const stage = STAGES[s];
+        if (!stage) return "";
+        const isDecision = stage.type === "decision";
+        return isDecision ? `<strong style="color:var(--primary)">${stage.name}</strong>` : stage.name;
+    }).filter(Boolean).join(" → ");
+    document.getElementById("aiInsightText").textContent = data.aiReason;
 }
 
 // ===== BIND EVENTS =====
@@ -769,7 +1566,12 @@ function bindEvents() {
     document.getElementById("routesFab").addEventListener("click", toggleBottomSheet);
     document.getElementById("spotterBtn").addEventListener("click", toggleSpotterPanel);
     document.getElementById("notifBtn").addEventListener("click", showNotifications);
-    document.getElementById("reportFab").addEventListener("click", () => { appState.selectedStageForReport = null; document.getElementById("reportModalTitle").innerHTML = "🚨 Report Condition"; document.getElementById("reportModalDesc").textContent = "What is happening on your route?"; document.getElementById("reportModal").classList.add("active"); });
+    document.getElementById("reportFab").addEventListener("click", () => { 
+        appState.selectedStageForReport = null; 
+        document.getElementById("reportModalTitle").innerHTML = "🚨 Report Condition"; 
+        document.getElementById("reportModalDesc").textContent = "What is happening on your route?"; 
+        document.getElementById("reportModal").classList.add("active"); 
+    });
     document.getElementById("closeReportModal").addEventListener("click", closeReportModal);
     document.getElementById("submitReportBtn").addEventListener("click", () => submitReport());
     document.querySelectorAll(".report-option").forEach(opt => {
@@ -778,7 +1580,7 @@ function bindEvents() {
             const stage = appState.selectedStageForReport ? STAGES[appState.selectedStageForReport] : null;
             if (stage) {
                 stage.status = reportType === "clear" ? "green" : reportType === "slow" ? "yellow" : reportType === "jam" ? "red" : "red";
-                stage.spotterConfirm = 1; // You confirmed it
+                stage.spotterConfirm = 1;
                 updateMarkerColor(appState.selectedStageForReport);
                 renderTimeline();
                 renderRouteBar();
@@ -791,6 +1593,22 @@ function bindEvents() {
     document.getElementById("voiceBtn").addEventListener("click", toggleVoiceListening);
     document.getElementById("navFab").addEventListener("click", startNavigation);
     document.getElementById("myLocationBtn").addEventListener("click", centerOnMyLocation);
+
+    // Direction toggle
+    document.getElementById("directionToggle").addEventListener("click", function(e) {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+        document.querySelectorAll("#directionToggle button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        appState.currentDirection = btn.getAttribute("data-dir");
+        drawRoutes();
+        renderRouteBar();
+        renderTimeline();
+        renderAltRoutes();
+        updateRouteDisplay();
+        updateVehicles();
+    });
+
     document.getElementById("routeSelector").addEventListener("click", function(e) {
         const chip = e.target.closest(".route-chip");
         if (chip) selectRoute(chip.getAttribute("data-route"));
@@ -856,10 +1674,11 @@ function selectRoute(routeId) {
     drawRoutes();
     renderRouteBar();
     renderTimeline();
+    renderAltRoutes();
     updateRouteDisplay();
     updateVehicles();
-    const route = ROUTE_PATHS[routeId];
-    if (route) showToast(`✅ ${route.name} selected. ${route.time} ETA.`);
+    const route = ROUTES[routeId];
+    if (route) showToast(`✅ ${route.name} selected.`);
 }
 function centerOnMyLocation() {
     if (myLocation && appState.map) {
@@ -915,8 +1734,8 @@ function addPoints(points) {
 // ===== NAVIGATION =====
 function startNavigation() {
     showToast("🗺️ Navigation started! Follow the highlighted route.");
-    const route = ROUTE_PATHS[appState.currentRoute];
-    if (route) {
+    const route = getActiveRouteData();
+    if (route && route.stages) {
         let delay = 3000;
         route.stages.forEach((stageKey, i) => {
             if (i > 0 && i < route.stages.length - 1) {
@@ -945,6 +1764,7 @@ function showToast(message) {
 
 // ===== START APP =====
 document.addEventListener("DOMContentLoaded", initApp);
-    </script>
+
+</script>
 </body>
 </html>
