@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MtaaWatch — Nganya Conductor Traffic Intelligence</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #1A1A2E;
+            --accent: #00D4AA;
+            --danger: #FF3366;
+            --warning: #FFB800;
+            --success: #00D4AA;
+            --info: #4A90E2;
+            --bg-dark: #0B0B15;
+            --bg-card: #151525;
+            --bg-card-hover: #1E1E35;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0B8;
+            --text-muted: #6B6B8A;
+            --border: #252540;
+            --glass: rgba(21, 21, 37, 0.95);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #app { display: flex; flex-direction: column; height: 100vh; position: relative; }
+
+        .header {
+            background: linear-gradient(135deg, var(--secondary) 0%, #0D1B2A 100%);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+
+        .header-brand { display: flex; align-items: center; gap: 10px; }
+        .header-brand .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3); }
+            50% { box-shadow: 0 4px 25px rgba(255, 107, 53, 0.6); }
+        }
+        .header-brand h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.5px; }
+        .header-brand span { display: block; font-size: 10px; color: var(--text-muted); font-weight: 500; margin-top: -2px; }
+
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+
+        .header-btn {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; position: relative; font-size: 14px;
+        }
+        .header-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .header-btn .badge {
+            position: absolute; top: -4px; right: -4px;
+            width: 16px; height: 16px; background: var(--danger);
+            border-radius: 50%; font-size: 9px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--secondary);
+        }
+
+        .user-score {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(0, 212, 170, 0.12);
+            border: 1px solid rgba(0, 212, 170, 0.25);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            cursor: pointer;
+        }
+
+        .route-selector {
+            background: var(--bg-card);
+            padding: 8px 14px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .route-selector::-webkit-scrollbar { display: none; }
+
+        .route-chip {
+            display: flex; align-items: center; gap: 5px;
+            padding: 6px 12px;
+            background: var(--bg-dark);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+        .route-chip:hover { border-color: var(--primary); color: var(--text-primary); }
+        .route-chip.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-color: var(--primary);
+        }
+        .route-chip .dot { width: 6px; height: 6px; border-radius: 50%; }
+        .route-chip .dot.green { background: var(--success); box-shadow: 0 0 6px var(--success); }
+        .route-chip .dot.yellow { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
+        .route-chip .dot.red { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+        .map-container { flex: 1; position: relative; min-height: 0; background: #0a0a14; }
+        #map { width: 100%; height: 100%; z-index: 1; }
+        .leaflet-control-zoom { display: none !important; }
+
+        .map-loading {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 2; background: var(--bg-dark);
+            gap: 12px;
+        }
+        .map-loading.hidden { display: none; }
+        .map-loading-spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .weather-widget {
+            position: absolute;
+            top: 12px; right: 12px;
+            z-index: 500;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+        .weather-widget i { font-size: 20px; color: var(--warning); }
+        .weather-widget .temp { font-weight: 700; font-size: 14px; }
+        .weather-widget .condition { color: var(--text-muted); font-size: 10px; }
+
+        .traffic-legend {
+            position: absolute;
+            bottom: 85px; left: 12px;
+            z-index: 500;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 10px;
+            font-size: 10px;
+        }
+        .traffic-legend-item {
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 4px;
+        }
+        .traffic-legend-color {
+            width: 20px; height: 4px; border-radius: 2px;
+        }
+
+        .spotter-panel {
+            position: absolute;
+            top: 70px; left: 12px;
+            z-index: 500;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 12px;
+            max-width: 220px;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .spotter-panel h4 {
+            font-size: 10px; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex; align-items: center;
+            gap: 5px;
+        }
+        .spotter-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 0;
+            font-size: 11px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .spotter-item:last-child { border-bottom: none; }
+        .spotter-avatar {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700;
+            flex-shrink: 0;
+        }
+        .spotter-info { flex: 1; }
+        .spotter-info .name { font-weight: 600; font-size: 11px; }
+        .spotter-info .location { font-size: 9px; color: var(--text-muted); }
+        .spotter-status {
+            width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+        }
+        .spotter-status.online { background: var(--success); box-shadow: 0 0 4px var(--success); }
+        .spotter-status.busy { background: var(--warning); }
+        .spotter-status.offline { background: var(--text-muted); }
+
+        .fab-container {
+            position: absolute;
+            bottom: 85px;
+            right: 14px;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .fab {
+            width: 52px; height: 52px; border-radius: 50%; border: none;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .fab:active { transform: scale(0.9); }
+        .fab-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+        }
+        .fab-primary:hover { transform: scale(1.1); }
+        .fab-secondary {
+            background: linear-gradient(135deg, var(--danger), #CC2952);
+            box-shadow: 0 4px 20px rgba(255, 51, 102, 0.4);
+        }
+        .fab-tertiary {
+            background: linear-gradient(135deg, var(--accent), #00B894);
+            box-shadow: 0 4px 20px rgba(0, 212, 170, 0.4);
+        }
+        .fab-quaternary {
+            background: linear-gradient(135deg, var(--info), #357ABD);
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.4);
+        }
+        .fab-label {
+            position: absolute; right: 60px;
+            background: var(--glass); backdrop-filter: blur(10px);
+            padding: 5px 10px; border-radius: 8px;
+            font-size: 11px; font-weight: 600;
+            white-space: nowrap; opacity: 0;
+            transform: translateX(10px); transition: all 0.2s;
+            pointer-events: none; border: 1px solid var(--border);
+        }
+        .fab:hover .fab-label { opacity: 1; transform: translateX(0); }
+
+        .bottom-sheet {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border-radius: 24px 24px 0 0;
+            border-top: 1px solid var(--border);
+            z-index: 600;
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            max-height: 65vh;
+            display: flex; flex-direction: column;
+        }
+        .bottom-sheet.collapsed { transform: translateY(calc(100% - 55px)); }
+        .bottom-sheet-handle {
+            width: 36px; height: 4px;
+            background: var(--text-muted); border-radius: 2px;
+            margin: 10px auto; cursor: pointer;
+        }
+        .bottom-sheet-content {
+            flex: 1; overflow-y: auto;
+            padding: 0 14px 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .bottom-sheet-content::-webkit-scrollbar { display: none; }
+
+        .route-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .route-header h2 { font-size: 16px; font-weight: 700; }
+        .route-header .route-direction {
+            font-size: 11px; color: var(--text-muted);
+            display: flex; align-items: center; gap: 4px;
+        }
+        .eta-badge {
+            background: linear-gradient(135deg, var(--accent), #00B894);
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 700;
+        }
+
+        .ai-insight {
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.12), rgba(74, 144, 226, 0.04));
+            border: 1px solid rgba(74, 144, 226, 0.25);
+            border-radius: 14px;
+            padding: 12px;
+            margin: 12px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .ai-insight i {
+            color: var(--info);
+            font-size: 16px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        .ai-insight-content h4 {
+            font-size: 12px;
+            color: var(--info);
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        .ai-insight-content p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .smart-route-card {
+            background: linear-gradient(135deg, rgba(255,107,53,0.12), rgba(255,107,53,0.04));
+            border: 1px solid rgba(255,107,53,0.25);
+            border-radius: 16px; padding: 14px;
+            margin: 14px 0; position: relative; overflow: hidden;
+        }
+        .smart-route-card::before {
+            content: '💡'; position: absolute;
+            top: 10px; right: 14px; font-size: 18px; opacity: 0.5;
+        }
+        .smart-route-card h3 {
+            font-size: 11px; color: var(--primary);
+            font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 6px;
+        }
+        .smart-route-card .route-path {
+            font-size: 12px; font-weight: 600; line-height: 1.5; margin-bottom: 8px;
+        }
+        .smart-route-stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .smart-route-stat {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 12px; font-weight: 600;
+        }
+        .smart-route-stat i { color: var(--primary); font-size: 12px; }
+
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline::before {
+            content: ''; position: absolute;
+            left: 7px; top: 6px; bottom: 6px;
+            width: 3px;
+            background: linear-gradient(to bottom,
+                var(--success) 0%, var(--success) 30%,
+                var(--warning) 50%, var(--danger) 70%, var(--success) 100%);
+            border-radius: 3px;
+        }
+
+        .timeline-item {
+            position: relative; padding: 8px 0;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .timeline-item:hover {
+            background: rgba(255,255,255,0.03);
+            margin: 0 -14px; padding: 8px 14px;
+            border-radius: 12px;
+        }
+        .timeline-dot {
+            position: absolute; left: -21px; top: 12px;
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2.5px solid var(--bg-dark); z-index: 2;
+        }
+        .timeline-dot.green { background: var(--success); }
+        .timeline-dot.yellow { background: var(--warning); }
+        .timeline-dot.red { background: var(--danger); }
+        .timeline-dot.decision {
+            background: var(--primary); width: 16px; height: 16px;
+            left: -23px; top: 10px;
+            border: 2.5px solid var(--bg-dark);
+            box-shadow: 0 0 10px var(--primary);
+        }
+        .timeline-dot.start { background: var(--primary); border-color: white; }
+        .timeline-dot.end { background: var(--accent); border-color: white; }
+
+        .timeline-content { display: flex; justify-content: space-between; align-items: flex-start; }
+        .timeline-info h3 { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+        .timeline-info p { font-size: 11px; color: var(--text-muted); line-height: 1.3; }
+        .timeline-status {
+            display: flex; align-items: center; gap: 3px;
+            font-size: 10px; font-weight: 600;
+            padding: 2px 7px; border-radius: 10px;
+            background: rgba(0,0,0,0.3); white-space: nowrap;
+        }
+        .timeline-status.green { color: var(--success); }
+        .timeline-status.yellow { color: var(--warning); }
+        .timeline-status.red { color: var(--danger); }
+
+        .spotter-confirm {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: rgba(0, 212, 170, 0.15);
+            border: 1px solid rgba(0, 212, 170, 0.3);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .alt-routes-section { margin-top: 14px; }
+        .alt-routes-section h3 {
+            font-size: 11px; color: var(--text-secondary);
+            font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 10px;
+        }
+        .alt-route-card {
+            background: var(--bg-dark); border: 1px solid var(--border);
+            border-radius: 14px; padding: 12px;
+            margin-bottom: 8px; cursor: pointer;
+            transition: all 0.2s; position: relative;
+        }
+        .alt-route-card:hover { border-color: var(--primary); background: var(--bg-card-hover); }
+        .alt-route-card.selected {
+            border-color: var(--primary);
+            background: rgba(255,107,53,0.08);
+        }
+        .alt-route-card .route-name {
+            font-size: 13px; font-weight: 700;
+            margin-bottom: 5px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .alt-route-card .route-name .badge {
+            font-size: 9px; padding: 2px 7px;
+            border-radius: 10px; font-weight: 700;
+        }
+        .badge-fastest { background: var(--success); color: var(--bg-dark); }
+        .badge-shortcut { background: var(--primary); color: white; }
+        .badge-avoid { background: var(--danger); color: white; }
+        .badge-secret { background: var(--accent); color: var(--bg-dark); }
+        .alt-route-details {
+            display: flex; gap: 12px;
+            font-size: 11px; color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+        .alt-route-details span { display: flex; align-items: center; gap: 3px; }
+
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(5px);
+            z-index: 2000; display: flex;
+            align-items: flex-end; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal {
+            background: var(--bg-card);
+            border-radius: 24px 24px 0 0;
+            width: 100%; max-width: 500px;
+            max-height: 85vh;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            display: flex; flex-direction: column;
+        }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal-header {
+            padding: 18px 18px 0;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .modal-header h2 { font-size: 18px; font-weight: 700; }
+        .modal-close {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--bg-dark); border: none;
+            color: var(--text-secondary); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+        .modal-body { padding: 18px; overflow-y: auto; flex: 1; }
+
+        .report-options {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 10px; margin-top: 14px;
+        }
+        .report-option {
+            background: var(--bg-dark); border: 2px solid var(--border);
+            border-radius: 16px; padding: 18px;
+            text-align: center; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .report-option:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .report-option i { font-size: 24px; margin-bottom: 6px; display: block; }
+        .report-option span { font-size: 12px; font-weight: 600; }
+        .report-option.green { color: var(--success); }
+        .report-option.yellow { color: var(--warning); }
+        .report-option.red { color: var(--danger); }
+        .report-option.blue { color: var(--info); }
+
+        .voice-indicator {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 20px;
+            padding: 30px 0;
+        }
+        .voice-wave {
+            display: flex; align-items: center; gap: 4px;
+            height: 60px;
+        }
+        .voice-bar {
+            width: 6px; background: var(--primary);
+            border-radius: 3px;
+            animation: voiceWave 1s ease-in-out infinite;
+        }
+        .voice-bar:nth-child(1) { height: 20px; animation-delay: 0s; }
+        .voice-bar:nth-child(2) { height: 35px; animation-delay: 0.1s; }
+        .voice-bar:nth-child(3) { height: 50px; animation-delay: 0.2s; }
+        .voice-bar:nth-child(4) { height: 40px; animation-delay: 0.3s; }
+        .voice-bar:nth-child(5) { height: 25px; animation-delay: 0.4s; }
+        @keyframes voiceWave {
+            0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+            50% { transform: scaleY(1); opacity: 1; }
+        }
+
+        .leaderboard-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px; background: var(--bg-dark);
+            border-radius: 12px; margin-bottom: 8px;
+        }
+        .leaderboard-rank {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 800;
+        }
+        .leaderboard-rank.gold { background: linear-gradient(135deg, #FFD700, #FFA500); color: var(--bg-dark); }
+        .leaderboard-rank.silver { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: var(--bg-dark); }
+        .leaderboard-rank.bronze { background: linear-gradient(135deg, #CD7F32, #B87333); color: white; }
+        .leaderboard-rank.normal { background: var(--bg-card); color: var(--text-secondary); }
+        .leaderboard-info { flex: 1; }
+        .leaderboard-info h4 { font-size: 13px; font-weight: 600; }
+        .leaderboard-info p { font-size: 11px; color: var(--text-muted); }
+        .leaderboard-score { font-size: 14px; font-weight: 700; color: var(--accent); }
+
+        .live-pulse {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 10px; font-weight: 700; color: var(--danger);
+        }
+        .live-pulse::before {
+            content: ''; width: 7px; height: 7px;
+            background: var(--danger); border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .toast-container {
+            position: fixed; top: 75px; left: 50%;
+            transform: translateX(-50%); z-index: 3000;
+            display: flex; flex-direction: column; gap: 6px;
+            pointer-events: none;
+        }
+        .toast {
+            background: var(--glass); backdrop-filter: blur(15px);
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+            font-size: 12px; font-weight: 500;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.5s forwards;
+            max-width: 300px; pointer-events: all;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateY(-15px); }
+        }
+
+        .custom-marker {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 3px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .custom-marker::after {
+            content: ''; position: absolute;
+            bottom: -5px; left: 50%; transform: translateX(-50%);
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--primary);
+        }
+        .custom-marker.green { border-color: var(--success); }
+        .custom-marker.green::after { border-top-color: var(--success); }
+        .custom-marker.yellow { border-color: var(--warning); }
+        .custom-marker.yellow::after { border-top-color: var(--warning); }
+        .custom-marker.red { border-color: var(--danger); }
+        .custom-marker.red::after { border-top-color: var(--danger); }
+        .custom-marker.choke { border-color: var(--danger); animation: choke-blink 1s infinite; }
+        .custom-marker.choke::after { border-top-color: var(--danger); }
+        @keyframes choke-blink {
+            0%, 100% { box-shadow: 0 0 5px var(--danger); }
+            50% { box-shadow: 0 0 15px var(--danger); }
+        }
+
+        .vehicle-marker {
+            width: 16px; height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            animation: vehicle-pulse 1.5s infinite;
+        }
+        @keyframes vehicle-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        @media (min-width: 768px) {
+            .bottom-sheet {
+                max-width: 400px; left: auto; right: 12px;
+                bottom: 12px; border-radius: 24px;
+                max-height: 75vh;
+            }
+            .bottom-sheet.collapsed { transform: translateY(calc(100% - 55px)); }
+            .fab-container { bottom: 90px; }
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .route-info-bar {
+            background: var(--bg-card);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .route-info-bar::-webkit-scrollbar { display: none; }
+
+        .route-pill {
+            display: flex; align-items: center; gap: 5px;
+            padding: 5px 10px;
+            background: var(--bg-dark);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .route-pill:hover { border-color: var(--primary); }
+        .route-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+        .route-pill .dot.green { background: var(--success); box-shadow: 0 0 6px var(--success); }
+        .route-pill .dot.yellow { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
+        .route-pill .dot.red { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-brand">
+                <div class="logo-icon"><i class="fas fa-bus"></i></div>
+                <div>
+                    <h1>MtaaWatch</h1>
+                    <span id="routeDisplay">Route 39 — Kayole to CBD</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="user-score" id="userScoreBtn">
+                    <i class="fas fa-fire"></i>
+                    <span id="userScoreText">1,240 pts</span>
+                </div>
+                <button class="header-btn" id="spotterBtn">
+                    <i class="fas fa-users"></i>
+                    <span class="badge" id="spotterBadge">5</span>
+                </button>
+                <button class="header-btn" id="notifBtn">
+                    <i class="fas fa-bell"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="route-selector" id="routeSelector"></div>
+        <div class="route-info-bar" id="routeBar"></div>
+
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="map-loading" id="mapLoading">
+                <div class="map-loading-spinner"></div>
+                <span style="color:var(--text-muted); font-size:13px;">Loading Nairobi map...</span>
+            </div>
+            <div class="weather-widget">
+                <i class="fas fa-cloud-sun"></i>
+                <div>
+                    <div class="temp">24°C</div>
+                    <div class="condition">Partly cloudy</div>
+                </div>
+            </div>
+            <div class="traffic-legend">
+                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--success)"></div><span>Clear</span></div>
+                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--warning)"></div><span>Slow</span></div>
+                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--danger)"></div><span>Jam</span></div>
+                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--primary)"></div><span>Route</span></div>
+            </div>
+            <div class="spotter-panel" id="spotterPanel">
+                <h4><i class="fas fa-broadcast-tower"></i> Live Spotters</h4>
+                <div id="spotterList"></div>
+            </div>
+            <div class="fab-container">
+                <button class="fab fab-quaternary" id="voiceFab"><i class="fas fa-microphone"></i><span class="fab-label">Voice Report</span></button>
+                <button class="fab fab-tertiary" id="reportFab"><i class="fas fa-bullhorn"></i><span class="fab-label">Report Jam</span></button>
+                <button class="fab fab-secondary" id="navFab"><i class="fas fa-location-arrow"></i><span class="fab-label">Navigate</span></button>
+                <button class="fab fab-primary" id="routesFab"><i class="fas fa-route"></i><span class="fab-label">Routes</span></button>
+            </div>
+        </div>
+
+        <div class="bottom-sheet" id="bottomSheet">
+            <div class="bottom-sheet-handle" id="sheetHandle"></div>
+            <div class="bottom-sheet-content">
+                <div class="route-header">
+                    <div>
+                        <h2 id="currentRouteName">Route 39 Live</h2>
+                        <div class="route-direction" style="margin-top:3px;"><span class="live-pulse">7 spotters active</span></div>
+                    </div>
+                    <div class="eta-badge" id="mainEta">⏱ 42 min</div>
+                </div>
+                <div class="ai-insight" id="aiInsight">
+                    <i class="fas fa-robot"></i>
+                    <div class="ai-insight-content">
+                        <h4>AI Prediction</h4>
+                        <p id="aiInsightText">Traffic building on Jogoo Rd. Buruburu route likely to save 20-25 min based on pattern from last 30 days.</p>
+                    </div>
+                </div>
+                <div class="smart-route-card fade-in" id="smartRouteCard">
+                    <h3>💡 Smart Route Recommended</h3>
+                    <div class="route-path" id="smartRoutePath">Kayole Jn → Saika → 18 Stage → Kwa Miti → Pheroz → Komarock → <strong style="color:var(--primary)">Caltex → LEFT → Buruburu → Juja Rd</strong> → City Stadium → NACCICO → Country Bus → OTC → Temple Rd</div>
+                    <div class="smart-route-stats">
+                        <div class="smart-route-stat"><i class="fas fa-clock"></i><span id="smartEta">42 min</span></div>
+                        <div class="smart-route-stat"><i class="fas fa-bolt"></i><span id="timeSaved">Save 23 min</span></div>
+                        <div class="smart-route-stat"><i class="fas fa-users"></i><span id="makangaCount">8 makangas</span></div>
+                        <div class="smart-route-stat"><i class="fas fa-road"></i><span id="distanceKm">18 km</span></div>
+                        <div class="smart-route-stat"><span class="spotter-confirm"><i class="fas fa-check-double" style="font-size:9px;"></i> 5 spotters confirm</span></div>
+                    </div>
+                </div>
+                <div class="timeline" id="routeTimeline"></div>
+                <div class="alt-routes-section">
+                    <h3>🔄 Alternative Routes</h3>
+                    <div id="altRoutesContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal">
+            <div class="modal-header"><h2>🚨 Report Condition</h2><button class="modal-close" id="closeReportModal"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <p style="color:var(--text-secondary); font-size:13px; margin-bottom:6px;">What is happening on your route? Your report helps other makangas.</p>
+                <div class="report-options">
+                    <div class="report-option green" data-report="clear"><i class="fas fa-check-circle"></i><span>Road Clear</span></div>
+                    <div class="report-option yellow" data-report="slow"><i class="fas fa-exclamation-circle"></i><span>Moving Slow</span></div>
+                    <div class="report-option red" data-report="jam"><i class="fas fa-times-circle"></i><span>Heavy Jam</span></div>
+                    <div class="report-option blue" data-report="accident"><i class="fas fa-car-crash"></i><span>Accident / Police</span></div>
+                </div>
+                <div style="margin-top:16px;">
+                    <label style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Add Details (Optional)</label>
+                    <textarea id="reportDetails" style="width:100%; background:var(--bg-dark); border:1px solid var(--border); border-radius:12px; padding:10px; color:white; font-family:inherit; margin-top:6px; resize:none; font-size:13px;" rows="3" placeholder="e.g., Lorry imeharibika hapa Total..."></textarea>
+                </div>
+                <button id="submitReportBtn" style="width:100%; background:linear-gradient(135deg, var(--primary), var(--primary-dark)); border:none; color:white; padding:12px; border-radius:14px; font-size:15px; font-weight:700; margin-top:14px; cursor:pointer;"><i class="fas fa-paper-plane"></i> Send Report</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="voiceModal">
+        <div class="modal">
+            <div class="modal-header"><h2>🎙️ Voice Commands</h2><button class="modal-close" id="closeVoiceModal"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <div class="voice-indicator">
+                    <div class="voice-wave"><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div></div>
+                    <p style="color:var(--text-secondary); font-size:14px; text-align:center;">Say something like:</p>
+                </div>
+                <div style="background:var(--bg-dark); border-radius:16px; padding:16px; margin-top:10px;">
+                    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px;">"Jam hapa Caltex"</span></div>
+                    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px;">"Barabara safi mpaka CBD"</span></div>
+                    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px;">"Niende wapi?" (Which way?)</span></div>
+                    <div style="display:flex; align-items:center; gap:10px; padding:8px 0;"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px;">"Police hapa Jogoo Road"</span></div>
+                </div>
+                <button id="voiceBtn" style="width:100%; background:linear-gradient(135deg, var(--primary), var(--primary-dark)); border:none; color:white; padding:14px; border-radius:14px; font-size:16px; font-weight:700; margin-top:16px; cursor:pointer;"><i class="fas fa-microphone"></i> Tap to Speak</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="leaderboardModal">
+        <div class="modal">
+            <div class="modal-header"><h2>🏆 Makanga Leaderboard</h2><button class="modal-close" id="closeLeaderboard"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <p style="color:var(--text-secondary); font-size:13px; margin-bottom:14px;">Top reporters this week. Earn points by sharing accurate road conditions!</p>
+                <div id="leaderboardList"></div>
+                <div style="margin-top:16px; padding:12px; background:var(--bg-dark); border-radius:12px; border:1px solid var(--border);">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:32px; height:32px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;">YOU</div>
+                        <div style="flex:1;"><h4 style="font-size:13px;">Your Rank: #7</h4><p style="font-size:11px; color:var(--text-muted);">1,240 pts • 23 reports • 94% accuracy</p></div>
+                        <span style="font-size:14px; font-weight:700; color:var(--accent);">+50 pts</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+cbd", name: "CBD Temple", status: "online", avatar: "D", reports: 11, location: "Temple Rd" },
+            { id: "donholm", name: "Donholm", status: "online", avatar: "O", reports: 7, location: "Donholm Rbt" },
+            { id: "hamza", name: "Hamza", status: "online", avatar: "H", reports: 5, location: "Hamza Stage" },
+            { id: "city", name: "City Stadium", status: "busy", avatar: "Y", reports: 4, location: "City Stadium" }
+        ];
+
+        // ===== AI INSIGHTS =====
+        const AI_INSIGHTS = [
+            "Traffic building on Jogoo Rd. Buruburu route likely to save 20-25 min based on pattern from last 30 days.",
+            "Komarock lorry breakdown — expect 10-15 min delay. Consider Fedha backroads if familiar.",
+            "Rain expected at 4PM. Fedha route will be muddy — stick to main route this afternoon.",
+            "Friday pattern: Jogoo Rd clears by 10AM. Check again before choosing.",
+            "3 makangas reported police checkpoint on Outer Ring. Avoid if carrying excess.",
+            "AI predicts Caltex junction will clear in 12 minutes based on current flow rate.",
+            "Heavy passenger load at Saika. Expect 5 min wait for full vehicle.",
+            "City Stadium roundabout showing unusual delay — possible accident ahead."
+        ];
+
+        // ===== LEADERBOARD DATA =====
+        const LEADERBOARD = [
+            { rank: 1, name: "Makanga Joe", sacco: "Kayole Star", points: 2450, streak: 12, reports: 89, accuracy: 97 },
+            { rank: 2, name: "Conductor Mike", sacco: "Metro Trans", points: 1890, streak: 8, reports: 67, accuracy: 95 },
+            { rank: 3, name: "Driver Kevo", sacco: "Kayole Star", points: 1550, streak: 5, reports: 42, accuracy: 94 },
+            { rank: 4, name: "Makanga Ben", sacco: "Metro Trans", points: 1120, streak: 4, reports: 38, accuracy: 92 },
+            { rank: 5, name: "Conductor Ali", sacco: "Route 39", points: 980, streak: 3, reports: 31, accuracy: 90 },
+            { rank: 6, name: "Driver Peter", sacco: "Kayole Star", points: 850, streak: 2, reports: 25, accuracy: 89 },
+            { rank: 7, name: "You", sacco: "Route 39", points: 1240, streak: 7, reports: 48, accuracy: 94, isYou: true }
+        ];
+
+        // ===== APP STATE =====
+        const appState = {
+            voiceEnabled: false,
+            voiceListening: false,
+            navigating: false,
+            currentRoute: "alt_buruburu",
+            userPoints: 1240,
+            userStreak: 7,
+            userRank: 7,
+            reportsToday: 48,
+            tripsToday: 156,
+            bottomSheetCollapsed: false,
+            spotterPanelVisible: false,
+            map: null,
+            routeLayers: {},
+            markers: {},
+            vehicleMarkers: [],
+            vehiclePositions: [0, 3, 6, 9, 12]
+        };
+
+        // ===== INITIALIZE =====
+        function initApp() {
+            initMap();
+            renderRouteSelector();
+            renderRouteBar();
+            renderSpotterList();
+            renderTimeline();
+            renderAltRoutes();
+            renderLeaderboard();
+            bindEvents();
+            startLiveSimulation();
+            updateRouteDisplay();
+        }
+
+        // ===== MAP INITIALIZATION =====
+        function initMap() {
+            try {
+                appState.map = L.map("map", {
+                    zoomControl: false,
+                    attributionControl: false
+                }).setView([-1.268, 36.87], 12);
+
+                L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+                    maxZoom: 19,
+                    subdomains: "abcd"
+                }).addTo(appState.map);
+
+                document.getElementById("mapLoading").classList.add("hidden");
+
+                drawRoutes();
+                addStageMarkers();
+
+                setInterval(updateVehicles, 2000);
+                updateVehicles();
+
+                showToast("🎉 Map loaded! Welcome to MtaaWatch");
+            } catch (e) {
+                console.error("Map init error:", e);
+                document.getElementById("mapLoading").innerHTML = "<span style=\'color:var(--danger)\'>Map failed to load. Check internet.</span>";
+            }
+        }
+
+        // ===== DRAW ROUTES =====
+        function drawRoutes() {
+            Object.entries(ROUTE_PATHS).forEach(([id, route]) => {
+                const isActive = id === appState.currentRoute;
+                const opacity = isActive ? 0.9 : 0.15;
+                const weight = isActive ? 5 : 2;
+                const dash = id === "main_jogoo" ? null : id === "alt_fedha" ? "5, 8" : id === "alt_outer_ring" ? "10, 8" : "8, 4";
+
+                if (appState.routeLayers[id]) {
+                    appState.map.removeLayer(appState.routeLayers[id]);
+                }
+
+                appState.routeLayers[id] = L.polyline(route.coords, {
+                    color: route.color,
+                    weight: weight,
+                    opacity: opacity,
+                    dashArray: dash
+                }).addTo(appState.map);
+            });
+        }
+
+        // ===== ADD STAGE MARKERS =====
+        function addStageMarkers() {
+            Object.entries(STAGES).forEach(([key, stage]) => {
+                const color = stage.status === "green" ? "#00D4AA" : stage.status === "yellow" ? "#FFB800" : "#FF3366";
+                let icon = "📍";
+                if (stage.type === "start") icon = "🚌";
+                else if (stage.type === "end") icon = "🏁";
+                else if (stage.type === "decision") icon = "⚠️";
+                else if (stage.type === "choke") icon = "🚧";
+                else if (stage.type === "interchange") icon = "🔄";
+
+                const customIcon = L.divIcon({
+                    className: "custom-marker-container",
+                    html: `<div class="custom-marker ${stage.status} ${stage.type === "choke" ? "choke" : ""}" style="border-color:${color}">${icon} ${stage.name}</div>`,
+                    iconSize: [160, 30],
+                    iconAnchor: [80, 30]
+                });
+
+                const marker = L.marker([stage.lat, stage.lng], { icon: customIcon }).addTo(appState.map);
+
+                const popupContent = `<div style="font-family:Inter,sans-serif; min-width:240px;">` +
+                    `<h3 style="margin:0 0 6px; font-size:15px; color:#1A1A2E; font-weight:700;">${stage.name}</h3>` +
+                    (stage.note ? `<p style="margin:0 0 6px; color:#FF6B35; font-weight:600; font-size:12px; padding:4px 8px; background:#FFF3E0; border-radius:6px;">${stage.note}</p>` : "") +
+                    `<p style="margin:0; font-size:12px; color:#555; line-height:1.4;">${stage.desc}</p>` +
+                    `<p style="margin:6px 0 0; font-size:11px; color:#888;">` +
+                    `Status: <span style="color:${color}; font-weight:700; text-transform:uppercase;">${stage.status}</span> • ` +
+                    `Spotters: <span style="color:#00D4AA; font-weight:700;">${stage.spotterConfirm} confirm</span>` +
+                    `</p></div>`;
+
+                marker.bindPopup(popupContent);
+                appState.markers[key] = marker;
+            });
+        }
+
+        // ===== ANIMATED VEHICLES =====
+        function updateVehicles() {
+            appState.vehicleMarkers.forEach(m => appState.map.removeLayer(m));
+            appState.vehicleMarkers = [];
+
+            const activeRoute = ROUTE_PATHS[appState.currentRoute];
+            if (!activeRoute) return;
+
+            const activePath = activeRoute.coords;
+
+            appState.vehiclePositions.forEach(pos => {
+                const idx = Math.floor(pos) % activePath.length;
+                const nextIdx = (idx + 1) % activePath.length;
+                const frac = pos - Math.floor(pos);
+
+                const lat = activePath[idx][0] + (activePath[nextIdx][0] - activePath[idx][0]) * frac;
+                const lng = activePath[idx][1] + (activePath[nextIdx][1] - activePath[idx][1]) * frac;
+
+                const vMarker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: "vehicle-marker-container",
+                        html: `<div class="vehicle-marker"></div>`,
+                        iconSize: [16, 16]
+                    })
+                }).addTo(appState.map);
+
+                appState.vehicleMarkers.push(vMarker);
+            });
+
+            appState.vehiclePositions = appState.vehiclePositions.map(p => p + 0.04);
+        }
+
+        // ===== RENDER ROUTE SELECTOR =====
+        function renderRouteSelector() {
+            const selector = document.getElementById("routeSelector");
+            const routes = [
+                { id: "main_jogoo", name: "Route 39 Jogoo", status: "red" },
+                { id: "alt_buruburu", name: "Buruburu Shortcut", status: "green" },
+                { id: "alt_fedha", name: "Fedha Backroads", status: "yellow" },
+                { id: "alt_outer_ring", name: "Outer Ring Bypass", status: "green" }
+            ];
+
+            selector.innerHTML = routes.map(r => {
+                const isActive = r.id === appState.currentRoute;
+                return `<div class="route-chip ${isActive ? "active" : ""}" data-route="${r.id}">` +
+                    `<span class="dot ${r.status}"></span> ${r.name}` +
+                    `</div>`;
+            }).join("");
+        }
+
+        // ===== RENDER ROUTE BAR =====
+        function renderRouteBar() {
+            const bar = document.getElementById("routeBar");
+            const activeRoute = ROUTE_PATHS[appState.currentRoute];
+            if (!activeRoute) return;
+
+            const pills = activeRoute.stages.map(stageKey => {
+                const stage = STAGES[stageKey];
+                if (!stage) return "";
+                return `<div class="route-pill" data-stage="${stageKey}">` +
+                    `<span class="dot ${stage.status}"></span> ${stage.name.split(" ")[0]}` +
+                    `</div>`;
+            }).filter(Boolean);
+
+            bar.innerHTML = pills.join("");
+        }
+
+        // ===== RENDER SPOTTER LIST =====
+        function renderSpotterList() {
+            const list = document.getElementById("spotterList");
+            list.innerHTML = SPOTTERS.map(s => {
+                return `<div class="spotter-item">` +
+                    `<div class="spotter-avatar">${s.avatar}</div>` +
+                    `<div class="spotter-info">` +
+                        `<div class="name">${s.name}</div>` +
+                        `<div class="location">${s.location}</div>` +
+                    `</div>` +
+                    `<span class="spotter-status ${s.status}"></span>` +
+                    `</div>`;
+            }).join("");
+        }
+
+        // ===== RENDER TIMELINE =====
+        function renderTimeline() {
+            const timeline = document.getElementById("routeTimeline");
+            timeline.innerHTML = "";
+
+            const activeRoute = ROUTE_PATHS[appState.currentRoute];
+            if (!activeRoute) return;
+
+            activeRoute.stages.forEach(stageKey => {
+                const stage = STAGES[stageKey];
+                if (!stage) return;
+
+                let dotClass = stage.status;
+                if (stage.type === "start") dotClass = "start";
+                else if (stage.type === "end") dotClass = "end";
+                else if (stage.type === "decision") dotClass = "decision";
+                else if (stage.type === "choke") dotClass = "red";
+
+                const statusIcon = stage.status === "green" ? "fa-check" : stage.status === "yellow" ? "fa-exclamation" : "fa-times";
+                const statusText = stage.status === "green" ? "Clear" : stage.status === "yellow" ? "Slow" : "Jammed";
+                const confirmBadge = stage.spotterConfirm > 2 ?
+                    `<span class="spotter-confirm"><i class="fas fa-check-double" style="font-size:8px;"></i> ${stage.spotterConfirm} spotters</span>` : "";
+
+                const item = document.createElement("div");
+                item.className = "timeline-item";
+                item.setAttribute("data-stage", stageKey);
+                item.innerHTML =
+                    `<div class="timeline-dot ${dotClass}"></div>` +
+                    `<div class="timeline-content">` +
+                        `<div class="timeline-info">` +
+                            `<h3>${stage.name} ${stage.type === "decision" ? "⚠️" : stage.type === "choke" ? "🚧" : ""}</h3>` +
+                            `<p>${stage.desc}</p>` +
+                            (confirmBadge ? `<div style="margin-top:4px;">${confirmBadge}</div>` : "") +
+                        `</div>` +
+                        `<div class="timeline-status ${stage.status}">` +
+                            `<i class="fas ${statusIcon}"></i> ${statusText}` +
+                        `</div>` +
+                    `</div>`;
+                timeline.appendChild(item);
+            });
+        }
+
+        // ===== RENDER ALTERNATIVE ROUTES =====
+        function renderAltRoutes() {
+            const container = document.getElementById("altRoutesContainer");
+            container.innerHTML = "";
+
+            Object.values(ROUTE_PATHS).forEach(route => {
+                const card = document.createElement("div");
+                card.className = `alt-route-card ${route.id === appState.currentRoute ? "selected" : ""}`;
+                card.setAttribute("data-route", route.id);
+                card.innerHTML =
+                    `<div class="route-name">` +
+                        `<i class="fas fa-route" style="color:${route.color}"></i>` +
+                        route.name +
+                        `<span class="badge ${route.badgeClass}">${route.badge}</span>` +
+                    `</div>` +
+                    `<div class="alt-route-details">` +
+                        `<span><i class="fas fa-clock"></i> ${route.time}</span>` +
+                        `<span><i class="fas fa-road"></i> ${route.distance}</span>` +
+                        (route.makangas > 0 ? `<span><i class="fas fa-users"></i> ${route.makangas} makangas</span>` : "") +
+                        `<span style="color:${route.statusColor}"><i class="fas ${route.statusIcon}"></i> ${route.status}</span>` +
+                    `</div>`;
+                container.appendChild(card);
+            });
+        }
+
+        // ===== RENDER LEADERBOARD =====
+        function renderLeaderboard() {
+            const list = document.getElementById("leaderboardList");
+            list.innerHTML = "";
+
+            LEADERBOARD.forEach(entry => {
+                const rankClass = entry.rank === 1 ? "gold" : entry.rank === 2 ? "silver" : entry.rank === 3 ? "bronze" : "normal";
+                const isYou = entry.isYou;
+
+                const item = document.createElement("div");
+                item.className = "leaderboard-item";
+                if (isYou) {
+                    item.style.border = "1px solid var(--primary)";
+                    item.style.background = "rgba(255,107,53,0.08)";
+                }
+                item.innerHTML =
+                    `<div class="leaderboard-rank ${rankClass}">${entry.rank}</div>` +
+                    `<div class="leaderboard-info">` +
+                        `<h4>${entry.name} ${isYou ? "<span style=\'color:var(--primary)\'>(You)</span>" : ""}</h4>` +
+                        `<p>${entry.sacco} • ${entry.reports} reports • ${entry.accuracy}% accuracy</p>` +
+                    `</div>` +
+                    `<div class="leaderboard-score">${entry.points.toLocaleString()} ${entry.streak >= 5 ? "🔥" : ""}</div>`;
+                list.appendChild(item);
+            });
+        }
+
+        // ===== UPDATE ROUTE DISPLAY =====
+        function updateRouteDisplay() {
+            const route = ROUTE_PATHS[appState.currentRoute];
+            if (!route) return;
+
+            document.getElementById("routeDisplay").textContent = `${route.name} — ${route.distance}`;
+            document.getElementById("currentRouteName").textContent = route.name;
+            document.getElementById("mainEta").textContent = `⏱ ${route.time}`;
+            document.getElementById("smartEta").textContent = route.time;
+            document.getElementById("timeSaved").textContent = route.id === "alt_buruburu" ? "Save 23 min" : route.id === "alt_fedha" ? "Save 30 min" : route.id === "alt_outer_ring" ? "Save 27 min" : "Standard route";
+            document.getElementById("makangaCount").textContent = route.makangas > 0 ? `${route.makangas} makangas` : "Avoided by all";
+            document.getElementById("distanceKm").textContent = route.distance;
+            document.getElementById("smartRoutePath").innerHTML = route.description;
+            document.getElementById("aiInsightText").textContent = route.aiReason;
+        }
+
+        // ===== BIND EVENTS =====
+        function bindEvents() {
+            // Bottom sheet
+            document.getElementById("sheetHandle").addEventListener("click", toggleBottomSheet);
+            document.getElementById("routesFab").addEventListener("click", toggleBottomSheet);
+
+            // Spotter panel
+            document.getElementById("spotterBtn").addEventListener("click", toggleSpotterPanel);
+
+            // Notifications
+            document.getElementById("notifBtn").addEventListener("click", showNotifications);
+
+            // Report modal
+            document.getElementById("reportFab").addEventListener("click", showReportModal);
+            document.getElementById("closeReportModal").addEventListener("click", closeReportModal);
+            document.getElementById("submitReportBtn").addEventListener("click", () => submitReport("custom"));
+
+            // Report options
+            document.querySelectorAll(".report-option").forEach(opt => {
+                opt.addEventListener("click", function() {
+                    submitReport(this.getAttribute("data-report"));
+                });
+            });
+
+            // Voice modal
+            document.getElementById("voiceFab").addEventListener("click", showVoiceModal);
+            document.getElementById("closeVoiceModal").addEventListener("click", closeVoiceModal);
+            document.getElementById("voiceBtn").addEventListener("click", toggleVoiceListening);
+
+            // Navigation
+            document.getElementById("navFab").addEventListener("click", startNavigation);
+
+            // Leaderboard
+            document.getElementById("userScoreBtn").addEventListener("click", showLeaderboard);
+            document.getElementById("closeLeaderboard").addEventListener("click", closeLeaderboard);
+
+            // Route selector
+            document.getElementById("routeSelector").addEventListener("click", function(e) {
+                const chip = e.target.closest(".route-chip");
+                if (chip) {
+                    const routeId = chip.getAttribute("data-route");
+                    selectRoute(routeId);
+                }
+            });
+
+            // Route pills
+            document.getElementById("routeBar").addEventListener("click", function(e) {
+                const pill = e.target.closest(".route-pill");
+                if (pill) {
+                    const stageKey = pill.getAttribute("data-stage");
+                    focusStage(stageKey);
+                }
+            });
+
+            // Timeline items
+            document.getElementById("routeTimeline").addEventListener("click", function(e) {
+                const item = e.target.closest(".timeline-item");
+                if (item) {
+                    const stageKey = item.getAttribute("data-stage");
+                    focusStage(stageKey);
+                }
+            });
+
+            // Alt route cards
+            document.getElementById("altRoutesContainer").addEventListener("click", function(e) {
+                const card = e.target.closest(".alt-route-card");
+                if (card) {
+                    const routeId = card.getAttribute("data-route");
+                    selectRoute(routeId);
+                }
+            });
+
+            // Close modals on overlay click
+            document.querySelectorAll(".modal-overlay").forEach(overlay => {
+                overlay.addEventListener("click", function(e) {
+                    if (e.target === this) {
+                        this.classList.remove("active");
+                    }
+                });
+            });
+        }
+
+        // ===== UI FUNCTIONS =====
+        function toggleBottomSheet() {
+            const sheet = document.getElementById("bottomSheet");
+            appState.bottomSheetCollapsed = !appState.bottomSheetCollapsed;
+            sheet.classList.toggle("collapsed", appState.bottomSheetCollapsed);
+        }
+
+        function toggleSpotterPanel() {
+            const panel = document.getElementById("spotterPanel");
+            appState.spotterPanelVisible = !appState.spotterPanelVisible;
+            panel.style.display = appState.spotterPanelVisible ? "block" : "none";
+        }
+
+        function focusStage(stageKey) {
+            const stage = STAGES[stageKey];
+            if (stage && appState.markers[stageKey] && appState.map) {
+                appState.map.flyTo([stage.lat, stage.lng], 15, { duration: 1 });
+                appState.markers[stageKey].openPopup();
+            }
+        }
+
+        function selectRoute(routeId) {
+            appState.currentRoute = routeId;
+
+            // Update UI
+            document.querySelectorAll(".route-chip").forEach(c => c.classList.remove("active"));
+            document.querySelectorAll(`[data-route="${routeId}"]`).forEach(el => {
+                if (el.classList.contains("route-chip")) el.classList.add("active");
+            });
+
+            document.querySelectorAll(".alt-route-card").forEach(c => c.classList.remove("selected"));
+            document.querySelectorAll(`[data-route="${routeId}"]`).forEach(el => {
+                if (el.classList.contains("alt-route-card")) el.classList.add("selected");
+            });
+
+            drawRoutes();
+            renderRouteBar();
+            renderTimeline();
+            updateRouteDisplay();
+            updateVehicles();
+
+            const route = ROUTE_PATHS[routeId];
+            if (route) {
+                showToast(`✅ ${route.name} selected. ${route.time} ETA.`);
+            }
+        }
+
+        // ===== MODAL FUNCTIONS =====
+        function showReportModal() {
+            document.getElementById("reportModal").classList.add("active");
+        }
+
+        function closeReportModal() {
+            document.getElementById("reportModal").classList.remove("active");
+        }
+
+        function showVoiceModal() {
+            document.getElementById("voiceModal").classList.add("active");
+        }
+
+        function closeVoiceModal() {
+            document.getElementById("voiceModal").classList.remove("active");
+        }
+
+        function showLeaderboard() {
+            document.getElementById("leaderboardModal").classList.add("active");
+        }
+
+        function closeLeaderboard() {
+            document.getElementById("leaderboardModal").classList.remove("active");
+        }
+
+        // ===== VOICE =====
+        function toggleVoiceListening() {
+            const btn = document.getElementById("voiceBtn");
+            appState.voiceListening = !appState.voiceListening;
+
+            if (appState.voiceListening) {
+                btn.innerHTML = '<i class="fas fa-stop"></i> Listening...';
+                btn.style.background = "var(--danger)";
+
+                setTimeout(() => {
+                    appState.voiceListening = false;
+                    btn.innerHTML = '<i class="fas fa-microphone"></i> Tap to Speak';
+                    btn.style.background = "";
+                    closeVoiceModal();
+                    showToast('🎙️ "Jam hapa Caltex" — Report received! +10 points');
+                    updateUserScore(10);
+                }, 3000);
+            } else {
+                btn.innerHTML = '<i class="fas fa-microphone"></i> Tap to Speak';
+                btn.style.background = "";
+            }
+        }
+
+        // ===== REPORTING =====
+        function submitReport(type) {
+            closeReportModal();
+
+            const messages = {
+                clear: "✅ Road clear report sent! +5 points",
+                slow: "⚠️ Slow traffic reported! +5 points",
+                jam: "🚨 Jam reported! Alert sent to 12 makangas! +15 points",
+                accident: "🚔 Accident/police reported! +15 points",
+                custom: "📋 Report received! +10 points"
+            };
+
+            const points = type === "jam" || type === "accident" ? 15 : type === "custom" ? 10 : 5;
+            showToast(messages[type] || messages.custom);
+            updateUserScore(points);
+        }
+
+        function updateUserScore(points) {
+            appState.userPoints += points;
+            document.getElementById("userScoreText").innerHTML = `<i class="fas fa-fire"></i> ${appState.userPoints.toLocaleString()} pts`;
+        }
+
+        // ===== NAVIGATION =====
+        function startNavigation() {
+            appState.navigating = !appState.navigating;
+
+            if (appState.navigating) {
+                showToast("🗺️ Navigation started! Following route...");
+
+                const route = ROUTE_PATHS[appState.currentRoute];
+                if (route) {
+                    const stages = route.stages;
+                    let delay = 3000;
+                    stages.forEach((stageKey, i) => {
+                        if (i > 0 && i < stages.length - 1) {
+                            const stage = STAGES[stageKey];
+                            if (stage && stage.type === "decision") {
+                                setTimeout(() => {
+                                    showToast(`🔊 "Approaching ${stage.name}. ${stage.note || ""}"`);
+                                }, delay);
+                                delay += 3000;
+                            }
+                        }
+                    });
+                }
+            } else {
+                showToast("🛑 Navigation stopped.");
+            }
+        }
+
+        // ===== NOTIFICATIONS =====
+        function showNotifications() {
+            showToast("📢 New alerts: Komarock lorry cleared. Fedha shortcut muddy today.");
+        }
+
+        // ===== TOAST =====
+        function showToast(message) {
+            const container = document.getElementById("toastContainer");
+            const toast = document.createElement("div");
+            toast.className = "toast";
+            toast.innerHTML = message;
+            container.appendChild(toast);
+
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // ===== LIVE DATA SIMULATION =====
+        function startLiveSimulation() {
+            setInterval(() => {
+                const keys = Object.keys(STAGES);
+                const randomKey = keys[Math.floor(Math.random() * keys.length)];
+                const statuses = ["green", "green", "green", "yellow", "red"];
+                const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+
+                if (STAGES[randomKey].type !== "decision" && Math.random() > 0.7) {
+                    STAGES[randomKey].status = newStatus;
+
+                    const marker = appState.markers[randomKey];
+                    if (marker) {
+                        const color = newStatus === "green" ? "#00D4AA" : newStatus === "yellow" ? "#FFB800" : "#FF3366";
+                        const stage = STAGES[randomKey];
+                        let icon = "📍";
+                        if (stage.type === "start") icon = "🚌";
+                        else if (stage.type === "end") icon = "🏁";
+                        else if (stage.type === "decision") icon = "⚠️";
+                        else if (stage.type === "choke") icon = "🚧";
+                        else if (stage.type === "interchange") icon = "🔄";
+
+                        marker.setIcon(L.divIcon({
+                            className: "custom-marker-container",
+                            html: `<div class="custom-marker ${newStatus} ${stage.type === "choke" ? "choke" : ""}" style="border-color:${color}">${icon} ${stage.name}</div>`,
+                            iconSize: [160, 30],
+                            iconAnchor: [80, 30]
+                        }));
+                    }
+
+                    renderTimeline();
+                    renderRouteBar();
+
+                    if (newStatus === "red") {
+                        showToast(`🚨 ALERT: ${STAGES[randomKey].name} — Jam reported!`);
+                    }
+                }
+
+                // Rotate AI insight
+                if (Math.random() > 0.8) {
+                    const randomInsight = AI_INSIGHTS[Math.floor(Math.random() * AI_INSIGHTS.length)];
+                    document.getElementById("aiInsightText").textContent = randomInsight;
+                }
+            }, 15000);
+        }
+
+        // ===== GPS TRACKING =====
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+                pos => {
+                    // Track user position on map
+                    if (appState.map) {
+                        const userLat = pos.coords.latitude;
+                        const userLng = pos.coords.longitude;
+                        // Could add user marker here
+                    }
+                },
+                err => console.log("GPS error:", err),
+                { enableHighAccuracy: true }
+            );
+        }
+
+        // ===== START APP =====
+        document.addEventListener("DOMContentLoaded", initApp);
+    </script>
+</body>
+</html>
