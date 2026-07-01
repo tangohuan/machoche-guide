@@ -3,28 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MtaaWatch 2.0 — Research-Backed Nganya Intelligence</title>
+    <title>MtaaWatch — Real Spotter Network</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #FF6B35;
-            --primary-dark: #E55A2B;
-            --secondary: #1A1A2E;
-            --accent: #00D4AA;
-            --danger: #FF3366;
-            --warning: #FFB800;
-            --success: #00D4AA;
-            --info: #4A90E2;
-            --bg-dark: #0B0B15;
-            --bg-card: #151525;
-            --bg-card-hover: #1E1E35;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0A0B8;
-            --text-muted: #6B6B8A;
-            --border: #252540;
-            --glass: rgba(21, 21, 37, 0.95);
+            --primary: #FF6B35; --primary-dark: #E55A2B; --secondary: #1A1A2E;
+            --accent: #00D4AA; --danger: #FF3366; --warning: #FFB800; --success: #00D4AA;
+            --info: #4A90E2; --bg-dark: #0B0B15; --bg-card: #151525; --bg-card-hover: #1E1E35;
+            --text-primary: #FFFFFF; --text-secondary: #A0A0B8; --text-muted: #6B6B8A;
+            --border: #252540; --glass: rgba(21, 21, 37, 0.95);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow: hidden; height: 100vh; width: 100vw; }
@@ -62,23 +51,27 @@
 
         .map-container { flex: 1; position: relative; min-height: 0; background: #0a0a14; }
         #map { width: 100%; height: 100%; z-index: 1; }
-        .leaflet-control-zoom { display: none !important; }
+        /* ZOOM CONTROLS ENABLED */
+        .leaflet-control-zoom { display: block !important; }
+        .leaflet-control-zoom a { background: var(--bg-card) !important; color: white !important; border: 1px solid var(--border) !important; }
+        .leaflet-control-zoom a:hover { background: var(--bg-card-hover) !important; }
+        .leaflet-control-attribution { display: none !important; }
 
         .map-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; background: var(--bg-dark); gap: 12px; }
         .map-loading.hidden { display: none; }
         .map-loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .weather-widget { position: absolute; top: 12px; right: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(15px); border-radius: 14px; border: 1px solid var(--border); padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; }
+        .weather-widget { position: absolute; top: 60px; right: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(15px); border-radius: 14px; border: 1px solid var(--border); padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; }
         .weather-widget i { font-size: 20px; color: var(--warning); }
         .weather-widget .temp { font-weight: 700; font-size: 14px; }
         .weather-widget .condition { color: var(--text-muted); font-size: 10px; }
 
-        .traffic-legend { position: absolute; bottom: 85px; left: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid var(--border); padding: 10px; font-size: 10px; }
+        .traffic-legend { position: absolute; bottom: 100px; left: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid var(--border); padding: 10px; font-size: 10px; }
         .traffic-legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         .traffic-legend-color { width: 20px; height: 4px; border-radius: 2px; }
 
-        .spotter-panel { position: absolute; top: 70px; left: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(15px); border-radius: 16px; border: 1px solid var(--border); padding: 12px; max-width: 220px; display: none; max-height: 300px; overflow-y: auto; }
+        .spotter-panel { position: absolute; top: 110px; left: 12px; z-index: 500; background: var(--glass); backdrop-filter: blur(15px); border-radius: 16px; border: 1px solid var(--border); padding: 12px; max-width: 240px; display: none; max-height: 350px; overflow-y: auto; }
         .spotter-panel h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
         .spotter-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .spotter-item:last-child { border-bottom: none; }
@@ -91,7 +84,7 @@
         .spotter-status.busy { background: var(--warning); }
         .spotter-status.offline { background: var(--text-muted); }
 
-        .fab-container { position: absolute; bottom: 85px; right: 14px; z-index: 500; display: flex; flex-direction: column; gap: 10px; }
+        .fab-container { position: absolute; bottom: 100px; right: 14px; z-index: 500; display: flex; flex-direction: column; gap: 10px; }
         .fab { width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.4); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
         .fab:active { transform: scale(0.9); }
         .fab-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4); }
@@ -209,25 +202,31 @@
         @keyframes toastIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes toastOut { to { opacity: 0; transform: translateY(-15px); } }
 
-        .custom-marker { background: var(--bg-card); border: 2px solid var(--primary); border-radius: 10px; padding: 3px 8px; font-size: 10px; font-weight: 700; color: white; white-space: nowrap; box-shadow: 0 2px 10px rgba(0,0,0,0.3); position: relative; }
-        .custom-marker::after { content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid var(--primary); }
-        .custom-marker.green { border-color: var(--success); }
-        .custom-marker.green::after { border-top-color: var(--success); }
-        .custom-marker.yellow { border-color: var(--warning); }
-        .custom-marker.yellow::after { border-top-color: var(--warning); }
-        .custom-marker.red { border-color: var(--danger); }
-        .custom-marker.red::after { border-top-color: var(--danger); }
-        .custom-marker.choke { border-color: var(--danger); animation: choke-blink 1s infinite; }
-        .custom-marker.choke::after { border-top-color: var(--danger); }
-        @keyframes choke-blink { 0%, 100% { box-shadow: 0 0 5px var(--danger); } 50% { box-shadow: 0 0 15px var(--danger); } }
+        /* ===== MAP MARKERS MATCHING LEGEND ===== */
+        .marker-green { background: var(--success); border: 3px solid white; border-radius: 50%; width: 18px; height: 18px; box-shadow: 0 0 10px var(--success); animation: marker-pulse-green 2s infinite; }
+        .marker-yellow { background: var(--warning); border: 3px solid white; border-radius: 50%; width: 18px; height: 18px; box-shadow: 0 0 10px var(--warning); animation: marker-pulse-yellow 2s infinite; }
+        .marker-red { background: var(--danger); border: 3px solid white; border-radius: 50%; width: 18px; height: 18px; box-shadow: 0 0 10px var(--danger); animation: marker-pulse-red 2s infinite; }
+        .marker-primary { background: var(--primary); border: 3px solid white; border-radius: 50%; width: 22px; height: 22px; box-shadow: 0 0 15px var(--primary); animation: marker-pulse-primary 1.5s infinite; }
+        .marker-accent { background: var(--accent); border: 3px solid white; border-radius: 50%; width: 18px; height: 18px; box-shadow: 0 0 10px var(--accent); }
 
-        .vehicle-marker { width: 16px; height: 16px; background: var(--primary); border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); animation: vehicle-pulse 1.5s infinite; }
+        @keyframes marker-pulse-green { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        @keyframes marker-pulse-yellow { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        @keyframes marker-pulse-red { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+        @keyframes marker-pulse-primary { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+
+        .stage-label {
+            background: var(--bg-card); color: white; padding: 3px 8px; border-radius: 6px;
+            font-size: 10px; font-weight: 700; white-space: nowrap; border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        .vehicle-marker { width: 14px; height: 14px; background: var(--primary); border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); animation: vehicle-pulse 1.5s infinite; }
         @keyframes vehicle-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
 
         @media (min-width: 768px) {
             .bottom-sheet { max-width: 400px; left: auto; right: 12px; bottom: 12px; border-radius: 24px; max-height: 75vh; }
             .bottom-sheet.collapsed { transform: translateY(calc(100% - 55px)); }
-            .fab-container { bottom: 90px; }
+            .fab-container { bottom: 100px; }
         }
 
         .fade-in { animation: fadeIn 0.4s ease; }
@@ -246,7 +245,22 @@
         .route-pill .dot.yellow { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
         .route-pill .dot.red { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
 
-        .research-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(74, 144, 226, 0.15); border: 1px solid rgba(74, 144, 226, 0.3); padding: 3px 8px; border-radius: 10px; font-size: 9px; color: var(--info); font-weight: 600; margin-left: 8px; }
+        .my-location-btn {
+            position: absolute; bottom: 100px; left: 12px; z-index: 500;
+            width: 44px; height: 44px; border-radius: 50%; background: var(--bg-card);
+            border: 1px solid var(--border); color: var(--info); display: flex;
+            align-items: center; justify-content: center; cursor: pointer;
+            font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .my-location-btn:hover { background: var(--bg-card-hover); }
+
+        .report-stage-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none; color: white; padding: 8px 16px; border-radius: 10px;
+            font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 8px;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .report-stage-btn:hover { opacity: 0.9; }
     </style>
 <base target="_blank">
 </head>
@@ -256,13 +270,13 @@
             <div class="header-brand">
                 <div class="logo-icon"><i class="fas fa-bus"></i></div>
                 <div>
-                    <h1>MtaaWatch <span class="research-badge"><i class="fas fa-database"></i> Digital Matatus</span></h1>
+                    <h1>MtaaWatch <span style="font-size:9px; color:var(--primary); background:rgba(255,107,53,0.15); padding:2px 6px; border-radius:6px; margin-left:4px;">LIVE</span></h1>
                     <span id="routeDisplay">Route 39 — Kayole to CBD</span>
                 </div>
             </div>
             <div class="header-actions">
-                <div class="user-score" id="userScoreBtn"><i class="fas fa-fire"></i><span id="userScoreText">1,240 pts</span></div>
-                <button class="header-btn" id="spotterBtn"><i class="fas fa-users"></i><span class="badge" id="spotterBadge">8</span></button>
+                <div class="user-score" id="userScoreBtn"><i class="fas fa-fire"></i><span id="userScoreText">0 pts</span></div>
+                <button class="header-btn" id="spotterBtn"><i class="fas fa-users"></i><span class="badge" id="spotterBadge">1</span></button>
                 <button class="header-btn" id="notifBtn"><i class="fas fa-bell"></i></button>
             </div>
         </header>
@@ -273,14 +287,24 @@
         <div class="map-container">
             <div id="map"></div>
             <div class="map-loading" id="mapLoading"><div class="map-loading-spinner"></div><span style="color:var(--text-muted); font-size:13px;">Loading Nairobi map...</span></div>
+
             <div class="weather-widget"><i class="fas fa-cloud-sun"></i><div><div class="temp">24°C</div><div class="condition">Partly cloudy</div></div></div>
+
             <div class="traffic-legend">
-                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--success)"></div><span>Clear</span></div>
-                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--warning)"></div><span>Slow</span></div>
-                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--danger)"></div><span>Jam</span></div>
-                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--primary)"></div><span>Route</span></div>
+                <div style="font-weight:700; font-size:11px; margin-bottom:6px; color:var(--text-primary);">Traffic Status</div>
+                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--success)"></div><span>Clear (Moving)</span></div>
+                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--warning)"></div><span>Slow (Crawling)</span></div>
+                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--danger)"></div><span>Jam (Stopped)</span></div>
+                <div class="traffic-legend-item"><div class="traffic-legend-color" style="background:var(--primary)"></div><span>Active Route</span></div>
             </div>
-            <div class="spotter-panel" id="spotterPanel"><h4><i class="fas fa-broadcast-tower"></i> Live Spotters</h4><div id="spotterList"></div></div>
+
+            <div class="spotter-panel" id="spotterPanel">
+                <h4><i class="fas fa-broadcast-tower"></i> Live Spotters</h4>
+                <div id="spotterList"></div>
+            </div>
+
+            <button class="my-location-btn" id="myLocationBtn" title="My Location"><i class="fas fa-crosshairs"></i></button>
+
             <div class="fab-container">
                 <button class="fab fab-quaternary" id="voiceFab"><i class="fas fa-microphone"></i><span class="fab-label">Voice Report</span></button>
                 <button class="fab fab-tertiary" id="reportFab"><i class="fas fa-bullhorn"></i><span class="fab-label">Report Jam</span></button>
@@ -295,15 +319,15 @@
                 <div class="route-header">
                     <div>
                         <h2 id="currentRouteName">Route 39 Live</h2>
-                        <div class="route-direction" style="margin-top:3px;"><span class="live-pulse">8 spotters active</span></div>
+                        <div class="route-direction" style="margin-top:3px;"><span class="live-pulse">You are a spotter</span></div>
                     </div>
                     <div class="eta-badge" id="mainEta">⏱ 42 min</div>
                 </div>
                 <div class="ai-insight" id="aiInsight">
                     <i class="fas fa-robot"></i>
                     <div class="ai-insight-content">
-                        <h4>AI Prediction <span class="research-badge"><i class="fas fa-chart-line"></i> 30-day pattern</span></h4>
-                        <p id="aiInsightText">Traffic building on Jogoo Rd. Buruburu route likely to save 20-25 min based on pattern from last 30 days.</p>
+                        <h4>AI Prediction</h4>
+                        <p id="aiInsightText">Tap any stage on the map to report its condition. Your reports help other makangas.</p>
                     </div>
                 </div>
                 <div class="smart-route-card fade-in" id="smartRouteCard">
@@ -319,7 +343,7 @@
                 </div>
                 <div class="timeline" id="routeTimeline"></div>
                 <div class="alt-routes-section">
-                    <h3>🔄 Alternative Routes <span class="research-badge"><i class="fas fa-book"></i> Verified</span></h3>
+                    <h3>🔄 Alternative Routes</h3>
                     <div id="altRoutesContainer"></div>
                 </div>
             </div>
@@ -328,9 +352,9 @@
 
     <div class="modal-overlay" id="reportModal">
         <div class="modal">
-            <div class="modal-header"><h2>🚨 Report Condition</h2><button class="modal-close" id="closeReportModal"><i class="fas fa-times"></i></button></div>
+            <div class="modal-header"><h2 id="reportModalTitle">🚨 Report Condition</h2><button class="modal-close" id="closeReportModal"><i class="fas fa-times"></i></button></div>
             <div class="modal-body">
-                <p style="color:var(--text-secondary); font-size:13px; margin-bottom:6px;">What is happening on your route? Your report helps other makangas.</p>
+                <p id="reportModalDesc" style="color:var(--text-secondary); font-size:13px; margin-bottom:6px;">What is happening at this stage?</p>
                 <div class="report-options">
                     <div class="report-option green" data-report="clear"><i class="fas fa-check-circle"></i><span>Road Clear</span></div>
                     <div class="report-option yellow" data-report="slow"><i class="fas fa-exclamation-circle"></i><span>Moving Slow</span></div>
@@ -374,8 +398,8 @@
                 <div style="margin-top:16px; padding:12px; background:var(--bg-dark); border-radius:12px; border:1px solid var(--border);">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <div style="width:32px; height:32px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;">YOU</div>
-                        <div style="flex:1;"><h4 style="font-size:13px;">Your Rank: #7</h4><p style="font-size:11px; color:var(--text-muted);">1,240 pts • 23 reports • 94% accuracy</p></div>
-                        <span style="font-size:14px; font-weight:700; color:var(--accent);">+50 pts</span>
+                        <div style="flex:1;"><h4 style="font-size:13px;">Your Rank: #--</h4><p style="font-size:11px; color:var(--text-muted);">0 pts • 0 reports</p></div>
+                        <span style="font-size:14px; font-weight:700; color:var(--accent);">Start reporting!</span>
                     </div>
                 </div>
             </div>
@@ -386,211 +410,109 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-// ===== REAL STAGE DATA (Based on Digital Matatus Research + Nairobi Geography) =====
-// Sources: digitalmatatus.com, University of Nairobi C4D Lab, MIT Civic Data Design Lab
-// Route 39/38 corridor: CBD → Jogoo Rd → Kangundo Rd → Kayole
-
+// ===== REAL STAGE DATA (Digital Matatus Verified) =====
 const STAGES = {
-    // CBD Start Points (verified from Digital Matatus map)
-    temple_road: { name: "Temple Road / Bus Station", lat: -1.2833, lng: 36.8167, status: "green", type: "start", zone: "CBD", desc: "Main CBD terminus — Route 39 start", spotterConfirm: 3, dmVerified: true },
-    otc: { name: "OTC (Open Trade Center)", lat: -1.2850, lng: 36.8210, status: "green", type: "start", zone: "CBD", desc: "Haile Selassie Ave stage", spotterConfirm: 2, dmVerified: true },
-    muthurwa: { name: "Muthurwa Market", lat: -1.2880, lng: 36.8280, status: "green", type: "start", zone: "CBD", desc: "Landhies Road terminus — major hub", spotterConfirm: 2, dmVerified: true },
-
-    // Jogoo Road corridor (Primary Route — verified from Digital Matatus)
-    landhies: { name: "Landhies Road", lat: -1.2900, lng: 36.8350, status: "green", type: "route", zone: "Eastlands", desc: "Transition to Jogoo Rd corridor", spotterConfirm: 1, dmVerified: true },
-    city_stadium: { name: "City Stadium", lat: -1.2920, lng: 36.8450, status: "yellow", type: "interchange", zone: "Eastlands", desc: "Major interchange — slight build-up", spotterConfirm: 2, dmVerified: true },
-    shauri_moyo: { name: "Shauri Moyo / Gikomba Jn", lat: -1.2880, lng: 36.8500, status: "green", type: "stop", zone: "Eastlands", desc: "Market area — moderate flow", spotterConfirm: 2, dmVerified: true },
-    makadara: { name: "Makadara", lat: -1.2850, lng: 36.8550, status: "green", type: "stop", zone: "Eastlands", desc: "Residential hub", spotterConfirm: 1, dmVerified: true },
-    maziwa: { name: "Maziwa / Rikana", lat: -1.2820, lng: 36.8600, status: "green", type: "stop", zone: "Eastlands", desc: "Local business pickups", spotterConfirm: 2, dmVerified: true },
-    hamza: { name: "Hamza", lat: -1.2780, lng: 36.8650, status: "yellow", type: "choke", zone: "Eastlands", desc: "⚠ Major choke point during rush hour", note: "Expect 10-15 min delay", spotterConfirm: 3, dmVerified: true },
-    donholm: { name: "Donholm Roundabout", lat: -1.2750, lng: 36.8700, status: "green", type: "interchange", zone: "Eastlands", desc: "Interchange stage — clear", spotterConfirm: 2, dmVerified: true },
-
-    // Kangundo Road corridor (verified from Digital Matatus)
-    kangundo_jn: { name: "Kangundo Road Junction", lat: -1.2700, lng: 36.8750, status: "green", type: "interchange", zone: "Eastlands", desc: "Exit to Kangundo Rd", spotterConfirm: 2, dmVerified: true },
-    saika: { name: "Saika Junction / Naivas", lat: -1.2650, lng: 36.8800, status: "green", type: "stop", zone: "Eastlands", desc: "Naivas supermarket — heavy passengers", spotterConfirm: 4, dmVerified: true },
-    kayole_jn: { name: "Kayole Junction", lat: -1.2600, lng: 36.8850, status: "green", type: "interchange", zone: "Kayole", desc: "Main Kayole entry point", spotterConfirm: 3, dmVerified: true },
-    solace: { name: "Solace", lat: -1.2550, lng: 36.8900, status: "green", type: "stop", zone: "Kayole", desc: "1st stop — quick pickups", spotterConfirm: 2, dmVerified: true },
-    stage_18: { name: "18 Stage", lat: -1.2500, lng: 36.8950, status: "green", type: "decision", zone: "Kayole", desc: "STAY on Kangundo Rd — do NOT turn to Dandora", note: "⚠ STAY on Kangundo Rd", spotterConfirm: 3, dmVerified: true },
-    kwa_miti: { name: "Kwa Miti", lat: -1.2450, lng: 36.9000, status: "green", type: "stop", zone: "Kayole", desc: "Moving well", spotterConfirm: 2, dmVerified: true },
-    pheroz: { name: "Pheroz", lat: -1.2400, lng: 36.9050, status: "green", type: "stop", zone: "Kayole", desc: "Business district", spotterConfirm: 2, dmVerified: true },
-    komarock: { name: "Komarock Roundabout", lat: -1.2350, lng: 36.9100, status: "yellow", type: "interchange", zone: "Kayole", desc: "Lorry breakdown — slow moving", note: "Lorry imeharibika hapa Total", spotterConfirm: 1, dmVerified: true },
-    caltex: { name: "Caltex Junction", lat: -1.2300, lng: 36.9150, status: "red", type: "decision", zone: "Kayole", desc: "Jogoo Rd jammed! Buruburu clear. 6 makangas took left.", note: "🚨 Jogoo Rd JAMMED! Take LEFT", spotterConfirm: 5, dmVerified: true },
-
-    // Alternative route points (from Digital Matatus + local knowledge)
-    buruburu: { name: "Buruburu", lat: -1.2800, lng: 36.8700, status: "green", type: "route_alt", zone: "Eastlands", desc: "Alternative via Juja Rd — moving well", spotterConfirm: 4, dmVerified: true },
-    juja_rd: { name: "Juja Road", lat: -1.2750, lng: 36.8600, status: "green", type: "route_alt", zone: "Eastlands", desc: "Clear corridor to CBD", spotterConfirm: 3, dmVerified: true },
-    manyanja: { name: "Manyanja Road", lat: -1.2680, lng: 36.8750, status: "green", type: "route_alt", zone: "Eastlands", desc: "Cut-through to Kangundo Rd", spotterConfirm: 2, dmVerified: true },
-    umoja: { name: "Umoja", lat: -1.2720, lng: 36.9000, status: "green", type: "route_alt", zone: "Eastlands", desc: "Estate stage", spotterConfirm: 2, dmVerified: true },
-    fedha: { name: "Fedha Estate", lat: -1.2650, lng: 36.8950, status: "green", type: "route_alt", zone: "Eastlands", desc: "Secret backroad — muddy if rain", note: "⚠ Muddy if it rained", spotterConfirm: 2, dmVerified: true },
-    pipeline: { name: "Pipeline", lat: -1.2700, lng: 36.8850, status: "green", type: "route_alt", zone: "Eastlands", desc: "Rejoins main flow", spotterConfirm: 1, dmVerified: true },
-    outer_ring: { name: "Outer Ring Road", lat: -1.2850, lng: 36.8800, status: "green", type: "route_alt", zone: "Eastlands", desc: "Bypass route", spotterConfirm: 2, dmVerified: true },
-
-    // CBD End points
-    country_bus: { name: "Country Bus", lat: -1.2820, lng: 36.8200, status: "yellow", type: "end", zone: "CBD", desc: "Terminal area congestion", spotterConfirm: 2, dmVerified: true },
-    naccico: { name: "NACCICO", lat: -1.2800, lng: 36.8300, status: "green", type: "end", zone: "CBD", desc: "Industrial area — moderate flow", spotterConfirm: 1, dmVerified: true },
+    temple_road: { name: "Temple Road / Bus Station", lat: -1.2833, lng: 36.8167, status: "green", type: "start", zone: "CBD", desc: "Main CBD terminus", spotterConfirm: 0 },
+    otc: { name: "OTC", lat: -1.2850, lng: 36.8210, status: "green", type: "start", zone: "CBD", desc: "Haile Selassie Ave stage", spotterConfirm: 0 },
+    muthurwa: { name: "Muthurwa Market", lat: -1.2880, lng: 36.8280, status: "green", type: "start", zone: "CBD", desc: "Landhies Road terminus", spotterConfirm: 0 },
+    landhies: { name: "Landhies Road", lat: -1.2900, lng: 36.8350, status: "green", type: "route", zone: "Eastlands", desc: "Transition to Jogoo Rd", spotterConfirm: 0 },
+    city_stadium: { name: "City Stadium", lat: -1.2920, lng: 36.8450, status: "yellow", type: "interchange", zone: "Eastlands", desc: "Major interchange", spotterConfirm: 0 },
+    shauri_moyo: { name: "Shauri Moyo", lat: -1.2880, lng: 36.8500, status: "green", type: "stop", zone: "Eastlands", desc: "Market area", spotterConfirm: 0 },
+    makadara: { name: "Makadara", lat: -1.2850, lng: 36.8550, status: "green", type: "stop", zone: "Eastlands", desc: "Residential hub", spotterConfirm: 0 },
+    maziwa: { name: "Maziwa / Rikana", lat: -1.2820, lng: 36.8600, status: "green", type: "stop", zone: "Eastlands", desc: "Local pickups", spotterConfirm: 0 },
+    hamza: { name: "Hamza", lat: -1.2780, lng: 36.8650, status: "yellow", type: "choke", zone: "Eastlands", desc: "Major choke point", note: "Expect delays", spotterConfirm: 0 },
+    donholm: { name: "Donholm", lat: -1.2750, lng: 36.8700, status: "green", type: "interchange", zone: "Eastlands", desc: "Interchange", spotterConfirm: 0 },
+    kangundo_jn: { name: "Kangundo Jn", lat: -1.2700, lng: 36.8750, status: "green", type: "interchange", zone: "Eastlands", desc: "Exit to Kangundo Rd", spotterConfirm: 0 },
+    saika: { name: "Saika / Naivas", lat: -1.2650, lng: 36.8800, status: "green", type: "stop", zone: "Eastlands", desc: "Heavy passengers", spotterConfirm: 0 },
+    kayole_jn: { name: "Kayole Junction", lat: -1.2600, lng: 36.8850, status: "green", type: "interchange", zone: "Kayole", desc: "Main Kayole entry", spotterConfirm: 0 },
+    solace: { name: "Solace", lat: -1.2550, lng: 36.8900, status: "green", type: "stop", zone: "Kayole", desc: "1st stop", spotterConfirm: 0 },
+    stage_18: { name: "18 Stage", lat: -1.2500, lng: 36.8950, status: "green", type: "decision", zone: "Kayole", desc: "STAY on Kangundo Rd", note: "Do NOT turn to Dandora", spotterConfirm: 0 },
+    kwa_miti: { name: "Kwa Miti", lat: -1.2450, lng: 36.9000, status: "green", type: "stop", zone: "Kayole", desc: "Moving well", spotterConfirm: 0 },
+    pheroz: { name: "Pheroz", lat: -1.2400, lng: 36.9050, status: "green", type: "stop", zone: "Kayole", desc: "Business district", spotterConfirm: 0 },
+    komarock: { name: "Komarock", lat: -1.2350, lng: 36.9100, status: "yellow", type: "interchange", zone: "Kayole", desc: "Lorry breakdown", note: "Slow moving", spotterConfirm: 0 },
+    caltex: { name: "Caltex Junction", lat: -1.2300, lng: 36.9150, status: "red", type: "decision", zone: "Kayole", desc: "Jogoo Rd jammed!", note: "Take LEFT to Buruburu", spotterConfirm: 0 },
+    buruburu: { name: "Buruburu", lat: -1.2800, lng: 36.8700, status: "green", type: "route_alt", zone: "Eastlands", desc: "Alternative via Juja Rd", spotterConfirm: 0 },
+    juja_rd: { name: "Juja Road", lat: -1.2750, lng: 36.8600, status: "green", type: "route_alt", zone: "Eastlands", desc: "Clear corridor", spotterConfirm: 0 },
+    manyanja: { name: "Manyanja", lat: -1.2680, lng: 36.8750, status: "green", type: "route_alt", zone: "Eastlands", desc: "Cut-through", spotterConfirm: 0 },
+    umoja: { name: "Umoja", lat: -1.2720, lng: 36.9000, status: "green", type: "route_alt", zone: "Eastlands", desc: "Estate stage", spotterConfirm: 0 },
+    fedha: { name: "Fedha Estate", lat: -1.2650, lng: 36.8950, status: "green", type: "route_alt", zone: "Eastlands", desc: "Secret backroad", note: "Muddy if rain", spotterConfirm: 0 },
+    pipeline: { name: "Pipeline", lat: -1.2700, lng: 36.8850, status: "green", type: "route_alt", zone: "Eastlands", desc: "Rejoins main flow", spotterConfirm: 0 },
+    outer_ring: { name: "Outer Ring", lat: -1.2850, lng: 36.8800, status: "green", type: "route_alt", zone: "Eastlands", desc: "Bypass route", spotterConfirm: 0 },
+    country_bus: { name: "Country Bus", lat: -1.2820, lng: 36.8200, status: "yellow", type: "end", zone: "CBD", desc: "Terminal congestion", spotterConfirm: 0 },
+    naccico: { name: "NACCICO", lat: -1.2800, lng: 36.8300, status: "green", type: "end", zone: "CBD", desc: "Industrial area", spotterConfirm: 0 },
 };
 
-// ===== ROUTE PATHS (Based on Digital Matatus GTFS + Real Nairobi Road Network) =====
 const ROUTE_PATHS = {
     main_jogoo: {
-        id: "main_jogoo",
-        name: "Main Jogoo Road (Route 39)",
-        description: "Temple Rd → Landhies → Jogoo Rd → Kangundo Rd → Kayole",
-        color: "#FF6B35",
-        badge: "PRIMARY",
-        badgeClass: "badge-fastest",
-        time: "65+ min",
-        distance: "16 km",
-        makangas: 0,
-        status: "Heavy jam on Jogoo Rd",
-        statusColor: "#FF3366",
-        statusIcon: "fa-exclamation-triangle",
-        aiReason: "AI detected congestion building 15 min ago — pattern matches rush hour (Digital Matatus data)",
-        coords: [
-            [-1.2833, 36.8167], [-1.2880, 36.8280], [-1.2900, 36.8350], [-1.2920, 36.8450],
-            [-1.2880, 36.8500], [-1.2850, 36.8550], [-1.2820, 36.8600], [-1.2780, 36.8650],
-            [-1.2750, 36.8700], [-1.2700, 36.8750], [-1.2650, 36.8800], [-1.2600, 36.8850],
-            [-1.2550, 36.8900], [-1.2500, 36.8950], [-1.2450, 36.9000], [-1.2400, 36.9050],
-            [-1.2350, 36.9100], [-1.2300, 36.9150]
-        ],
-        stages: ["temple_road", "muthurwa", "landhies", "city_stadium", "shauri_moyo", 
-                "makadara", "maziwa", "hamza", "donholm", "kangundo_jn", 
-                "saika", "kayole_jn", "solace", "stage_18", "kwa_miti", 
-                "pheroz", "komarock", "caltex"]
+        id: "main_jogoo", name: "Route 39 Jogoo Road", description: "Temple Rd → Landhies → Jogoo Rd → Kangundo Rd → Kayole",
+        color: "#FF6B35", badge: "PRIMARY", badgeClass: "badge-avoid", time: "65+ min", distance: "16 km", makangas: 0,
+        status: "Heavy jam confirmed", statusColor: "#FF3366", statusIcon: "fa-exclamation-triangle",
+        aiReason: "Jogoo Rd jammed — avoid during rush hour", coords: [
+            [-1.2833,36.8167], [-1.2880,36.8280], [-1.2900,36.8350], [-1.2920,36.8450],
+            [-1.2880,36.8500], [-1.2850,36.8550], [-1.2820,36.8600], [-1.2780,36.8650],
+            [-1.2750,36.8700], [-1.2700,36.8750], [-1.2650,36.8800], [-1.2600,36.8850],
+            [-1.2550,36.8900], [-1.2500,36.8950], [-1.2450,36.9000], [-1.2400,36.9050],
+            [-1.2350,36.9100], [-1.2300,36.9150]
+        ], stages: ["temple_road","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
     },
     alt_buruburu: {
-        id: "alt_buruburu",
-        name: "Buruburu → Juza Rd Shortcut",
-        description: "Caltex → LEFT → Buruburu → Juja Rd → CBD (avoids Jogoo Rd jam)",
-        color: "#00D4AA",
-        badge: "FASTEST",
-        badgeClass: "badge-fastest",
-        time: "42 min",
-        distance: "18 km",
-        makangas: 8,
-        status: "5 spotters confirm clear",
-        statusColor: "#00D4AA",
-        statusIcon: "fa-check-double",
-        aiReason: "AI predicts 20-25 min savings based on 30-day Digital Matatus traffic pattern",
-        coords: [
-            [-1.2300, 36.9150], [-1.2350, 36.9100], [-1.2400, 36.9050], [-1.2450, 36.9000],
-            [-1.2500, 36.8950], [-1.2550, 36.8900], [-1.2600, 36.8850], [-1.2650, 36.8800],
-            [-1.2700, 36.8750], [-1.2750, 36.8700], [-1.2800, 36.8700], [-1.2750, 36.8600],
-            [-1.2700, 36.8550], [-1.2680, 36.8500], [-1.2650, 36.8450], [-1.2600, 36.8400],
-            [-1.2550, 36.8350], [-1.2500, 36.8300], [-1.2450, 36.8250], [-1.2400, 36.8200],
-            [-1.2350, 36.8150], [-1.2833, 36.8167]
-        ],
-        stages: ["caltex", "komarock", "pheroz", "kwa_miti", "stage_18", "solace", 
-                "kayole_jn", "saika", "kangundo_jn", "donholm", "buruburu", "juja_rd", 
-                "manyanja", "muthurwa", "temple_road"]
+        id: "alt_buruburu", name: "Buruburu → Juja Rd Shortcut", description: "Caltex → LEFT → Buruburu → Juja Rd → CBD",
+        color: "#00D4AA", badge: "FASTEST", badgeClass: "badge-fastest", time: "42 min", distance: "18 km", makangas: 8,
+        status: "Clear — 8 makangas using", statusColor: "#00D4AA", statusIcon: "fa-check-double",
+        aiReason: "Saves 23 min vs Jogoo Rd during rush", coords: [
+            [-1.2300,36.9150], [-1.2350,36.9100], [-1.2400,36.9050], [-1.2450,36.9000],
+            [-1.2500,36.8950], [-1.2550,36.8900], [-1.2600,36.8850], [-1.2650,36.8800],
+            [-1.2700,36.8750], [-1.2750,36.8700], [-1.2800,36.8700], [-1.2750,36.8600],
+            [-1.2700,36.8550], [-1.2680,36.8500], [-1.2650,36.8450], [-1.2600,36.8400],
+            [-1.2550,36.8350], [-1.2500,36.8300], [-1.2450,36.8250], [-1.2400,36.8200],
+            [-1.2350,36.8150], [-1.2833,36.8167]
+        ], stages: ["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","buruburu","juja_rd","manyanja","muthurwa","temple_road"]
     },
     alt_fedha: {
-        id: "alt_fedha",
-        name: "Fedha Estate Backroads",
-        description: "Secret route through Fedha Estate — muddy if rain (veteran makanga route)",
-        color: "#FFB800",
-        badge: "SECRET",
-        badgeClass: "badge-secret",
-        time: "35 min",
-        distance: "17 km",
-        makangas: 2,
-        status: "Muddy if rain — 2 spotters",
-        statusColor: "#FFB800",
-        statusIcon: "fa-cloud-rain",
-        aiReason: "AI learned this from 2 experienced conductors — high accuracy when dry (Digital Matatus informal routes)",
-        coords: [
-            [-1.2600, 36.8850], [-1.2620, 36.8870], [-1.2650, 36.8950], [-1.2680, 36.8970],
-            [-1.2700, 36.8980], [-1.2720, 36.9000], [-1.2700, 36.8850], [-1.2680, 36.8800],
-            [-1.2650, 36.8750], [-1.2600, 36.8700], [-1.2550, 36.8650], [-1.2500, 36.8600],
-            [-1.2450, 36.8550], [-1.2400, 36.8500], [-1.2350, 36.8450], [-1.2300, 36.8400],
-            [-1.2250, 36.8350], [-1.2200, 36.8300], [-1.2833, 36.8167]
-        ],
-        stages: ["kayole_jn", "fedha", "umoja", "pipeline", "donholm", "temple_road"]
+        id: "alt_fedha", name: "Fedha Estate Backroads", description: "Secret route — muddy if rain",
+        color: "#FFB800", badge: "SECRET", badgeClass: "badge-secret", time: "35 min", distance: "17 km", makangas: 2,
+        status: "Muddy if rain — 2 makangas", statusColor: "#FFB800", statusIcon: "fa-cloud-rain",
+        aiReason: "Veteran route — fastest when dry", coords: [
+            [-1.2600,36.8850], [-1.2620,36.8870], [-1.2650,36.8950], [-1.2680,36.8970],
+            [-1.2700,36.8980], [-1.2720,36.9000], [-1.2700,36.8850], [-1.2680,36.8800],
+            [-1.2650,36.8750], [-1.2600,36.8700], [-1.2550,36.8650], [-1.2500,36.8600],
+            [-1.2450,36.8550], [-1.2400,36.8500], [-1.2350,36.8450], [-1.2300,36.8400],
+            [-1.2250,36.8350], [-1.2200,36.8300], [-1.2833,36.8167]
+        ], stages: ["kayole_jn","fedha","umoja","pipeline","donholm","temple_road"]
     },
     alt_outer_ring: {
-        id: "alt_outer_ring",
-        name: "Outer Ring Bypass",
-        description: "Longer distance but bypasses main route jams (Digital Matatus verified)",
-        color: "#4A90E2",
-        badge: "SHORTCUT",
-        badgeClass: "badge-shortcut",
-        time: "38 min",
-        distance: "20 km",
-        makangas: 3,
-        status: "Rough road — 3 spotters",
-        statusColor: "#FFB800",
-        statusIcon: "fa-info-circle",
-        aiReason: "AI suggests this when main route delay exceeds 30 min (Digital Matatus pattern)",
-        coords: [
-            [-1.2300, 36.9150], [-1.2350, 36.9100], [-1.2400, 36.9050], [-1.2450, 36.9000],
-            [-1.2500, 36.8950], [-1.2550, 36.8900], [-1.2600, 36.8850], [-1.2650, 36.8800],
-            [-1.2700, 36.8750], [-1.2750, 36.8700], [-1.2800, 36.8750], [-1.2850, 36.8800],
-            [-1.2900, 36.8750], [-1.2950, 36.8700], [-1.3000, 36.8650], [-1.3050, 36.8600],
-            [-1.3100, 36.8550], [-1.3150, 36.8500], [-1.3200, 36.8450], [-1.3250, 36.8400],
-            [-1.3300, 36.8350], [-1.3350, 36.8300], [-1.3400, 36.8250], [-1.3450, 36.8200],
-            [-1.2833, 36.8167]
-        ],
-        stages: ["caltex", "komarock", "pheroz", "kwa_miti", "stage_18", "solace", 
-                "kayole_jn", "saika", "kangundo_jn", "donholm", "outer_ring", "temple_road"]
+        id: "alt_outer_ring", name: "Outer Ring Bypass", description: "Longer but bypasses jams",
+        color: "#4A90E2", badge: "SHORTCUT", badgeClass: "badge-shortcut", time: "38 min", distance: "20 km", makangas: 3,
+        status: "Rough road — 3 makangas", statusColor: "#FFB800", statusIcon: "fa-info-circle",
+        aiReason: "Use when main route delay > 30 min", coords: [
+            [-1.2300,36.9150], [-1.2350,36.9100], [-1.2400,36.9050], [-1.2450,36.9000],
+            [-1.2500,36.8950], [-1.2550,36.8900], [-1.2600,36.8850], [-1.2650,36.8800],
+            [-1.2700,36.8750], [-1.2750,36.8700], [-1.2800,36.8750], [-1.2850,36.8800],
+            [-1.2900,36.8750], [-1.2950,36.8700], [-1.3000,36.8650], [-1.3050,36.8600],
+            [-1.3100,36.8550], [-1.3150,36.8500], [-1.3200,36.8450], [-1.3250,36.8400],
+            [-1.3300,36.8350], [-1.3350,36.8300], [-1.3400,36.8250], [-1.3450,36.8200],
+            [-1.2833,36.8167]
+        ], stages: ["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","outer_ring","temple_road"]
     }
 };
 
-// ===== SPOTTER DATA (Realistic network based on Digital Matatus stop data) =====
-const SPOTTERS = [
-    { id: "caltex", name: "Caltex Jn", status: "online", avatar: "C", reports: 12, location: "Caltex Junction", lastActive: "2 min ago" },
-    { id: "komarock", name: "Komarock", status: "online", avatar: "K", reports: 8, location: "Komarock Rbt", lastActive: "5 min ago" },
-    { id: "saika", name: "Saika", status: "online", avatar: "S", reports: 15, location: "Saika Jn", lastActive: "1 min ago" },
-    { id: "buruburu", name: "Buruburu", status: "busy", avatar: "B", reports: 6, location: "Buruburu Stage", lastActive: "8 min ago" },
-    { id: "jogoo", name: "Jogoo Rd", status: "online", avatar: "J", reports: 9, location: "Hamza Stage", lastActive: "3 min ago" },
-    { id: "cbd", name: "CBD Temple", status: "online", avatar: "D", reports: 11, location: "Temple Rd", lastActive: "4 min ago" },
-    { id: "donholm", name: "Donholm", status: "online", avatar: "O", reports: 7, location: "Donholm Rbt", lastActive: "6 min ago" },
-    { id: "hamza", name: "Hamza", status: "online", avatar: "H", reports: 5, location: "Hamza Stage", lastActive: "2 min ago" },
-    { id: "city", name: "City Stadium", status: "busy", avatar: "Y", reports: 4, location: "City Stadium", lastActive: "10 min ago" }
-];
-
-// ===== AI INSIGHTS (Based on Digital Matatus traffic patterns) =====
-const AI_INSIGHTS = [
-    "Traffic building on Jogoo Rd. Buruburu route likely to save 20-25 min based on pattern from last 30 days.",
-    "Komarock lorry breakdown — expect 10-15 min delay. Consider Fedha backroads if familiar.",
-    "Rain expected at 4PM. Fedha route will be muddy — stick to main route this afternoon.",
-    "Friday pattern: Jogoo Rd clears by 10AM. Check again before choosing (Digital Matatus data).",
-    "3 makangas reported police checkpoint on Outer Ring. Avoid if carrying excess.",
-    "AI predicts Caltex junction will clear in 12 minutes based on current flow rate.",
-    "Heavy passenger load at Saika. Expect 5 min wait for full vehicle.",
-    "City Stadium roundabout showing unusual delay — possible accident ahead.",
-    "Digital Matatus data shows 85% of Route 39 nganyas use Buruburu shortcut during rush hour.",
-    "Fedha route 40% faster when dry, but 60% slower when wet — check weather before choosing."
-];
-
-// ===== LEADERBOARD DATA =====
-const LEADERBOARD = [
-    { rank: 1, name: "Makanga Joe", sacco: "Kayole Star", points: 2450, streak: 12, reports: 89, accuracy: 97 },
-    { rank: 2, name: "Conductor Mike", sacco: "Metro Trans", points: 1890, streak: 8, reports: 67, accuracy: 95 },
-    { rank: 3, name: "Driver Kevo", sacco: "Kayole Star", points: 1550, streak: 5, reports: 42, accuracy: 94 },
-    { rank: 4, name: "Makanga Ben", sacco: "Metro Trans", points: 1120, streak: 4, reports: 38, accuracy: 92 },
-    { rank: 5, name: "Conductor Ali", sacco: "Route 39", points: 980, streak: 3, reports: 31, accuracy: 90 },
-    { rank: 6, name: "Driver Peter", sacco: "Kayole Star", points: 850, streak: 2, reports: 25, accuracy: 89 },
-    { rank: 7, name: "You", sacco: "Route 39", points: 1240, streak: 7, reports: 48, accuracy: 94, isYou: true }
-];
+// ===== YOU ARE THE SPOTTER =====
+const MY_SPOTTER_ID = "user_" + Math.random().toString(36).substr(2, 9);
+let myLocation = null;
+let myReports = [];
+let myPoints = 0;
 
 // ===== APP STATE =====
 const appState = {
-    voiceEnabled: false,
-    voiceListening: false,
-    navigating: false,
     currentRoute: "alt_buruburu",
-    userPoints: 1240,
-    userStreak: 7,
-    userRank: 7,
-    reportsToday: 48,
-    tripsToday: 156,
     bottomSheetCollapsed: false,
     spotterPanelVisible: false,
     map: null,
     routeLayers: {},
     markers: {},
     vehicleMarkers: [],
-    vehiclePositions: [0, 3, 6, 9, 12]
+    vehiclePositions: [0, 3, 6, 9, 12],
+    selectedStageForReport: null
 };
 
 // ===== INITIALIZE =====
@@ -601,69 +523,113 @@ function initApp() {
     renderSpotterList();
     renderTimeline();
     renderAltRoutes();
-    renderLeaderboard();
     bindEvents();
-    startLiveSimulation();
     updateRouteDisplay();
+    showToast("🎉 Welcome! You are now a spotter. Tap any stage to report.");
 }
 
-// ===== MAP INITIALIZATION =====
+// ===== MAP WITH ZOOM CONTROLS =====
 function initMap() {
     try {
-        appState.map = L.map("map", { zoomControl: false, attributionControl: false }).setView([-1.268, 36.87], 12);
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd" }).addTo(appState.map);
+        appState.map = L.map("map", {
+            zoomControl: true,  // ENABLED
+            attributionControl: false
+        }).setView([-1.268, 36.87], 12);
+
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+            maxZoom: 19, subdomains: "abcd"
+        }).addTo(appState.map);
+
+        // Custom zoom position
+        appState.map.zoomControl.setPosition('bottomleft');
+
         document.getElementById("mapLoading").classList.add("hidden");
         drawRoutes();
         addStageMarkers();
         setInterval(updateVehicles, 2000);
         updateVehicles();
-        showToast("🎉 Map loaded! Digital Matatus data integrated");
+
+        // Get user location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    myLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    L.marker([myLocation.lat, myLocation.lng], {
+                        icon: L.divIcon({
+                            className: "my-location-marker",
+                            html: '<div style="width:20px;height:20px;background:#4A90E2;border:3px solid white;border-radius:50%;box-shadow:0 0 15px #4A90E2;"></div>',
+                            iconSize: [20, 20]
+                        })
+                    }).addTo(appState.map).bindPopup("<b>You are here</b><br>Spotter ID: " + MY_SPOTTER_ID);
+                },
+                err => console.log("GPS not available:", err),
+                { enableHighAccuracy: true }
+            );
+        }
     } catch (e) {
-        console.error("Map init error:", e);
-        document.getElementById("mapLoading").innerHTML = "<span style='color:var(--danger)'>Map failed to load. Check internet.</span>";
+        console.error("Map error:", e);
     }
 }
 
-// ===== DRAW ROUTES =====
+// ===== DRAW ROUTES WITH LEGEND COLORS =====
 function drawRoutes() {
     Object.entries(ROUTE_PATHS).forEach(([id, route]) => {
         const isActive = id === appState.currentRoute;
-        const opacity = isActive ? 0.9 : 0.15;
+        const opacity = isActive ? 0.9 : 0.2;
         const weight = isActive ? 5 : 2;
         const dash = id === "main_jogoo" ? null : id === "alt_fedha" ? "5, 8" : id === "alt_outer_ring" ? "10, 8" : "8, 4";
         if (appState.routeLayers[id]) appState.map.removeLayer(appState.routeLayers[id]);
-        appState.routeLayers[id] = L.polyline(route.coords, { color: route.color, weight: weight, opacity: opacity, dashArray: dash }).addTo(appState.map);
+        appState.routeLayers[id] = L.polyline(route.coords, {
+            color: route.color, weight: weight, opacity: opacity, dashArray: dash
+        }).addTo(appState.map);
     });
 }
 
-// ===== ADD STAGE MARKERS =====
+// ===== ADD STAGE MARKERS — COLORS MATCH LEGEND =====
 function addStageMarkers() {
     Object.entries(STAGES).forEach(([key, stage]) => {
-        const color = stage.status === "green" ? "#00D4AA" : stage.status === "yellow" ? "#FFB800" : "#FF3366";
-        let icon = "📍";
-        if (stage.type === "start") icon = "🚌";
-        else if (stage.type === "end") icon = "🏁";
-        else if (stage.type === "decision") icon = "⚠️";
-        else if (stage.type === "choke") icon = "🚧";
-        else if (stage.type === "interchange") icon = "🔄";
-        const customIcon = L.divIcon({
-            className: "custom-marker-container",
-            html: `<div class="custom-marker ${stage.status} ${stage.type === "choke" ? "choke" : ""}" style="border-color:${color}">${icon} ${stage.name}</div>`,
-            iconSize: [160, 30], iconAnchor: [80, 30]
+        // Marker color matches legend exactly
+        let markerClass = "marker-green";
+        let glowColor = "#00D4AA";
+        if (stage.status === "yellow") { markerClass = "marker-yellow"; glowColor = "#FFB800"; }
+        else if (stage.status === "red") { markerClass = "marker-red"; glowColor = "#FF3366"; }
+        else if (stage.type === "decision") { markerClass = "marker-primary"; glowColor = "#FF6B35"; }
+        else if (stage.type === "start" || stage.type === "end") { markerClass = "marker-accent"; glowColor = "#00D4AA"; }
+
+        const markerIcon = L.divIcon({
+            className: "stage-marker-container",
+            html: `<div class="${markerClass}"></div>`,
+            iconSize: [22, 22], iconAnchor: [11, 11]
         });
-        const marker = L.marker([stage.lat, stage.lng], { icon: customIcon }).addTo(appState.map);
-        const popupContent = `<div style="font-family:Inter,sans-serif; min-width:240px;">` +
-            `<h3 style="margin:0 0 6px; font-size:15px; color:#1A1A2E; font-weight:700;">${stage.name}</h3>` +
-            (stage.note ? `<p style="margin:0 0 6px; color:#FF6B35; font-weight:600; font-size:12px; padding:4px 8px; background:#FFF3E0; border-radius:6px;">${stage.note}</p>` : "") +
-            `<p style="margin:0; font-size:12px; color:#555; line-height:1.4;">${stage.desc}</p>` +
-            `<p style="margin:6px 0 0; font-size:11px; color:#888;">` +
-            `Status: <span style="color:${color}; font-weight:700; text-transform:uppercase;">${stage.status}</span> • ` +
-            `Spotters: <span style="color:#00D4AA; font-weight:700;">${stage.spotterConfirm} confirm</span>` +
-            `${stage.dmVerified ? ' • <span style="color:#4A90E2; font-weight:700;">✓ Digital Matatus</span>' : ''}` +
-            `</p></div>`;
+
+        const marker = L.marker([stage.lat, stage.lng], { icon: markerIcon }).addTo(appState.map);
+
+        // Popup with report button
+        const popupContent = `
+            <div style="font-family:Inter,sans-serif; min-width:220px;">
+                <h3 style="margin:0 0 6px; font-size:14px; color:#1A1A2E; font-weight:700;">${stage.name}</h3>
+                ${stage.note ? `<p style="margin:0 0 6px; color:#FF6B35; font-weight:600; font-size:11px; padding:3px 6px; background:#FFF3E0; border-radius:4px;">${stage.note}</p>` : ""}
+                <p style="margin:0; font-size:11px; color:#555; line-height:1.4;">${stage.desc}</p>
+                <p style="margin:6px 0 0; font-size:10px; color:#888;">
+                    Status: <span style="color:${glowColor}; font-weight:700; text-transform:uppercase;">${stage.status}</span>
+                </p>
+                <button class="report-stage-btn" onclick="reportStage('${key}')">
+                    <i class="fas fa-bullhorn"></i> Report This Stage
+                </button>
+            </div>
+        `;
         marker.bindPopup(popupContent);
         appState.markers[key] = marker;
     });
+}
+
+// ===== REPORT A SPECIFIC STAGE =====
+function reportStage(stageKey) {
+    appState.selectedStageForReport = stageKey;
+    const stage = STAGES[stageKey];
+    document.getElementById("reportModalTitle").innerHTML = `🚨 Report: ${stage.name}`;
+    document.getElementById("reportModalDesc").textContent = `Current status: ${stage.status.toUpperCase()}. What do you see?`;
+    document.getElementById("reportModal").classList.add("active");
 }
 
 // ===== ANIMATED VEHICLES =====
@@ -680,14 +646,14 @@ function updateVehicles() {
         const lat = activePath[idx][0] + (activePath[nextIdx][0] - activePath[idx][0]) * frac;
         const lng = activePath[idx][1] + (activePath[nextIdx][1] - activePath[idx][1]) * frac;
         const vMarker = L.marker([lat, lng], {
-            icon: L.divIcon({ className: "vehicle-marker-container", html: `<div class="vehicle-marker"></div>`, iconSize: [16, 16] })
+            icon: L.divIcon({ className: "vehicle-container", html: '<div class="vehicle-marker"></div>', iconSize: [14, 14] })
         }).addTo(appState.map);
         appState.vehicleMarkers.push(vMarker);
     });
     appState.vehiclePositions = appState.vehiclePositions.map(p => p + 0.04);
 }
 
-// ===== RENDER ROUTE SELECTOR =====
+// ===== RENDER FUNCTIONS =====
 function renderRouteSelector() {
     const selector = document.getElementById("routeSelector");
     const routes = [
@@ -702,7 +668,6 @@ function renderRouteSelector() {
     }).join("");
 }
 
-// ===== RENDER ROUTE BAR =====
 function renderRouteBar() {
     const bar = document.getElementById("routeBar");
     const activeRoute = ROUTE_PATHS[appState.currentRoute];
@@ -715,19 +680,24 @@ function renderRouteBar() {
     bar.innerHTML = pills.join("");
 }
 
-// ===== RENDER SPOTTER LIST =====
 function renderSpotterList() {
     const list = document.getElementById("spotterList");
-    list.innerHTML = SPOTTERS.map(s => {
-        return `<div class="spotter-item">` +
-            `<div class="spotter-avatar">${s.avatar}</div>` +
-            `<div class="spotter-info"><div class="name">${s.name}</div><div class="location">${s.location}</div></div>` +
-            `<span class="spotter-status ${s.status}"></span>` +
-            `</div>`;
-    }).join("");
+    // Only show YOU as the real spotter
+    list.innerHTML = `
+        <div class="spotter-item" style="border:1px solid var(--primary); border-radius:8px; padding:8px; background:rgba(255,107,53,0.1);">
+            <div class="spotter-avatar" style="background:linear-gradient(135deg, var(--primary), var(--primary-dark));">YOU</div>
+            <div class="spotter-info">
+                <div class="name" style="color:var(--primary);">You (Spotter)</div>
+                <div class="location">${myLocation ? "Location tracked" : "Enable GPS"}</div>
+            </div>
+            <span class="spotter-status online"></span>
+        </div>
+        <div style="font-size:10px; color:var(--text-muted); margin-top:8px; text-align:center;">
+            You are the only spotter right now.<br>Share this app with other makangas!
+        </div>
+    `;
 }
 
-// ===== RENDER TIMELINE =====
 function renderTimeline() {
     const timeline = document.getElementById("routeTimeline");
     timeline.innerHTML = "";
@@ -743,7 +713,6 @@ function renderTimeline() {
         else if (stage.type === "choke") dotClass = "red";
         const statusIcon = stage.status === "green" ? "fa-check" : stage.status === "yellow" ? "fa-exclamation" : "fa-times";
         const statusText = stage.status === "green" ? "Clear" : stage.status === "yellow" ? "Slow" : "Jammed";
-        const confirmBadge = stage.spotterConfirm > 2 ? `<span class="spotter-confirm"><i class="fas fa-check-double" style="font-size:8px;"></i> ${stage.spotterConfirm} spotters</span>` : "";
         const item = document.createElement("div");
         item.className = "timeline-item";
         item.setAttribute("data-stage", stageKey);
@@ -752,7 +721,6 @@ function renderTimeline() {
                 `<div class="timeline-info">` +
                     `<h3>${stage.name} ${stage.type === "decision" ? "⚠️" : stage.type === "choke" ? "🚧" : ""}</h3>` +
                     `<p>${stage.desc}</p>` +
-                    (confirmBadge ? `<div style="margin-top:4px;">${confirmBadge}</div>` : "") +
                 `</div>` +
                 `<div class="timeline-status ${stage.status}"><i class="fas ${statusIcon}"></i> ${statusText}</div>` +
             `</div>`;
@@ -760,7 +728,6 @@ function renderTimeline() {
     });
 }
 
-// ===== RENDER ALTERNATIVE ROUTES =====
 function renderAltRoutes() {
     const container = document.getElementById("altRoutesContainer");
     container.innerHTML = "";
@@ -769,8 +736,7 @@ function renderAltRoutes() {
         card.className = `alt-route-card ${route.id === appState.currentRoute ? "selected" : ""}`;
         card.setAttribute("data-route", route.id);
         card.innerHTML = `<div class="route-name">` +
-            `<i class="fas fa-route" style="color:${route.color}"></i>` +
-            route.name +
+            `<i class="fas fa-route" style="color:${route.color}"></i>` + route.name +
             `<span class="badge ${route.badgeClass}">${route.badge}</span>` +
             `</div>` +
             `<div class="alt-route-details">` +
@@ -783,24 +749,6 @@ function renderAltRoutes() {
     });
 }
 
-// ===== RENDER LEADERBOARD =====
-function renderLeaderboard() {
-    const list = document.getElementById("leaderboardList");
-    list.innerHTML = "";
-    LEADERBOARD.forEach(entry => {
-        const rankClass = entry.rank === 1 ? "gold" : entry.rank === 2 ? "silver" : entry.rank === 3 ? "bronze" : "normal";
-        const isYou = entry.isYou;
-        const item = document.createElement("div");
-        item.className = "leaderboard-item";
-        if (isYou) { item.style.border = "1px solid var(--primary)"; item.style.background = "rgba(255,107,53,0.08)"; }
-        item.innerHTML = `<div class="leaderboard-rank ${rankClass}">${entry.rank}</div>` +
-            `<div class="leaderboard-info"><h4>${entry.name} ${isYou ? "<span style='color:var(--primary)'>(You)</span>" : ""}</h4><p>${entry.sacco} • ${entry.reports} reports • ${entry.accuracy}% accuracy</p></div>` +
-            `<div class="leaderboard-score">${entry.points.toLocaleString()} ${entry.streak >= 5 ? "🔥" : ""}</div>`;
-        list.appendChild(item);
-    });
-}
-
-// ===== UPDATE ROUTE DISPLAY =====
 function updateRouteDisplay() {
     const route = ROUTE_PATHS[appState.currentRoute];
     if (!route) return;
@@ -821,18 +769,28 @@ function bindEvents() {
     document.getElementById("routesFab").addEventListener("click", toggleBottomSheet);
     document.getElementById("spotterBtn").addEventListener("click", toggleSpotterPanel);
     document.getElementById("notifBtn").addEventListener("click", showNotifications);
-    document.getElementById("reportFab").addEventListener("click", showReportModal);
+    document.getElementById("reportFab").addEventListener("click", () => { appState.selectedStageForReport = null; document.getElementById("reportModalTitle").innerHTML = "🚨 Report Condition"; document.getElementById("reportModalDesc").textContent = "What is happening on your route?"; document.getElementById("reportModal").classList.add("active"); });
     document.getElementById("closeReportModal").addEventListener("click", closeReportModal);
-    document.getElementById("submitReportBtn").addEventListener("click", () => submitReport("custom"));
+    document.getElementById("submitReportBtn").addEventListener("click", () => submitReport());
     document.querySelectorAll(".report-option").forEach(opt => {
-        opt.addEventListener("click", function() { submitReport(this.getAttribute("data-report")); });
+        opt.addEventListener("click", function() {
+            const reportType = this.getAttribute("data-report");
+            const stage = appState.selectedStageForReport ? STAGES[appState.selectedStageForReport] : null;
+            if (stage) {
+                stage.status = reportType === "clear" ? "green" : reportType === "slow" ? "yellow" : reportType === "jam" ? "red" : "red";
+                stage.spotterConfirm = 1; // You confirmed it
+                updateMarkerColor(appState.selectedStageForReport);
+                renderTimeline();
+                renderRouteBar();
+            }
+            submitReport(reportType);
+        });
     });
     document.getElementById("voiceFab").addEventListener("click", showVoiceModal);
     document.getElementById("closeVoiceModal").addEventListener("click", closeVoiceModal);
     document.getElementById("voiceBtn").addEventListener("click", toggleVoiceListening);
     document.getElementById("navFab").addEventListener("click", startNavigation);
-    document.getElementById("userScoreBtn").addEventListener("click", showLeaderboard);
-    document.getElementById("closeLeaderboard").addEventListener("click", closeLeaderboard);
+    document.getElementById("myLocationBtn").addEventListener("click", centerOnMyLocation);
     document.getElementById("routeSelector").addEventListener("click", function(e) {
         const chip = e.target.closest(".route-chip");
         if (chip) selectRoute(chip.getAttribute("data-route"));
@@ -854,6 +812,23 @@ function bindEvents() {
     });
 }
 
+// ===== UPDATE MARKER COLOR AFTER REPORT =====
+function updateMarkerColor(stageKey) {
+    const stage = STAGES[stageKey];
+    if (!stage || !appState.markers[stageKey]) return;
+    let markerClass = "marker-green";
+    if (stage.status === "yellow") markerClass = "marker-yellow";
+    else if (stage.status === "red") markerClass = "marker-red";
+    else if (stage.type === "decision") markerClass = "marker-primary";
+    else if (stage.type === "start" || stage.type === "end") markerClass = "marker-accent";
+
+    appState.markers[stageKey].setIcon(L.divIcon({
+        className: "stage-marker-container",
+        html: `<div class="${markerClass}"></div>`,
+        iconSize: [22, 22], iconAnchor: [11, 11]
+    }));
+}
+
 // ===== UI FUNCTIONS =====
 function toggleBottomSheet() {
     const sheet = document.getElementById("bottomSheet");
@@ -868,7 +843,7 @@ function toggleSpotterPanel() {
 function focusStage(stageKey) {
     const stage = STAGES[stageKey];
     if (stage && appState.markers[stageKey] && appState.map) {
-        appState.map.flyTo([stage.lat, stage.lng], 15, { duration: 1 });
+        appState.map.flyTo([stage.lat, stage.lng], 16, { duration: 1 });
         appState.markers[stageKey].openPopup();
     }
 }
@@ -886,81 +861,77 @@ function selectRoute(routeId) {
     const route = ROUTE_PATHS[routeId];
     if (route) showToast(`✅ ${route.name} selected. ${route.time} ETA.`);
 }
+function centerOnMyLocation() {
+    if (myLocation && appState.map) {
+        appState.map.flyTo([myLocation.lat, myLocation.lng], 16, { duration: 1 });
+        showToast("📍 Centered on your location");
+    } else {
+        showToast("⚠️ Enable GPS to see your location");
+    }
+}
 
 // ===== MODAL FUNCTIONS =====
 function showReportModal() { document.getElementById("reportModal").classList.add("active"); }
-function closeReportModal() { document.getElementById("reportModal").classList.remove("active"); }
+function closeReportModal() { document.getElementById("reportModal").classList.remove("active"); appState.selectedStageForReport = null; }
 function showVoiceModal() { document.getElementById("voiceModal").classList.add("active"); }
 function closeVoiceModal() { document.getElementById("voiceModal").classList.remove("active"); }
-function showLeaderboard() { document.getElementById("leaderboardModal").classList.add("active"); }
-function closeLeaderboard() { document.getElementById("leaderboardModal").classList.remove("active"); }
 
 // ===== VOICE =====
 function toggleVoiceListening() {
     const btn = document.getElementById("voiceBtn");
-    appState.voiceListening = !appState.voiceListening;
-    if (appState.voiceListening) {
-        btn.innerHTML = '<i class="fas fa-stop"></i> Listening...';
-        btn.style.background = "var(--danger)";
-        setTimeout(() => {
-            appState.voiceListening = false;
-            btn.innerHTML = '<i class="fas fa-microphone"></i> Tap to Speak';
-            btn.style.background = "";
-            closeVoiceModal();
-            showToast('🎙️ "Jam hapa Caltex" — Report received! +10 points');
-            updateUserScore(10);
-        }, 3000);
-    } else {
+    btn.innerHTML = '<i class="fas fa-stop"></i> Listening...';
+    btn.style.background = "var(--danger)";
+    setTimeout(() => {
         btn.innerHTML = '<i class="fas fa-microphone"></i> Tap to Speak';
         btn.style.background = "";
-    }
+        closeVoiceModal();
+        showToast('🎙️ Voice report received! +10 points');
+        addPoints(10);
+    }, 3000);
 }
 
 // ===== REPORTING =====
 function submitReport(type) {
     closeReportModal();
+    if (!type) type = "custom";
     const messages = {
-        clear: "✅ Road clear report sent! +5 points",
-        slow: "⚠️ Slow traffic reported! +5 points",
-        jam: "🚨 Jam reported! Alert sent to 12 makangas! +15 points",
-        accident: "🚔 Accident/police reported! +15 points",
-        custom: "📋 Report received! +10 points"
+        clear: "✅ Road clear reported! +5 pts",
+        slow: "⚠️ Slow traffic reported! +5 pts",
+        jam: "🚨 Jam reported! +15 pts",
+        accident: "🚔 Accident/police reported! +15 pts",
+        custom: "📋 Report received! +10 pts"
     };
     const points = type === "jam" || type === "accident" ? 15 : type === "custom" ? 10 : 5;
     showToast(messages[type] || messages.custom);
-    updateUserScore(points);
+    addPoints(points);
+    myReports.push({ type: type, time: new Date().toISOString(), stage: appState.selectedStageForReport });
 }
-function updateUserScore(points) {
-    appState.userPoints += points;
-    document.getElementById("userScoreText").innerHTML = `<i class="fas fa-fire"></i> ${appState.userPoints.toLocaleString()} pts`;
+
+function addPoints(points) {
+    myPoints += points;
+    document.getElementById("userScoreText").innerHTML = `<i class="fas fa-fire"></i> ${myPoints} pts`;
 }
 
 // ===== NAVIGATION =====
 function startNavigation() {
-    appState.navigating = !appState.navigating;
-    if (appState.navigating) {
-        showToast("🗺️ Navigation started! Following route...");
-        const route = ROUTE_PATHS[appState.currentRoute];
-        if (route) {
-            const stages = route.stages;
-            let delay = 3000;
-            stages.forEach((stageKey, i) => {
-                if (i > 0 && i < stages.length - 1) {
-                    const stage = STAGES[stageKey];
-                    if (stage && stage.type === "decision") {
-                        setTimeout(() => { showToast(`🔊 "Approaching ${stage.name}. ${stage.note || ""}"`); }, delay);
-                        delay += 3000;
-                    }
+    showToast("🗺️ Navigation started! Follow the highlighted route.");
+    const route = ROUTE_PATHS[appState.currentRoute];
+    if (route) {
+        let delay = 3000;
+        route.stages.forEach((stageKey, i) => {
+            if (i > 0 && i < route.stages.length - 1) {
+                const stage = STAGES[stageKey];
+                if (stage && (stage.type === "decision" || stage.type === "choke")) {
+                    setTimeout(() => { showToast(`🔊 "Approaching ${stage.name}. ${stage.note || ""}"`); }, delay);
+                    delay += 4000;
                 }
-            });
-        }
-    } else {
-        showToast("🛑 Navigation stopped.");
+            }
+        });
     }
 }
 
 // ===== NOTIFICATIONS =====
-function showNotifications() { showToast("📢 New alerts: Komarock lorry cleared. Fedha shortcut muddy today."); }
+function showNotifications() { showToast("📢 You have no new alerts. Start reporting to get updates!"); }
 
 // ===== TOAST =====
 function showToast(message) {
@@ -970,51 +941,6 @@ function showToast(message) {
     toast.innerHTML = message;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
-}
-
-// ===== LIVE DATA SIMULATION =====
-function startLiveSimulation() {
-    setInterval(() => {
-        const keys = Object.keys(STAGES);
-        const randomKey = keys[Math.floor(Math.random() * keys.length)];
-        const statuses = ["green", "green", "green", "yellow", "red"];
-        const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
-        if (STAGES[randomKey].type !== "decision" && Math.random() > 0.7) {
-            STAGES[randomKey].status = newStatus;
-            const marker = appState.markers[randomKey];
-            if (marker) {
-                const color = newStatus === "green" ? "#00D4AA" : newStatus === "yellow" ? "#FFB800" : "#FF3366";
-                const stage = STAGES[randomKey];
-                let icon = "📍";
-                if (stage.type === "start") icon = "🚌";
-                else if (stage.type === "end") icon = "🏁";
-                else if (stage.type === "decision") icon = "⚠️";
-                else if (stage.type === "choke") icon = "🚧";
-                else if (stage.type === "interchange") icon = "🔄";
-                marker.setIcon(L.divIcon({
-                    className: "custom-marker-container",
-                    html: `<div class="custom-marker ${newStatus} ${stage.type === "choke" ? "choke" : ""}" style="border-color:${color}">${icon} ${stage.name}</div>`,
-                    iconSize: [160, 30], iconAnchor: [80, 30]
-                }));
-            }
-            renderTimeline();
-            renderRouteBar();
-            if (newStatus === "red") showToast(`🚨 ALERT: ${STAGES[randomKey].name} — Jam reported!`);
-        }
-        if (Math.random() > 0.8) {
-            const randomInsight = AI_INSIGHTS[Math.floor(Math.random() * AI_INSIGHTS.length)];
-            document.getElementById("aiInsightText").textContent = randomInsight;
-        }
-    }, 15000);
-}
-
-// ===== GPS TRACKING =====
-if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(
-        pos => { if (appState.map) { /* Track user position */ } },
-        err => console.log("GPS error:", err),
-        { enableHighAccuracy: true }
-    );
 }
 
 // ===== START APP =====
