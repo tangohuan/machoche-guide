@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MtaaWatch — Real Spotter Network</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -12,7 +12,6 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-primary);overflow:hidden;height:100vh;width:100vw}
 #app{display:flex;flex-direction:column;height:100vh;position:relative}
-
 .header{background:linear-gradient(135deg,var(--secondary) 0%,#0D1B2A 100%);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:1000;flex-shrink:0}
 .header-brand{display:flex;align-items:center;gap:10px}
 .header-brand .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 15px rgba(255,107,53,0.3);animation:pulse-glow 2s infinite}
@@ -24,7 +23,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .header-btn:hover{background:var(--bg-card-hover);color:var(--text-primary)}
 .header-btn .badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--danger);border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--secondary)}
 .user-score{display:flex;align-items:center;gap:6px;background:rgba(0,212,170,0.12);border:1px solid rgba(0,212,170,0.25);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer}
-
 .route-selector{background:var(--bg-card);padding:8px 14px;display:flex;gap:8px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .route-selector::-webkit-scrollbar{display:none}
 .route-chip{display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bg-dark);border-radius:20px;border:1px solid var(--border);white-space:nowrap;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-secondary)}
@@ -34,28 +32,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .route-chip .dot.green{background:var(--success);box-shadow:0 0 6px var(--success)}
 .route-chip .dot.yellow{background:var(--warning);box-shadow:0 0 6px var(--warning)}
 .route-chip .dot.red{background:var(--danger);box-shadow:0 0 6px var(--danger)}
-
 .map-container{flex:1;position:relative;min-height:0;background:#0a0a14}
 #map{width:100%;height:100%;z-index:1}
 .leaflet-control-zoom{display:block!important}
 .leaflet-control-zoom a{background:var(--bg-card)!important;color:white!important;border:1px solid var(--border)!important}
 .leaflet-control-zoom a:hover{background:var(--bg-card-hover)!important}
 .leaflet-control-attribution{display:none!important}
-
 .map-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;background:var(--bg-dark);gap:12px}
 .map-loading.hidden{display:none}
 .map-loading-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
 .weather-widget{position:absolute;top:60px;right:12px;z-index:500;background:var(--glass);backdrop-filter:blur(15px);border-radius:14px;border:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12px}
 .weather-widget i{font-size:20px;color:var(--warning)}
 .weather-widget .temp{font-weight:700;font-size:14px}
 .weather-widget .condition{color:var(--text-muted);font-size:10px}
-
 .traffic-legend{position:absolute;bottom:100px;left:12px;z-index:500;background:var(--glass);backdrop-filter:blur(10px);border-radius:12px;border:1px solid var(--border);padding:10px;font-size:10px}
 .traffic-legend-item{display:flex;align-items:center;gap:6px;margin-bottom:4px}
 .traffic-legend-color{width:20px;height:4px;border-radius:2px}
-
 .spotter-panel{position:absolute;top:110px;left:12px;z-index:500;background:var(--glass);backdrop-filter:blur(15px);border-radius:16px;border:1px solid var(--border);padding:12px;max-width:240px;display:none;max-height:350px;overflow-y:auto}
 .spotter-panel h4{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:5px}
 .spotter-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11px;border-bottom:1px solid rgba(255,255,255,0.05)}
@@ -68,7 +61,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .spotter-status.online{background:var(--success);box-shadow:0 0 4px var(--success)}
 .spotter-status.busy{background:var(--warning)}
 .spotter-status.offline{background:var(--text-muted)}
-
 .fab-container{position:absolute;bottom:100px;right:14px;z-index:500;display:flex;flex-direction:column;gap:10px}
 .fab{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:white;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);position:relative}
 .fab:active{transform:scale(0.9)}
@@ -79,23 +71,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .fab-quaternary{background:linear-gradient(135deg,var(--info),#357ABD);box-shadow:0 4px 20px rgba(74,144,226,0.4)}
 .fab-label{position:absolute;right:60px;background:var(--glass);backdrop-filter:blur(10px);padding:5px 10px;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;opacity:0;transform:translateX(10px);transition:all 0.2s;pointer-events:none;border:1px solid var(--border)}
 .fab:hover .fab-label{opacity:1;transform:translateX(0)}
-
 .bottom-sheet{position:absolute;bottom:0;left:0;right:0;background:var(--glass);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;border-top:1px solid var(--border);z-index:600;transition:transform 0.4s cubic-bezier(0.32,0.72,0,1);max-height:65vh;display:flex;flex-direction:column}
 .bottom-sheet.collapsed{transform:translateY(calc(100% - 55px))}
 .bottom-sheet-handle{width:36px;height:4px;background:var(--text-muted);border-radius:2px;margin:10px auto;cursor:pointer}
 .bottom-sheet-content{flex:1;overflow-y:auto;padding:0 14px 16px;-webkit-overflow-scrolling:touch}
 .bottom-sheet-content::-webkit-scrollbar{display:none}
-
 .route-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .route-header h2{font-size:16px;font-weight:700}
 .route-header .route-direction{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px}
 .eta-badge{background:linear-gradient(135deg,var(--accent),#00B894);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700}
-
 .ai-insight{background:linear-gradient(135deg,rgba(74,144,226,0.12),rgba(74,144,226,0.04));border:1px solid rgba(74,144,226,0.25);border-radius:14px;padding:12px;margin:12px 0;display:flex;align-items:flex-start;gap:10px}
 .ai-insight i{color:var(--info);font-size:16px;margin-top:2px;flex-shrink:0}
 .ai-insight-content h4{font-size:12px;color:var(--info);font-weight:700;margin-bottom:2px}
 .ai-insight-content p{font-size:11px;color:var(--text-secondary);line-height:1.4}
-
 .smart-route-card{background:linear-gradient(135deg,rgba(255,107,53,0.12),rgba(255,107,53,0.04));border:1px solid rgba(255,107,53,0.25);border-radius:16px;padding:14px;margin:14px 0;position:relative;overflow:hidden}
 .smart-route-card::before{content:'💡';position:absolute;top:10px;right:14px;font-size:18px;opacity:0.5}
 .smart-route-card h3{font-size:11px;color:var(--primary);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
@@ -103,7 +91,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .smart-route-stats{display:flex;gap:14px;flex-wrap:wrap}
 .smart-route-stat{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600}
 .smart-route-stat i{color:var(--primary);font-size:12px}
-
 .timeline{position:relative;padding-left:24px}
 .timeline::before{content:'';position:absolute;left:7px;top:6px;bottom:6px;width:3px;background:linear-gradient(to bottom,var(--success) 0%,var(--success) 30%,var(--warning) 50%,var(--danger) 70%,var(--success) 100%);border-radius:3px}
 .timeline-item{position:relative;padding:8px 0;cursor:pointer;transition:all 0.2s}
@@ -123,7 +110,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .timeline-status.yellow{color:var(--warning)}
 .timeline-status.red{color:var(--danger)}
 .spotter-confirm{display:inline-flex;align-items:center;gap:4px;background:rgba(0,212,170,0.15);border:1px solid rgba(0,212,170,0.3);padding:2px 8px;border-radius:10px;font-size:10px;color:var(--accent);font-weight:600;margin-top:4px}
-
 .alt-routes-section{margin-top:14px}
 .alt-routes-section h3{font-size:11px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
 .alt-route-card{background:var(--bg-dark);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s;position:relative}
@@ -137,7 +123,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .badge-secret{background:var(--accent);color:var(--bg-dark)}
 .alt-route-details{display:flex;gap:12px;font-size:11px;color:var(--text-secondary);flex-wrap:wrap}
 .alt-route-details span{display:flex;align-items:center;gap:3px}
-
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(5px);z-index:2000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
 .modal-overlay.active{opacity:1;pointer-events:all}
 .modal{background:var(--bg-card);border-radius:24px 24px 0 0;width:100%;max-width:500px;max-height:85vh;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.32,0.72,0,1);display:flex;flex-direction:column}
@@ -146,7 +131,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .modal-header h2{font-size:18px;font-weight:700}
 .modal-close{width:34px;height:34px;border-radius:50%;background:var(--bg-dark);border:none;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
 .modal-body{padding:18px;overflow-y:auto;flex:1}
-
 .report-options{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
 .report-option{background:var(--bg-dark);border:2px solid var(--border);border-radius:16px;padding:18px;text-align:center;cursor:pointer;transition:all 0.2s}
 .report-option:hover{border-color:var(--primary);transform:translateY(-2px)}
@@ -156,7 +140,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .report-option.yellow{color:var(--warning)}
 .report-option.red{color:var(--danger)}
 .report-option.blue{color:var(--info)}
-
 .voice-indicator{display:flex;flex-direction:column;align-items:center;gap:20px;padding:30px 0}
 .voice-wave{display:flex;align-items:center;gap:4px;height:60px}
 .voice-bar{width:6px;background:var(--primary);border-radius:3px;animation:voiceWave 1s ease-in-out infinite}
@@ -166,7 +149,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .voice-bar:nth-child(4){height:40px;animation-delay:0.3s}
 .voice-bar:nth-child(5){height:25px;animation-delay:0.4s}
 @keyframes voiceWave{0%,100%{transform:scaleY(0.5);opacity:0.5}50%{transform:scaleY(1);opacity:1}}
-
 .leaderboard-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-dark);border-radius:12px;margin-bottom:8px}
 .leaderboard-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
 .leaderboard-rank.gold{background:linear-gradient(135deg,#FFD700,#FFA500);color:var(--bg-dark)}
@@ -177,45 +159,35 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .leaderboard-info h4{font-size:13px;font-weight:600}
 .leaderboard-info p{font-size:11px;color:var(--text-muted)}
 .leaderboard-score{font-size:14px;font-weight:700;color:var(--accent)}
-
 .live-pulse{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--danger)}
 .live-pulse::before{content:'';width:7px;height:7px;background:var(--danger);border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.2)}}
-
 .toast-container{position:fixed;top:75px;left:50%;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .toast{background:var(--glass);backdrop-filter:blur(15px);border:1px solid var(--border);border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;animation:toastIn 0.3s ease,toastOut 0.3s ease 3.5s forwards;max-width:300px;pointer-events:all}
 @keyframes toastIn{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
 @keyframes toastOut{to{opacity:0;transform:translateY(-15px)}}
-
 .marker-green{background:var(--success);border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 10px var(--success);animation:marker-pulse-green 2s infinite}
 .marker-yellow{background:var(--warning);border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 10px var(--warning);animation:marker-pulse-yellow 2s infinite}
 .marker-red{background:var(--danger);border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 10px var(--danger);animation:marker-pulse-red 2s infinite}
 .marker-primary{background:var(--primary);border:3px solid white;border-radius:50%;width:22px;height:22px;box-shadow:0 0 15px var(--primary);animation:marker-pulse-primary 1.5s infinite}
 .marker-accent{background:var(--accent);border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 10px var(--accent)}
-
 @keyframes marker-pulse-green{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 @keyframes marker-pulse-yellow{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 @keyframes marker-pulse-red{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
 @keyframes marker-pulse-primary{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
-
 .stage-label{background:var(--bg-card);color:white;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;white-space:nowrap;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.4)}
-
 .vehicle-marker{width:14px;height:14px;background:var(--primary);border-radius:50%;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);animation:vehicle-pulse 1.5s infinite}
 @keyframes vehicle-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0.7}}
-
 @media(min-width:768px){
   .bottom-sheet{max-width:400px;left:auto;right:12px;bottom:12px;border-radius:24px;max-height:75vh}
   .bottom-sheet.collapsed{transform:translateY(calc(100% - 55px))}
   .fab-container{bottom:100px}
 }
-
 .fade-in{animation:fadeIn 0.4s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
 .route-info-bar{background:var(--bg-card);padding:8px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .route-info-bar::-webkit-scrollbar{display:none}
 .route-pill{display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg-dark);border-radius:20px;border:1px solid var(--border);white-space:nowrap;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s}
@@ -224,17 +196,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .route-pill .dot.green{background:var(--success);box-shadow:0 0 6px var(--success)}
 .route-pill .dot.yellow{background:var(--warning);box-shadow:0 0 6px var(--warning)}
 .route-pill .dot.red{background:var(--danger);box-shadow:0 0 6px var(--danger)}
-
 .my-location-btn{position:absolute;bottom:100px;left:12px;z-index:500;width:44px;height:44px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border);color:var(--info);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;box-shadow:0 4px 15px rgba(0,0,0,0.3)}
 .my-location-btn:hover{background:var(--bg-card-hover)}
-
 .report-stage-btn{background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:none;color:white;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;display:inline-flex;align-items:center;gap:5px}
 .report-stage-btn:hover{opacity:0.9}
-
 .direction-toggle{display:flex;gap:4px;background:var(--bg-dark);border-radius:20px;padding:3px;border:1px solid var(--border);margin-right:8px}
 .direction-toggle button{padding:4px 10px;border-radius:16px;border:none;background:transparent;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s}
 .direction-toggle button.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white}
-
 .rush-badge{font-size:9px;padding:2px 6px;border-radius:6px;font-weight:700;margin-left:4px}
 .rush-badge.rush{background:var(--danger);color:white}
 .rush-badge.offpeak{background:var(--success);color:var(--bg-dark)}
@@ -357,12 +325,42 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 <div class="modal-body">
 <div class="voice-indicator">
 <div class="voice-wave"><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div></div>
-<p style="color:var(--text-secondary);font-size:14px;text-align:center">Say
-<script>
+<p style="color:var(--text-secondary);font-size:14px;text-align:center">Say something like:</p>
+</div>
+<div style="background:var(--bg-dark);border-radius:16px;padding:16px;margin-top:10px">
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px">"Jam hapa Caltex"</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px">"Barabara safi mpaka CBD"</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px">"Niende wapi?" (Which way?)</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0"><i class="fas fa-microphone" style="color:var(--primary)"></i><span style="font-size:13px">"Police hapa Jogoo Road"</span></div>
+</div>
+<button id="voiceBtn" style="width:100%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:none;color:white;padding:14px;border-radius:14px;font-size:16px;font-weight:700;margin-top:16px;cursor:pointer"><i class="fas fa-microphone"></i> Tap to Speak</button>
+</div>
+</div>
+</div>
 
+<div class="modal-overlay" id="leaderboardModal">
+<div class="modal">
+<div class="modal-header"><h2>Makanga Leaderboard</h2><button class="modal-close" id="closeLeaderboard"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px">Top reporters this week. Earn points by sharing accurate road conditions!</p>
+<div id="leaderboardList"></div>
+<div style="margin-top:16px;padding:12px;background:var(--bg-dark);border-radius:12px;border:1px solid var(--border)">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">YOU</div>
+<div style="flex:1"><h4 style="font-size:13px">Your Rank: #--</h4><p style="font-size:11px;color:var(--text-muted)">0 pts • 0 reports</p></div>
+<span style="font-size:14px;font-weight:700;color:var(--accent)">Start reporting!</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
 const STAGES = {
   // ===== CBD TERMINI =====
-  // Each route has its OWN terminus - NOT all at Temple Road!
   railways: { name: "Railways Terminus", lat: -1.2921, lng: 36.8210, status: "green", type: "start", zone: "CBD", 
              desc: "Haile Selassie Ave - Serves: Rongai, Kiserian, Kitengela, Ngong, Kawangware, Kibera", spotterConfirm: 0 },
   otc: { name: "OTC / Haile Selassie Ave", lat: -1.2855, lng: 36.8215, status: "green", type: "start", zone: "CBD",
@@ -390,7 +388,6 @@ const STAGES = {
   green_park: { name: "Green Park Terminus", lat: -1.2928, lng: 36.8185, status: "green", type: "start", zone: "CBD",
                 desc: "Former Lunar Park - Serves: Langata Rd routes (2026+)", spotterConfirm: 0 },
   // ===== JOGOO ROAD / EASTLANDS CORRIDOR =====
-  // Main artery for Kayole, Buruburu, Donholm, Komarock routes
   landhies: { name: "Landhies Road", lat: -1.2905, lng: 36.8355, status: "green", type: "route", zone: "Eastlands",
               desc: "Transition from CBD to Jogoo Rd", spotterConfirm: 0 },
   city_stadium: { name: "City Stadium", lat: -1.2925, lng: 36.8455, status: "yellow", type: "interchange", zone: "Eastlands",
@@ -411,19 +408,14 @@ const STAGES = {
                  desc: "Exit to Kangundo Rd / Kayole", spotterConfirm: 0 },
   saika: { name: "Saika", lat: -1.2655, lng: 36.8805, status: "green", type: "stop", zone: "Eastlands",
            desc: "Heavy passenger area on Jogoo Rd", spotterConfirm: 0 },
-  // ===== KAYOLE AREA (via Kangundo Rd from Jogoo Rd) =====
   kayole_jn: { name: "Kayole Junction", lat: -1.2605, lng: 36.8855, status: "green", type: "interchange", zone: "Kayole",
                desc: "Main Kayole entry from Kangundo Rd", spotterConfirm: 0 },
-  // ===== BURUBURU / JUJA RD CORRIDOR =====
-  // Buruburu is accessed via Juja Rd branching from Jogoo Rd at City Stadium
   buruburu: { name: "Buruburu", lat: -1.2805, lng: 36.8705, status: "green", type: "route_alt", zone: "Eastlands",
               desc: "Alternative via Juja Rd from City Stadium", spotterConfirm: 0 },
   juja_rd: { name: "Juja Road", lat: -1.2755, lng: 36.8605, status: "green", type: "route_alt", zone: "Eastlands",
              desc: "Clear corridor from City Stadium to Buruburu", spotterConfirm: 0 },
   manyanja: { name: "Manyanja Road", lat: -1.2685, lng: 36.8755, status: "green", type: "route_alt", zone: "Eastlands",
               desc: "Buruburu to Komarock connector", spotterConfirm: 0 },
-  // ===== KOMAROCK (via Manyanja Rd from Buruburu) =====
-  // Komarock is NOT on Jogoo Rd! It is accessed via Manyanja Rd from Buruburu
   komarock: { name: "Komarock", lat: -1.2355, lng: 36.9105, status: "yellow", type: "interchange", zone: "Kayole",
               desc: "Via Manyanja Rd from Buruburu", note: "Lorry breakdown common", spotterConfirm: 0 },
 // ===== THIKA ROAD CORRIDOR =====
@@ -974,7 +966,8 @@ const STAGES = {
   legend: { name: "Legend / Tuskys", lat: -1.3925, lng: 36.7385, status: "green", type: "stop", zone: "Langata",
             desc: "Shopping", spotterConfirm: 0 },
   // ===== ADDITIONAL RONGAI STAGES =====
-  
+  karen_hub: { name: "Karen Hub", lat: -1.3225, lng: 36.6955, status: "green", type: "stop", zone: "Langata",
+               desc: "Shopping", spotterConfirm: 0 },
   southern_bypass: { name: "Southern Bypass", lat: -1.3505, lng: 36.8005, status: "green", type: "stop", zone: "Langata",
                     desc: "Fast route", spotterConfirm: 0 },
   mombasa_rd_junction: { name: "Mombasa Rd Jn", lat: -1.3155, lng: 36.8855, status: "green", type: "stop", zone: "Mombasa Road",
