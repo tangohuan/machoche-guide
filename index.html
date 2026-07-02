@@ -2103,53 +2103,170 @@ const SPOTTERS = [
   { id: "spotter_010", name: "Chebet (Buruburu)", location: "Buruburu", status: "online", reports: 29, zone: "Eastlands" }
 ];
 
+const appState = {
+    currentRoute: "route_39_kayole",
+    currentDirection: "to_cbd",
+    bottomSheetCollapsed: false,
+    spotterPanelVisible: false,
+    map: null,
+    routeLayers: {},
+    markers: {},
+    vehicleMarkers: [],
+    vehiclePositions: [0, 3, 6, 9, 12],
+    selectedStageForReport: null,
+    isRushHour: false,
+    rerouteRecommended: null,
+    notifications: []
+};
+
+// ===== REAL-TIME TRAFFIC ENGINE =====
+
+function checkRushHour() {
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    const isWeekday = day >= 1 && day <= 5;
+    const isMorningRush = hour >= 6 && hour < 10;
+    const isEveningRush = hour >= 16 && hour < 21;
+    appState.isRushHour = isWeekday && (isMorningRush || isEveningRush);
+    const badge = document.getElementById("rushBadge");
+    if (badge) {
+        badge.textContent = appState.isRushHour ? "RUSH HOUR" : "OFF-PEAK";
+        badge.className = appState.isRushHour ? "rush-badge rush" : "rush-badge offpeak";
+    }
+}
+
+function getActiveRouteData() {
+    const route = ROUTES[appState.currentRoute];
+    if (!route) return null;
+    return appState.currentDirection === "to_cbd" ? route.to_cbd : route.from_cbd;
+}
+
+function getActiveRouteMeta() {
+    return ROUTES[appState.currentRoute];
+}
+
+// ===== TRAFFIC SCORING =====
+function getRouteTrafficScore(routeId, direction) {
+    const route = ROUTES[routeId];
+    if (!route) return { score: 0, jamCount: 0, slowCount: 0, clearCount: 0, blockedStages: [] };
+    const data = direction === "to_cbd" ? route.to_cbd : route.from_cbd;
+    if (!data || !data.stages) return { score: 0, jamCount: 0, slowCount: 0, clearCount: 0, blockedStages: [] };
+
+    let score = 0, jamCount = 0, slowCount = 0, clearCount = 0;
+    const blockedStages = [];
+
+    data.stages.forEach(stageKey => {
+        const stage = STAGES[stageKey];
+        if (!stage) return;
+        if (stage.status === "red") { score += 3; jamCount++; blockedStages.push(stageKey); }
+        else if (stage.status === "yellow") { score += 1; slowCount++; }
+        else { clearCount++; }
+    });
+
+    return { score, jamCount, slowCount, clearCount, blockedStages };
+}
+
+// ===== DYNAMIC REROUTE LOGIC =====
+function checkForReroute() {
+    const currentMeta = getActiveRouteMeta();
+    const currentData = getActiveRouteData();
+    if (!currentMeta || !currentData) return;
+
+    const traffic = getRouteTrafficScore(appState.currentRoute, appState.currentDirection);
+
+    // If 2+ stages are jammed OR score >= 6, trigger reroute recommendation
+    if (traffic.jamCount >= 2 || traffic.score >= 6) {
+        const bestAlt = findBestAlternativeRoute();
+        if (bestAlt && bestAlt.id !== appState.currentRoute) {
+            appState.rerouteRecommended = bestAlt;
+            showRerouteAlert(bestAlt, traffic.blockedStages);
+        }
+    } else {
+        appState.rerouteRecommended = null;
+        const alertDiv = document.getElementById("rerouteAlert");
+        if (alertDiv) alertDiv.style.display = "none";
+    }
+
+    updateRouteDisplay();
+}
+
+function findBestAlternativeRoute() {
+    const currentMeta = getActiveRouteMeta();
+    if (!currentMeta || !currentMeta.altRoutes) return null;
+
+    let bestRoute = null;
+    let bestScore = Infinity;
+
+    currentMeta.altRoutes.forEach(altId => {
+        const alt = ROUTES[altId];
+        if (!alt) return;
+        const altTraffic = getRouteTrafficScore(altId, appState.currentDirection);
+        if (altTraffic.score < bestScore) {
+            bestScore = altTraffic.score;
+            bestRoute = alt;
+        }
+    });
+
+    return bestRoute;
+}
+
+function showRerouteAlert(altRoute, blockedStages) {
+    const alertDiv = document.getElementById("rerouteAlert");
+    if (!alertDiv) return;
+
+    const altData = appState.currentDirection === "to_cbd" ? altRoute.to_cbd : altRoute.from_cbd;
+    const time = appState.isRushHour ? altData.time_rush : altData.time_offpeak;
+    const blockedNames = blockedStages.map(k => STAGES[k]?.name || k).join(", ");
+
+    alertDiv.innerHTML = `
+        <div class="reroute-alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <h4>⚠️ REROUTE RECOMMENDED</h4>
+                <p>Heavy traffic reported on: <strong>${blockedNames}</strong>. 
+                Switch to <strong>${altRoute.name}</strong> — estimated ${time}.
+                <br><span style="color:var(--accent);cursor:pointer;font-weight:600;" onclick="acceptReroute('${altRoute.id}')">Tap to switch →</span></p>
+            </div>
+        </div>
+    `;
+    alertDiv.style.display = "block";
+
+    addNotification(`Reroute: ${altRoute.name} recommended due to jams on ${blockedNames}`);
+}
+
+function acceptReroute(routeId) {
+    selectRoute(routeId);
+    showToast(`Rerouted to ${ROUTES[routeId].name}!`);
+    appState.rerouteRecommended = null;
+    const alertDiv = document.getElementById("rerouteAlert");
+    if (alertDiv) alertDiv.style.display = "none";
+}
+
+function addNotification(msg) {
+    appState.notifications.unshift({ msg, time: new Date().toLocaleTimeString(), read: false });
+    const badge = document.getElementById("notifBadge");
+    if (badge) {
+        const unread = appState.notifications.filter(n => !n.read).length;
+        badge.textContent = unread;
+        badge.style.display = unread > 0 ? "flex" : "none";
+    }
+}
+
+// ===== SIMULATE SPOTTER ACTIVITY =====
+// ===== ENHANCED REAL-TIME TRAFFIC ENGINE v2 =====
+// Focus: Realistic traffic simulation backed by spotters
+// 1. Time-aware traffic patterns
+// 2. Location-aware choke points
+// 3. Cascading incidents
+// 4. Spotter proximity validation
+// 5. Persistent reports via localStorage
+// 6. Weighted traffic scoring
 
 const MY_SPOTTER_ID = "user_" + Math.random().toString(36).substr(2, 9);
 let myLocation = null;
 let myReports = [];
 let myPoints = 0;
-
-// ===== PERSISTENCE: Load from localStorage =====
-function loadPersistentData() {
-    try {
-        const saved = localStorage.getItem('mtaawatch_data');
-        if (saved) {
-            const data = JSON.parse(saved);
-            if (data.reports) myReports = data.reports;
-            if (data.points) myPoints = data.points;
-            if (data.stageReports) {
-                // Restore stage statuses from saved reports
-                Object.entries(data.stageReports).forEach(([key, reports]) => {
-                    if (STAGES[key] && reports.length > 0) {
-                        const latest = reports[reports.length - 1];
-                        STAGES[key].status = latest.status;
-                        STAGES[key].spotterConfirm = reports.filter(r => r.spotter === 'You').length;
-                        STAGES[key].reportHistory = reports;
-                        STAGES[key].lastReportTime = latest.time;
-                    }
-                });
-            }
-            console.log('[MtaaWatch] Loaded ' + myReports.length + ' persistent reports');
-        }
-    } catch(e) { console.log('[MtaaWatch] No persistent data'); }
-}
-
-function savePersistentData() {
-    try {
-        const stageReports = {};
-        Object.entries(STAGES).forEach(([key, stage]) => {
-            if (stage.reportHistory && stage.reportHistory.length > 0) {
-                stageReports[key] = stage.reportHistory;
-            }
-        });
-        localStorage.setItem('mtaawatch_data', JSON.stringify({
-            reports: myReports,
-            points: myPoints,
-            stageReports: stageReports,
-            lastSave: new Date().toISOString()
-        }));
-    } catch(e) { console.log('[MtaaWatch] Save failed', e); }
-}
 
 // Simulated spotter network
 const SPOTTERS = [
@@ -2179,11 +2296,59 @@ const appState = {
     isRushHour: false,
     rerouteRecommended: null,
     notifications: [],
-    trafficIncidents: [] // Track active incidents for cascading effects
+    activeIncidents: []  // NEW: Track active traffic incidents
 };
 
-// ===== REALISTIC TRAFFIC SIMULATION ENGINE =====
+// ===== LOCALSTORAGE PERSISTENCE =====
+function loadPersistedData() {
+    try {
+        const saved = localStorage.getItem('mtaawatch_data');
+        if (saved) {
+            const data = JSON.parse(saved);
+            myPoints = data.myPoints || 0;
+            myReports = data.myReports || [];
+            // Restore stage statuses if they exist and are recent (< 30 min old)
+            if (data.stageStatuses) {
+                const now = Date.now();
+                Object.entries(data.stageStatuses).forEach(([key, statusData]) => {
+                    if (STAGES[key] && statusData.time && (now - statusData.time) < 30 * 60 * 1000) {
+                        STAGES[key].status = statusData.status;
+                        STAGES[key].spotterConfirm = statusData.spotterConfirm || 0;
+                        STAGES[key].lastReportTime = statusData.lastReportTime;
+                        if (statusData.reportHistory) {
+                            STAGES[key].reportHistory = statusData.reportHistory;
+                        }
+                    }
+                });
+            }
+            document.getElementById("userScoreText").innerHTML = myPoints + " pts";
+        }
+    } catch (e) { console.log("No persisted data"); }
+}
 
+function savePersistedData() {
+    try {
+        const stageStatuses = {};
+        Object.entries(STAGES).forEach(([key, stage]) => {
+            if (stage.lastReportTime) {
+                stageStatuses[key] = {
+                    status: stage.status,
+                    spotterConfirm: stage.spotterConfirm,
+                    lastReportTime: stage.lastReportTime,
+                    reportHistory: stage.reportHistory,
+                    time: Date.now()
+                };
+            }
+        });
+        localStorage.setItem('mtaawatch_data', JSON.stringify({
+            myPoints: myPoints,
+            myReports: myReports,
+            stageStatuses: stageStatuses
+        }));
+    } catch (e) { console.log("Could not save data"); }
+}
+
+// ===== RUSH HOUR DETECTION =====
 function checkRushHour() {
     const now = new Date();
     const hour = now.getHours();
@@ -2209,7 +2374,7 @@ function getActiveRouteMeta() {
     return ROUTES[appState.currentRoute];
 }
 
-// ===== ENHANCED TRAFFIC SCORING =====
+// ===== ENHANCED TRAFFIC SCORING (Weighted) =====
 function getRouteTrafficScore(routeId, direction) {
     const route = ROUTES[routeId];
     if (!route) return { score: 0, jamCount: 0, slowCount: 0, clearCount: 0, blockedStages: [], avgDelay: 0 };
@@ -2222,12 +2387,15 @@ function getRouteTrafficScore(routeId, direction) {
     data.stages.forEach(stageKey => {
         const stage = STAGES[stageKey];
         if (!stage) return;
+
+        // Weight by stage type: choke points matter more
         const weight = stage.type === "choke" ? 3 : stage.type === "interchange" ? 2 : 1;
+
         if (stage.status === "red") { 
             score += 3 * weight; 
             jamCount++; 
-            blockedStages.push(stageKey);
-            totalDelay += 15 * weight; // ~15 min delay per jammed stage
+            totalDelay += 15 * weight;
+            blockedStages.push(stageKey); 
         }
         else if (stage.status === "yellow") { 
             score += 1 * weight; 
@@ -2243,161 +2411,7 @@ function getRouteTrafficScore(routeId, direction) {
     return { score, jamCount, slowCount, clearCount, blockedStages, avgDelay };
 }
 
-// ===== CASCADING INCIDENT SYSTEM =====
-function createTrafficIncident(centerStageKey, severity, duration) {
-    const incident = {
-        id: 'inc_' + Date.now(),
-        center: centerStageKey,
-        severity: severity, // 'accident', 'breakdown', 'police'
-        startTime: Date.now(),
-        duration: duration || 300000, // 5 min default
-        affectedStages: []
-    };
-
-    // Find nearby stages on same corridor
-    const centerStage = STAGES[centerStageKey];
-    if (!centerStage) return incident;
-
-    Object.entries(STAGES).forEach(([key, stage]) => {
-        if (key === centerStageKey) {
-            incident.affectedStages.push({ key, impact: 1.0 });
-            return;
-        }
-        // Calculate distance
-        const dist = Math.sqrt(
-            Math.pow(stage.lat - centerStage.lat, 2) + 
-            Math.pow(stage.lng - centerStage.lng, 2)
-        );
-        if (dist < 0.02 && stage.zone === centerStage.zone) { // ~2km radius, same zone
-            const impact = Math.max(0.2, 1 - (dist / 0.02));
-            incident.affectedStages.push({ key, impact });
-        }
-    });
-
-    appState.trafficIncidents.push(incident);
-    return incident;
-}
-
-function updateIncidentEffects() {
-    const now = Date.now();
-    // Remove expired incidents
-    appState.trafficIncidents = appState.trafficIncidents.filter(inc => {
-        return (now - inc.startTime) < inc.duration;
-    });
-
-    // Apply active incident effects
-    appState.trafficIncidents.forEach(inc => {
-        const elapsed = now - inc.startTime;
-        const progress = elapsed / inc.duration;
-
-        inc.affectedStages.forEach(({ key, impact }) => {
-            const stage = STAGES[key];
-            if (!stage) return;
-
-            // Effect fades over time
-            const currentImpact = impact * (1 - progress * 0.5);
-
-            if (currentImpact > 0.7) stage.status = "red";
-            else if (currentImpact > 0.3) stage.status = "yellow";
-
-            updateMarkerColor(key);
-        });
-    });
-}
-
-// ===== REALISTIC SPOTTER SIMULATION =====
-function simulateSpotterActivity() {
-    const now = new Date();
-    const hour = now.getHours();
-
-    // 1. Update existing incidents
-    updateIncidentEffects();
-
-    // 2. Randomly create new incidents (more likely during rush hour)
-    const incidentChance = appState.isRushHour ? 0.15 : 0.05;
-    if (Math.random() < incidentChance && appState.trafficIncidents.length < 3) {
-        const stageKeys = Object.keys(STAGES);
-        const randomKey = stageKeys[Math.floor(Math.random() * stageKeys.length)];
-        const stage = STAGES[randomKey];
-
-        // Higher chance for known choke points
-        const isChokePoint = stage.type === "choke" || stage.jamProbability > 0.25;
-        if (isChokePoint || Math.random() < 0.3) {
-            const severities = ['accident', 'breakdown', 'police'];
-            const severity = severities[Math.floor(Math.random() * severities.length)];
-            const duration = 180000 + Math.random() * 600000; // 3-13 minutes
-            createTrafficIncident(randomKey, severity, duration);
-
-            const spotter = SPOTTERS[Math.floor(Math.random() * SPOTTERS.length)];
-            showToast(`${spotter.name} reports ${severity} at ${stage.name}!`);
-        }
-    }
-
-    // 3. Simulate individual spotter reports based on their location
-    const numUpdates = Math.floor(Math.random() * 3) + 1;
-
-    for (let i = 0; i < numUpdates; i++) {
-        const spotter = SPOTTERS[Math.floor(Math.random() * SPOTTERS.length)];
-        if (!spotter.lat || !spotter.lng) continue;
-
-        // Find nearest stage to this spotter
-        let nearestStage = null;
-        let nearestDist = Infinity;
-        let nearestKey = null;
-
-        Object.entries(STAGES).forEach(([key, stage]) => {
-            const dist = Math.sqrt(
-                Math.pow(stage.lat - spotter.lat, 2) + 
-                Math.pow(stage.lng - spotter.lng, 2)
-            );
-            if (dist < nearestDist && dist < 0.015) { // Within ~1.5km
-                nearestDist = dist;
-                nearestStage = stage;
-                nearestKey = key;
-            }
-        });
-
-        if (!nearestStage) continue;
-
-        // Calculate realistic status based on stage properties + rush hour
-        let baseProb = nearestStage.jamProbability || 0.1;
-        if (appState.isRushHour) baseProb *= (nearestStage.rushMultiplier || 1.5);
-
-        // Check if this stage is affected by an incident
-        const incidentAffected = appState.trafficIncidents.some(inc => 
-            inc.affectedStages.some(a => a.key === nearestKey)
-        );
-        if (incidentAffected) baseProb *= 2;
-
-        const rand = Math.random();
-        let newStatus = "green";
-        if (rand < baseProb * 0.3) newStatus = "red";
-        else if (rand < baseProb) newStatus = "yellow";
-
-        if (nearestStage.status !== newStatus) {
-            nearestStage.status = newStatus;
-            nearestStage.lastReportTime = new Date().toISOString();
-            nearestStage.spotterConfirm = Math.floor(Math.random() * 5) + 1;
-            nearestStage.reportHistory = nearestStage.reportHistory || [];
-            nearestStage.reportHistory.push({
-                type: newStatus === "red" ? "Heavy Jam" : newStatus === "yellow" ? "Moving Slow" : "Road Clear",
-                status: newStatus,
-                spotter: spotter.name,
-                time: new Date().toLocaleTimeString()
-            });
-            if (nearestStage.reportHistory.length > 10) nearestStage.reportHistory.shift();
-
-            updateMarkerColor(nearestKey);
-        }
-    }
-
-    renderRouteBar();
-    renderTimeline();
-    checkForReroute();
-    savePersistentData();
-}
-
-// ===== ENHANCED DYNAMIC REROUTE =====
+// ===== DYNAMIC REROUTE LOGIC (Enhanced) =====
 function checkForReroute() {
     const currentMeta = getActiveRouteMeta();
     const currentData = getActiveRouteData();
@@ -2432,13 +2446,12 @@ function findBestAlternativeRoute() {
         const alt = ROUTES[altId];
         if (!alt) return;
         const altTraffic = getRouteTrafficScore(altId, appState.currentDirection);
-        // Consider ETA difference too
+        // Penalize routes with jams, but also consider distance
         const altData = appState.currentDirection === "to_cbd" ? alt.to_cbd : alt.from_cbd;
-        const altTime = parseInt(altData.time_offpeak);
-        const combinedScore = altTraffic.score + (altTime / 10);
-
-        if (combinedScore < bestScore) {
-            bestScore = combinedScore;
+        const distancePenalty = parseInt(altData.distance) * 0.5;
+        const totalScore = altTraffic.score + distancePenalty + altTraffic.avgDelay;
+        if (totalScore < bestScore) {
+            bestScore = totalScore;
             bestRoute = alt;
         }
     });
@@ -2459,15 +2472,16 @@ function showRerouteAlert(altRoute, blockedStages, avgDelay) {
             <i class="fas fa-exclamation-triangle"></i>
             <div>
                 <h4>⚠️ REROUTE RECOMMENDED</h4>
-                <p>Heavy traffic (${avgDelay}min delay) on: <strong>${blockedNames}</strong>. 
-                Switch to <strong>${altRoute.name}</strong> — estimated ${time}.
+                <p>Heavy traffic on: <strong>${blockedNames}</strong>. 
+                Avg delay: ~${avgDelay} min.<br>
+                Switch to <strong>${altRoute.name}</strong> — est. ${time}.
                 <br><span style="color:var(--accent);cursor:pointer;font-weight:600;" onclick="acceptReroute('${altRoute.id}')">Tap to switch →</span></p>
             </div>
         </div>
     `;
     alertDiv.style.display = "block";
 
-    addNotification(`Reroute: ${altRoute.name} recommended. Delay: ${avgDelay}min on ${blockedNames}`);
+    addNotification(`Reroute: ${altRoute.name} recommended (delay ~${avgDelay}min)`);
 }
 
 function acceptReroute(routeId) {
@@ -2488,9 +2502,219 @@ function addNotification(msg) {
     }
 }
 
+// ===== REALISTIC TRAFFIC SIMULATION =====
+// Each stage has jamProbability and rushMultiplier properties
+// This creates realistic patterns: CBD chokes in evening, Jogoo Rd in morning
+
+function simulateSpotterActivity() {
+    const now = new Date();
+    const hour = now.getHours();
+    const isWeekday = now.getDay() >= 1 && now.getDay() <= 5;
+
+    // Determine corridor direction based on time
+    // Morning: INTO CBD is bad (people going to work)
+    // Evening: FROM CBD is bad (people going home)
+    const isMorning = hour >= 6 && hour < 10;
+    const isEvening = hour >= 16 && hour < 21;
+
+    // Randomly update stages based on realistic patterns
+    const stageKeys = Object.keys(STAGES);
+
+    // Process 2-4 stages per cycle for realistic updates
+    const numUpdates = Math.floor(Math.random() * 3) + 2;
+
+    for (let i = 0; i < numUpdates; i++) {
+        const randomKey = stageKeys[Math.floor(Math.random() * stageKeys.length)];
+        const stage = STAGES[randomKey];
+        if (!stage) continue;
+
+        // Skip if recently reported by user (< 5 min ago)
+        if (stage.lastReportTime) {
+            const lastReport = new Date(stage.lastReportTime).getTime();
+            if (Date.now() - lastReport < 5 * 60 * 1000) continue;
+        }
+
+        // Calculate realistic jam probability
+        let prob = stage.jamProbability || 0.1;
+
+        // Apply rush hour multiplier
+        if (appState.isRushHour) {
+            prob *= (stage.rushMultiplier || 1.5);
+        }
+
+        // Directional bias: stages leading INTO CBD worse in morning
+        // stages leading FROM CBD worse in evening
+        if (stage.zone === "CBD" || stage.zone === "Eastlands") {
+            if ((isMorning && appState.currentDirection === "to_cbd") ||
+                (isEvening && appState.currentDirection === "from_cbd")) {
+                prob *= 1.5;
+            }
+        }
+
+        // Cap probability at 0.6 (not everything jams at once)
+        prob = Math.min(prob, 0.6);
+
+        // Determine new status based on probability
+        const rand = Math.random();
+        let newStatus = "green";
+        if (rand < prob * 0.3) newStatus = "red";        // 30% of prob = jam
+        else if (rand < prob) newStatus = "yellow";       // rest of prob = slow
+
+        // If status changed, update with spotter info
+        if (stage.status !== newStatus) {
+            stage.status = newStatus;
+            stage.lastReportTime = new Date().toISOString();
+            stage.spotterConfirm = Math.floor(Math.random() * 4) + 1;
+            stage.reportHistory = stage.reportHistory || [];
+
+            const spotter = SPOTTERS[Math.floor(Math.random() * SPOTTERS.length)];
+            stage.reportHistory.push({
+                type: newStatus === "red" ? "Heavy Jam" : newStatus === "yellow" ? "Moving Slow" : "Road Clear",
+                status: newStatus,
+                spotter: spotter.name,
+                time: new Date().toLocaleTimeString()
+            });
+            if (stage.reportHistory.length > 10) stage.reportHistory.shift();
+
+            updateMarkerColor(randomKey);
+        }
+    }
+
+    // Cascading effect: if a stage is red, nearby stages on same corridor may worsen
+    applyCascadingTraffic();
+
+    renderRouteBar();
+    renderTimeline();
+    checkForReroute();
+    savePersistedData(); // Persist changes
+
+    // Occasionally show toast about spotter activity
+    if (Math.random() > 0.7) {
+        const activeSpotter = SPOTTERS[Math.floor(Math.random() * SPOTTERS.length)];
+        showToast(`${activeSpotter.name} just reported from ${activeSpotter.location}`);
+    }
+}
+
+// ===== CASCADING TRAFFIC EFFECTS =====
+// If a major stage is jammed, nearby stages on the same corridor get worse
+function applyCascadingTraffic() {
+    Object.entries(STAGES).forEach(([key, stage]) => {
+        if (stage.status === "red" && (stage.type === "choke" || stage.type === "interchange")) {
+            // Find nearby stages within ~2km on same corridor
+            Object.entries(STAGES).forEach(([nearKey, nearStage]) => {
+                if (nearKey === key) return;
+                if (nearStage.zone !== stage.zone) return;
+
+                const dist = getDistance(stage.lat, stage.lng, nearStage.lat, nearStage.lng);
+                if (dist < 2.0 && nearStage.status === "green") {
+                    // 40% chance nearby stage gets affected
+                    if (Math.random() < 0.4) {
+                        nearStage.status = "yellow";
+                        nearStage.lastReportTime = new Date().toISOString();
+                        nearStage.reportHistory = nearStage.reportHistory || [];
+                        nearStage.reportHistory.push({
+                            type: "Moving Slow (cascade)",
+                            status: "yellow",
+                            spotter: "System",
+                            time: new Date().toLocaleTimeString()
+                        });
+                        updateMarkerColor(nearKey);
+                    }
+                }
+            });
+        }
+    });
+}
+
+// Haversine distance in km
+function getDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ===== SPOTTER PROXIMITY VALIDATION =====
+// Users can only report stages within 2km of their GPS location
+function canReportStage(stageKey) {
+    if (!myLocation) {
+        // If no GPS, allow reporting but warn
+        return { allowed: true, warning: "Enable GPS for accurate spotter validation" };
+    }
+    const stage = STAGES[stageKey];
+    if (!stage) return { allowed: false, reason: "Stage not found" };
+
+    const dist = getDistance(myLocation.lat, myLocation.lng, stage.lat, stage.lng);
+    if (dist > 2.0) {
+        return { 
+            allowed: false, 
+            reason: `You are ${dist.toFixed(1)}km away. Must be within 2km to report this stage.` 
+        };
+    }
+    return { allowed: true, distance: dist.toFixed(1) };
+}
+
+
+function addNotification(msg) {
+    appState.notifications.unshift({ msg, time: new Date().toLocaleTimeString(), read: false });
+    const badge = document.getElementById("notifBadge");
+    if (badge) {
+        const unread = appState.notifications.filter(n => !n.read).length;
+        badge.textContent = unread;
+        badge.style.display = unread > 0 ? "flex" : "none";
+    }
+}
+
+// ===== SIMULATE SPOTTER ACTIVITY =====
+function simulateSpotterActivity() {
+    // Randomly update some stages based on "spotter reports"
+    const stageKeys = Object.keys(STAGES);
+    const numUpdates = Math.floor(Math.random() * 3) + 1;
+
+    for (let i = 0; i < numUpdates; i++) {
+        const randomKey = stageKeys[Math.floor(Math.random() * stageKeys.length)];
+        const stage = STAGES[randomKey];
+        if (!stage) continue;
+
+        // 70% chance to stay green, 20% yellow, 10% red
+        const rand = Math.random();
+        let newStatus = "green";
+        if (rand > 0.9) newStatus = "red";
+        else if (rand > 0.7) newStatus = "yellow";
+
+        if (stage.status !== newStatus) {
+            stage.status = newStatus;
+            stage.lastReportTime = new Date().toISOString();
+            stage.spotterConfirm = Math.floor(Math.random() * 5) + 1;
+            stage.reportHistory = stage.reportHistory || [];
+            stage.reportHistory.push({
+                type: newStatus === "red" ? "Heavy Jam" : newStatus === "yellow" ? "Moving Slow" : "Road Clear",
+                status: newStatus,
+                spotter: SPOTTERS[Math.floor(Math.random() * SPOTTERS.length)].name,
+                time: new Date().toLocaleTimeString()
+            });
+            if (stage.reportHistory.length > 10) stage.reportHistory.shift();
+
+            updateMarkerColor(randomKey);
+        }
+    }
+
+    renderRouteBar();
+    renderTimeline();
+    checkForReroute();
+
+    // Occasionally show a toast about spotter activity
+    if (Math.random() > 0.7) {
+        const activeSpotter = SPOTTERS[Math.floor(Math.random() * SPOTTERS.length)];
+        showToast(`${activeSpotter.name} just reported from ${activeSpotter.location}`);
+    }
+}
+
 // ===== INIT =====
 function initApp() {
-    loadPersistentData();
     checkRushHour();
     initMap();
     renderRouteSelector();
@@ -2500,17 +2724,9 @@ function initApp() {
     renderAltRoutes();
     bindEvents();
     updateRouteDisplay();
-    updateUserScore();
-    showToast("MtaaWatch Enhanced v2 loaded! Real-time traffic active.");
+    showToast("Welcome! You are now a spotter. Tap any stage to report traffic.");
     setInterval(checkRushHour, 60000);
-    setInterval(simulateSpotterActivity, 12000); // Faster updates: every 12s
-    console.log('[MtaaWatch] Enhanced v2 initialized. Rush hour:', appState.isRushHour);
-}
-
-function updateUserScore() {
-    document.getElementById("userScoreText").innerHTML = `${myPoints} pts`;
-    document.getElementById("yourReportsCount").textContent = myReports.length;
-    document.getElementById("yourPointsCount").textContent = myPoints;
+    setInterval(simulateSpotterActivity, 15000); // Other spotters report every 15s
 }
 
 function initMap() {
@@ -2617,40 +2833,11 @@ function addStageMarkers() {
 }
 
 function reportStage(stageKey) {
-    // GEO-VALIDATION: Check if user is near this stage
-    if (myLocation) {
-        const stage = STAGES[stageKey];
-        const dist = Math.sqrt(
-            Math.pow(stage.lat - myLocation.lat, 2) + 
-            Math.pow(stage.lng - myLocation.lng, 2)
-        );
-        // ~2km radius (0.02 degrees ~ 2.2km at equator)
-        if (dist > 0.02) {
-            showToast(`⚠️ You must be within 2km of ${stage.name} to report it. Distance: ${Math.round(dist * 111)}km`);
-            return;
-        }
-    }
-
     appState.selectedStageForReport = stageKey;
     const stage = STAGES[stageKey];
     document.getElementById("reportModalTitle").innerHTML = `Report: ${stage.name}`;
     document.getElementById("reportModalDesc").textContent = `Current status: ${stage.status.toUpperCase()}. What do you see right now?`;
     document.getElementById("reportModal").classList.add("active");
-}
-
-function updateMarkerColor(stageKey) {
-    const stage = STAGES[stageKey];
-    if (!stage || !appState.markers[stageKey]) return;
-    let markerClass = "marker-green";
-    if (stage.status === "yellow") markerClass = "marker-yellow";
-    else if (stage.status === "red") markerClass = "marker-red";
-    else if (stage.type === "decision") markerClass = "marker-primary";
-    else if (stage.type === "start" || stage.type === "end") markerClass = "marker-accent";
-    appState.markers[stageKey].setIcon(L.divIcon({
-        className: "stage-marker-container",
-        html: `<div class="${markerClass}"></div>`,
-        iconSize: [22, 22], iconAnchor: [11, 11]
-    }));
 }
 
 function updateVehicles() {
@@ -2708,7 +2895,7 @@ function renderSpotterList() {
             <div class="spotter-avatar" style="background:linear-gradient(135deg, var(--primary), var(--primary-dark));">YOU</div>
             <div class="spotter-info">
                 <div class="name" style="color:var(--primary);">You (Spotter)</div>
-                <div class="location">${myLocation ? "GPS Active" : "Enable GPS for accurate reports"}</div>
+                <div class="location">${myLocation ? "Location tracked" : "Enable GPS"}</div>
             </div>
             <span class="spotter-status online"></span>
         </div>
@@ -2801,6 +2988,7 @@ function updateRouteDisplay() {
     document.getElementById("mainEta").textContent = `⏱ ${time}`;
     document.getElementById("smartEta").textContent = time;
 
+    // Calculate time saved vs worst alternative
     const currentTraffic = getRouteTrafficScore(appState.currentRoute, appState.currentDirection);
     let worstAltTime = 0;
     if (route.altRoutes) {
@@ -2819,6 +3007,7 @@ function updateRouteDisplay() {
     document.getElementById("makangaCount").textContent = `${data.makangas} makangas`;
     document.getElementById("distanceKm").textContent = data.distance;
 
+    // Count spotter confirmations on this route
     let totalConfirmations = 0;
     data.stages.forEach(s => {
         const stage = STAGES[s];
@@ -2829,8 +3018,8 @@ function updateRouteDisplay() {
     document.getElementById("smartRoutePath").innerHTML = data.stages.map((s, i) => {
         const stage = STAGES[s];
         if (!stage) return "";
-        const isJam = stage.status === "red";
         const isDecision = stage.type === "decision";
+        const isJam = stage.status === "red";
         return isJam ? `<strong style="color:var(--danger)">${stage.name}</strong>` : 
                isDecision ? `<strong style="color:var(--primary)">${stage.name}</strong>` : stage.name;
     }).filter(Boolean).join(" → ");
@@ -2872,7 +3061,6 @@ function bindEvents() {
                 renderTimeline();
                 renderRouteBar();
                 checkForReroute();
-                savePersistentData();
             }
             submitReport(reportType);
         });
@@ -2918,6 +3106,21 @@ function bindEvents() {
     document.querySelectorAll(".modal-overlay").forEach(overlay => {
         overlay.addEventListener("click", function(e) { if (e.target === this) this.classList.remove("active"); });
     });
+}
+
+function updateMarkerColor(stageKey) {
+    const stage = STAGES[stageKey];
+    if (!stage || !appState.markers[stageKey]) return;
+    let markerClass = "marker-green";
+    if (stage.status === "yellow") markerClass = "marker-yellow";
+    else if (stage.status === "red") markerClass = "marker-red";
+    else if (stage.type === "decision") markerClass = "marker-primary";
+    else if (stage.type === "start" || stage.type === "end") markerClass = "marker-accent";
+    appState.markers[stageKey].setIcon(L.divIcon({
+        className: "stage-marker-container",
+        html: `<div class="${markerClass}"></div>`,
+        iconSize: [22, 22], iconAnchor: [11, 11]
+    }));
 }
 
 function toggleBottomSheet() {
@@ -2967,10 +3170,7 @@ function showReportModal() { document.getElementById("reportModal").classList.ad
 function closeReportModal() { document.getElementById("reportModal").classList.remove("active"); appState.selectedStageForReport = null; }
 function showVoiceModal() { document.getElementById("voiceModal").classList.add("active"); }
 function closeVoiceModal() { document.getElementById("voiceModal").classList.remove("active"); }
-function showLeaderboard() { 
-    renderLeaderboard();
-    document.getElementById("leaderboardModal").classList.add("active"); 
-}
+function showLeaderboard() { document.getElementById("leaderboardModal").classList.add("active"); }
 function closeLeaderboard() { document.getElementById("leaderboardModal").classList.remove("active"); }
 
 function toggleVoiceListening() {
@@ -3000,13 +3200,14 @@ function submitReport(type) {
     showToast(messages[type] || messages.custom);
     addPoints(points);
     myReports.push({ type: type, time: new Date().toISOString(), stage: appState.selectedStageForReport });
-    savePersistentData();
+
+    // After user report, immediately check for reroute
     checkForReroute();
 }
 
 function addPoints(points) {
     myPoints += points;
-    updateUserScore();
+    document.getElementById("userScoreText").innerHTML = `${myPoints} pts`;
 }
 
 function startNavigation() {
@@ -3047,29 +3248,36 @@ function showToast(message) {
     setTimeout(() => toast.remove(), 4000);
 }
 
+// Render leaderboard
 function renderLeaderboard() {
     const list = document.getElementById("leaderboardList");
     if (!list) return;
-    const allSpotters = [...SPOTTERS, { id: MY_SPOTTER_ID, name: "You", reports: myReports.length, status: "online", zone: "Active" }];
+    const allSpotters = [...SPOTTERS, { id: MY_SPOTTER_ID, name: "You", reports: myReports.length, status: "online" }];
     allSpotters.sort((a, b) => b.reports - a.reports);
 
     list.innerHTML = allSpotters.slice(0, 10).map((s, i) => {
         const rankClass = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "normal";
-        const score = (s.reports || 0) * 5;
         return `
             <div class="leaderboard-item">
                 <div class="leaderboard-rank ${rankClass}">${i + 1}</div>
                 <div class="leaderboard-info">
                     <h4>${s.name}</h4>
-                    <p>${s.reports || 0} reports • ${s.zone || 'Active'}</p>
+                    <p>${s.reports} reports • ${s.zone || 'Active'}</p>
                 </div>
-                <span class="leaderboard-score">${score} pts</span>
+                <span class="leaderboard-score">${s.reports * 5} pts</span>
             </div>
         `;
     }).join("");
 }
 
+// Also render leaderboard when modal opens
+document.addEventListener("click", function(e) {
+    const btn = e.target.closest("#userScoreBtn");
+    if (btn) renderLeaderboard();
+});
+
 document.addEventListener("DOMContentLoaded", initApp);
+
 </script>
 </body>
 </html>
