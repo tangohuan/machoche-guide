@@ -285,8 +285,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 <div class="ai-insight" id="aiInsight">
 <i class="fas fa-robot"></i>
 <div class="ai-insight-content">
-<h4>AI Prediction</h4>
+<h4 id="aiInsightTitle">AI Prediction</h4>
 <p id="aiInsightText">Tap any stage on the map to report its condition. Your reports help other makangas.</p>
+<p id="dataSourceText" style="margin-top:4px;font-size:10px;color:var(--text-muted);">
+    <span id="liveIndicator" style="display:none;"><span style="color:var(--success)">●</span> Connected to TomTom live traffic</span>
+    <span id="simIndicator"><span style="color:var(--warning)">●</span> Running spotter simulation</span>
+</p>
 </div>
 </div>
 <div class="smart-route-card fade-in" id="smartRouteCard">
@@ -1370,6 +1374,67 @@ const STAGES = {
 // Route 125 FIXED: Uses Langata Rd -> Magadi Rd (NOT Kiserian/Ngong Rd)
 // Dynamic reroute support: each route has altRoutes array for when main path is blocked
 
+
+// ===== DATA SOURCE TRACKING =====
+function getStageDataSource(stageKey) {
+    const stage = STAGES[stageKey];
+    if (!stage) return { source: "Unknown", time: null, icon: "❓" };
+
+    if (!stage.lastReportTime) {
+        return { source: "Default", time: null, icon: "⚪", label: "No data yet" };
+    }
+
+    const lastReport = stage.reportHistory && stage.reportHistory.length > 0 
+        ? stage.reportHistory[stage.reportHistory.length - 1] 
+        : null;
+
+    if (!lastReport) {
+        return { source: "Unknown", time: stage.lastReportTime, icon: "❓", label: "Unknown source" };
+    }
+
+    const spotter = lastReport.spotter || "";
+    const isTomTom = spotter.includes("TomTom");
+    const isHere = spotter.includes("HERE");
+    const isYou = spotter === "You";
+    const isSystem = spotter === "System" || spotter === "";
+
+    let source = "Simulated";
+    let icon = "🤖";
+    let label = "Simulated spotter";
+
+    if (isTomTom) {
+        source = "TomTom API";
+        icon = "🛰️";
+        label = "Live satellite data";
+    } else if (isHere) {
+        source = "HERE API";
+        icon = "🛰️";
+        label = "Live traffic data";
+    } else if (isYou) {
+        source = "You";
+        icon = "👤";
+        label = "Your report";
+    } else if (!isSystem && spotter.length > 0) {
+        source = "Spotter";
+        icon = "👁️";
+        label = spotter;
+    }
+
+    return { source, time: stage.lastReportTime, icon, label, spotter };
+}
+
+function formatTimeAgo(isoString) {
+    if (!isoString) return "Never";
+    const then = new Date(isoString).getTime();
+    const now = Date.now();
+    const diff = Math.floor((now - then) / 1000); // seconds
+
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+}
+
 const ROUTES = {
 
   // ===== ROUTE 39: KAYOLE (Main) =====
@@ -2319,11 +2384,14 @@ async function mergeTomTomTrafficWithSpotters() {
     });
 
     if (updatesCount > 0) {
-        console.log(`Updated ${updatesCount} stages with TomTom traffic data`);
+        console.log(`[TomTom] Updated ${updatesCount} stages with LIVE traffic data`);
+        console.log("[TomTom] Data source: api.tomtom.com — Real-time satellite traffic");
         renderRouteBar();
         renderTimeline();
         checkForReroute();
         savePersistedData();
+    } else {
+        console.log("[TomTom] No traffic changes detected — route is clear");
     }
 }
 
@@ -2548,7 +2616,9 @@ function addNotification(msg) {
 // ===== SIMULATE SPOTTER ACTIVITY =====
 // ===== SIMULATE SPOTTER ACTIVITY =====
 function simulateSpotterActivity() {
-    // Randomly update some stages based on "spotter reports"
+    // SIMULATED spotter activity — runs every 15 seconds when no real spotters are active
+    // This is NOT real-time data — it simulates what other makangas might report
+    console.log("[Spotter Sim] Running background simulation...");
     const stageKeys = Object.keys(STAGES);
     const numUpdates = Math.floor(Math.random() * 3) + 1;
 
@@ -2651,15 +2721,28 @@ function initApp() {
 
     // Initialize TomTom Traffic API (if key is configured)
     if (isTomTomApiConfigured()) {
-        console.log("TomTom Traffic API active");
-        showToast("Connecting to TomTom live traffic...");
+        console.log("✅ TomTom Traffic API ACTIVE — Using REAL satellite traffic data");
+        console.log("📡 Data source: api.tomtom.com/traffic/services/4/flowSegmentData");
+        showToast("Connected to TomTom live traffic satellite 🛰️");
+        // Update UI indicator
+        const liveInd = document.getElementById("liveIndicator");
+        const simInd = document.getElementById("simIndicator");
+        if (liveInd) liveInd.style.display = "inline";
+        if (simInd) simInd.style.display = "none";
+        const aiTitle = document.getElementById("aiInsightTitle");
+        if (aiTitle) aiTitle.innerHTML = '<i class="fas fa-satellite" style="color:var(--success)"></i> Live Traffic Feed';
         // Initial fetch
         mergeTomTomTrafficWithSpotters().then(() => {
             updateTomTomEta();
         });
     } else {
-        console.log("TomTom API not configured. Sign up at developer.tomtom.com and paste your key in TOMTOM_API_KEY");
+        console.log("⚠️ TomTom API not configured — Using simulated spotter data only");
+        console.log("💡 Sign up at developer.tomtom.com for real-time traffic");
         showToast("Spotter-only mode. Add TomTom API key for live traffic data.");
+        const liveInd = document.getElementById("liveIndicator");
+        const simInd = document.getElementById("simIndicator");
+        if (liveInd) liveInd.style.display = "none";
+        if (simInd) simInd.style.display = "inline";
     }
 
     updateTomTomStatus();
@@ -2756,6 +2839,9 @@ function addStageMarkers() {
 
         const marker = L.marker([stage.lat, stage.lng], { icon: markerIcon }).addTo(appState.map);
 
+        const dataSource = getStageDataSource(key);
+        const timeAgo = formatTimeAgo(dataSource.time);
+
         let reportHistoryHtml = "";
         if (stage.reportHistory && stage.reportHistory.length > 0) {
             const recent = stage.reportHistory.slice(-3);
@@ -2769,13 +2855,21 @@ function addStageMarkers() {
         }
 
         const popupContent = `
-            <div style="font-family:Inter,sans-serif; min-width:240px;">
-                <h3 style="margin:0 0 6px; font-size:14px; color:#1A1A2E; font-weight:700;">${stage.name}</h3>
+            <div style="font-family:Inter,sans-serif; min-width:260px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <h3 style="margin:0; font-size:14px; color:#1A1A2E; font-weight:700;">${stage.name}</h3>
+                    <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${dataSource.source === 'TomTom API' ? '#E8F5E9' : dataSource.source === 'You' ? '#FFF3E0' : '#F5F5F5'};color:${dataSource.source === 'TomTom API' ? '#2E7D32' : dataSource.source === 'You' ? '#E65100' : '#666'};font-weight:600;">
+                        ${dataSource.icon} ${dataSource.source}
+                    </span>
+                </div>
                 ${stage.note ? `<p style="margin:0 0 6px; color:#FF6B35; font-weight:600; font-size:11px; padding:3px 6px; background:#FFF3E0; border-radius:4px;">${stage.note}</p>` : ""}
                 <p style="margin:0; font-size:11px; color:#555; line-height:1.4;">${stage.desc}</p>
                 <p style="margin:6px 0 0; font-size:10px; color:#888;">
                     Status: <span style="color:${stage.status === 'green' ? '#00D4AA' : stage.status === 'yellow' ? '#FFB800' : '#FF3366'}; font-weight:700; text-transform:uppercase;">${stage.status}</span>
-                    ${stage.spotterConfirm > 0 ? `<span style="margin-left:8px;color:var(--accent);"><i class="fas fa-check-double"></i> ${stage.spotterConfirm} spotter${stage.spotterConfirm>1?'s':''}</span>` : ''}
+                    <span style="margin-left:8px;color:#888;">Updated: ${timeAgo}</span>
+                </p>
+                <p style="margin:4px 0 0; font-size:10px; color:#888;">
+                    ${stage.spotterConfirm > 0 ? `<span style="color:var(--accent);"><i class="fas fa-check-double"></i> ${stage.spotterConfirm} spotter${stage.spotterConfirm>1?'s':''} confirm</span>` : '<span style="color:var(--text-muted);">No confirmations yet</span>'}
                 </p>
                 ${reportHistoryHtml}
                 <button class="report-stage-btn" onclick="reportStage('${key}')">
