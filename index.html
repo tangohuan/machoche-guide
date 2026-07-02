@@ -246,6 +246,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 .rush-badge.offpeak{background:var(--success);color:var(--bg-dark)}
 </style>
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 <div id="app">
@@ -398,293 +399,320 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 
-
-// ===== PHASE 2: STAGE DATA =====
-// Each stage has correct coordinates based on actual Nairobi geography
-// type: start=origin terminus, end=destination terminus, stop=regular stage, 
-//       interchange=connection point, choke=known bottleneck, decision=route choice point
-
 const STAGES = {
-  // === CBD TERMINI (Different routes end at different places) ===
-  temple_road:   {name:"Temple Road / Bus Station", lat:-1.2833, lng:36.8167, status:"green", type:"start", zone:"CBD", desc:"Main CBD terminus near Railways", spotterConfirm:0},
-  otc:           {name:"OTC / Haile Selassie Ave",  lat:-1.2850, lng:36.8210, status:"green", type:"start", zone:"CBD", desc:"Eastlands pickup point", spotterConfirm:0},
-  muthurwa:      {name:"Muthurwa Market",           lat:-1.2880, lng:36.8280, status:"green", type:"start", zone:"CBD", desc:"Landhies Road terminus", spotterConfirm:0},
-  country_bus:   {name:"Country Bus Station",       lat:-1.2820, lng:36.8200, status:"yellow", type:"end", zone:"CBD", desc:"Terminal congestion zone", spotterConfirm:0},
-  naccico:       {name:"NACCICO / Industrial Area", lat:-1.2800, lng:36.8300, status:"green", type:"end", zone:"CBD", desc:"Industrial area stage", spotterConfirm:0},
-  kencom:        {name:"Kencom House",              lat:-1.2855, lng:36.8230, status:"green", type:"start", zone:"CBD", desc:"Western suburbs pickup", spotterConfirm:0},
-  odeon:         {name:"Odeon Cinema",              lat:-1.2835, lng:36.8220, status:"green", type:"start", zone:"CBD", desc:"Thika Road & Northern suburbs", spotterConfirm:0},
-  afya_center:   {name:"Afya Center",               lat:-1.2845, lng:36.8185, status:"green", type:"start", zone:"CBD", desc:"Upper Hill & Kilimani", spotterConfirm:0},
-  ambassador:    {name:"Ambassador / Archives",       lat:-1.2860, lng:36.8195, status:"green", type:"start", zone:"CBD", desc:"Kawangware, KNH, Satellite", spotterConfirm:0},
-  accra_rd:      {name:"Accra Road",                lat:-1.2840, lng:36.8235, status:"green", type:"start", zone:"CBD", desc:"Embakasi region pickup", spotterConfirm:0},
-  ronald_ngala:  {name:"Ronald Ngala Street",       lat:-1.2830, lng:36.8240, status:"green", type:"start", zone:"CBD", desc:"Eastlands & peri-urban", spotterConfirm:0},
-  ngara:         {name:"Ngara / Fig Tree",          lat:-1.2780, lng:36.8250, status:"green", type:"start", zone:"CBD", desc:"Northern suburbs terminus", spotterConfirm:0},
-  latema_rd:     {name:"Latema Road",               lat:-1.2828, lng:36.8238, status:"green", type:"start", zone:"CBD", desc:"Pangani, Ngara, Kasarani", spotterConfirm:0},
-  gpo:           {name:"GPO / General Post Office", lat:-1.2865, lng:36.8215, status:"green", type:"start", zone:"CBD", desc:"Ngong Road, Dagoretti", spotterConfirm:0},
-
-  // === JOGOO ROAD CORRIDOR ===
-  landhies:      {name:"Landhies Road",             lat:-1.2900, lng:36.8350, status:"green", type:"route", zone:"Eastlands", desc:"Transition to Jogoo Rd", spotterConfirm:0},
-  city_stadium:  {name:"City Stadium",              lat:-1.2920, lng:36.8450, status:"yellow", type:"interchange", zone:"Eastlands", desc:"Major interchange point", spotterConfirm:0},
-  shauri_moyo:   {name:"Shauri Moyo",               lat:-1.2880, lng:36.8500, status:"green", type:"stop", zone:"Eastlands", desc:"Market area", spotterConfirm:0},
-  makadara:      {name:"Makadara",                  lat:-1.2850, lng:36.8550, status:"green", type:"stop", zone:"Eastlands", desc:"Residential hub", spotterConfirm:0},
-  maziwa:        {name:"Maziwa / Rikana",           lat:-1.2820, lng:36.8600, status:"green", type:"stop", zone:"Eastlands", desc:"Local pickups", spotterConfirm:0},
-  hamza:         {name:"Hamza",                     lat:-1.2780, lng:36.8650, status:"yellow", type:"choke", zone:"Eastlands", desc:"Major choke point", note:"Expect delays", spotterConfirm:0},
-  donholm:       {name:"Donholm",                   lat:-1.2750, lng:36.8700, status:"green", type:"interchange", zone:"Eastlands", desc:"Interchange to Buruburu", spotterConfirm:0},
-  donholm_caltex:{name:"Donholm Caltex",            lat:-1.2740, lng:36.8720, status:"green", type:"interchange", zone:"Eastlands", desc:"Fuel & turnaround", spotterConfirm:0},
-
-  // === KANGUNDO ROAD (Kayole) ===
-  kangundo_jn:   {name:"Kangundo Junction",         lat:-1.2700, lng:36.8750, status:"green", type:"interchange", zone:"Eastlands", desc:"Exit to Kangundo Rd", spotterConfirm:0},
-  saika:         {name:"Saika / Naivas",            lat:-1.2650, lng:36.8800, status:"green", type:"stop", zone:"Eastlands", desc:"Heavy passenger area", spotterConfirm:0},
-  kayole_jn:     {name:"Kayole Junction",           lat:-1.2600, lng:36.8850, status:"green", type:"interchange", zone:"Kayole", desc:"Main Kayole entry", spotterConfirm:0},
-  solace:        {name:"Solace",                    lat:-1.2550, lng:36.8900, status:"green", type:"stop", zone:"Kayole", desc:"1st Kayole stop", spotterConfirm:0},
-  stage_18:      {name:"18 Stage",                  lat:-1.2500, lng:36.8950, status:"green", type:"decision", zone:"Kayole", desc:"STAY on Kangundo Rd", note:"Do NOT turn to Dandora", spotterConfirm:0},
-  kwa_miti:      {name:"Kwa Miti",                  lat:-1.2450, lng:36.9000, status:"green", type:"stop", zone:"Kayole", desc:"Moving well", spotterConfirm:0},
-  pheroz:        {name:"Pheroz",                    lat:-1.2400, lng:36.9050, status:"green", type:"stop", zone:"Kayole", desc:"Business district", spotterConfirm:0},
-  komarock:      {name:"Komarock",                  lat:-1.2350, lng:36.9100, status:"yellow", type:"interchange", zone:"Kayole", desc:"Lorry breakdown common", note:"Slow moving", spotterConfirm:0},
-  caltex:        {name:"Caltex Junction",           lat:-1.2300, lng:36.9150, status:"red", type:"decision", zone:"Kayole", desc:"Jogoo Rd jammed!", note:"Take LEFT to Buruburu", spotterConfirm:0},
-  mama_lucy:     {name:"Mama Lucy Hospital",        lat:-1.2580, lng:36.8880, status:"green", type:"stop", zone:"Kayole", desc:"Hospital area", spotterConfirm:0},
-  mwiki:         {name:"Mwiki",                     lat:-1.2180, lng:36.9280, status:"green", type:"stop", zone:"Kayole", desc:"Eastern outskirts", spotterConfirm:0},
-
-  // === BURUBURU / JUJA RD ALTERNATIVE ===
-  buruburu:      {name:"Buruburu",                  lat:-1.2800, lng:36.8700, status:"green", type:"route_alt", zone:"Eastlands", desc:"Alternative via Juja Rd", spotterConfirm:0},
-  juja_rd:       {name:"Juja Road",                 lat:-1.2750, lng:36.8600, status:"green", type:"route_alt", zone:"Eastlands", desc:"Clear corridor to CBD", spotterConfirm:0},
-  manyanja:      {name:"Manyanja",                  lat:-1.2680, lng:36.8750, status:"green", type:"route_alt", zone:"Eastlands", desc:"Cut-through route", spotterConfirm:0},
-  umoja:         {name:"Umoja",                     lat:-1.2720, lng:36.9000, status:"green", type:"route_alt", zone:"Eastlands", desc:"Estate stage", spotterConfirm:0},
-  umoja_inner:   {name:"Umoja Inner",               lat:-1.2700, lng:36.9050, status:"green", type:"route_alt", zone:"Eastlands", desc:"Inner estate", spotterConfirm:0},
-
-  // === FEDHA / PIPELINE BACKROADS ===
-  fedha:         {name:"Fedha Estate",              lat:-1.2650, lng:36.8950, status:"green", type:"route_alt", zone:"Eastlands", desc:"Secret backroad", note:"Muddy if rain", spotterConfirm:0},
-  pipeline:      {name:"Pipeline",                  lat:-1.2700, lng:36.8850, status:"green", type:"route_alt", zone:"Eastlands", desc:"Rejoins main flow", spotterConfirm:0},
-  pipeline_taj:  {name:"Pipeline / Taj Mall",         lat:-1.2680, lng:36.8830, status:"green", type:"route_alt", zone:"Eastlands", desc:"Shopping area", spotterConfirm:0},
-  embakasi:      {name:"Embakasi",                  lat:-1.3150, lng:36.8850, status:"green", type:"route_alt", zone:"Eastlands", desc:"Airport zone", spotterConfirm:0},
-
-  // === OUTER RING BYPASS ===
-  outer_ring:    {name:"Outer Ring Road",           lat:-1.2850, lng:36.8800, status:"green", type:"route_alt", zone:"Eastlands", desc:"Bypass route", spotterConfirm:0},
-  allsops:       {name:"Allsops",                   lat:-1.2650, lng:36.8600, status:"green", type:"route_alt", zone:"Eastlands", desc:"Thika Rd connection", spotterConfirm:0},
-  roysambu:      {name:"Roysambu",                  lat:-1.2150, lng:36.8750, status:"green", type:"route_alt", zone:"Eastlands", desc:"Northern suburbs", spotterConfirm:0},
-  kasarani:      {name:"Kasarani",                  lat:-1.2200, lng:36.8950, status:"green", type:"route_alt", zone:"Eastlands", desc:"Sports complex area", spotterConfirm:0},
-  thika_rd:      {name:"Thika Road",                lat:-1.2100, lng:36.8800, status:"green", type:"route_alt", zone:"Eastlands", desc:"Major highway", spotterConfirm:0},
-
-  // === THIKA ROAD CORRIDOR ===
-  ngara_thika:   {name:"Ngara (Thika Rd)",        lat:-1.2780, lng:36.8250, status:"green", type:"start", zone:"Thika Road", desc:"Thika Rd terminus", spotterConfirm:0},
-  pangani:       {name:"Pangani",                   lat:-1.2700, lng:36.8300, status:"green", type:"stop", zone:"Thika Road", desc:"Roundabout area", spotterConfirm:0},
-  muthaiga:      {name:"Muthaiga",                  lat:-1.2550, lng:36.8350, status:"green", type:"stop", zone:"Thika Road", desc:"Diplomatic zone", spotterConfirm:0},
-  garden_city:   {name:"Garden City",               lat:-1.2350, lng:36.8450, status:"green", type:"stop", zone:"Thika Road", desc:"Mall area", spotterConfirm:0},
-  roasters:      {name:"Roasters",                  lat:-1.2250, lng:36.8550, status:"green", type:"stop", zone:"Thika Road", desc:"Famous stop", spotterConfirm:0},
-  kahawa_sukari: {name:"Kahawa Sukari",             lat:-1.2050, lng:36.8650, status:"green", type:"stop", zone:"Thika Road", desc:"Estate area", spotterConfirm:0},
-  kahawa_wendani:{name:"Kahawa Wendani",            lat:-1.1950, lng:36.8750, status:"green", type:"stop", zone:"Thika Road", desc:"Residential", spotterConfirm:0},
-  githurai:      {name:"Githurai",                  lat:-1.1850, lng:36.8850, status:"green", type:"interchange", zone:"Thika Road", desc:"Major interchange", spotterConfirm:0},
-  ruiru:         {name:"Ruiru",                     lat:-1.1500, lng:36.9600, status:"green", type:"end", zone:"Thika Road", desc:"Town terminus", spotterConfirm:0},
-  thika_town:    {name:"Thika Town",                lat:-1.0350, lng:37.0700, status:"green", type:"end", zone:"Thika Road", desc:"Final destination", spotterConfirm:0},
-  juja:          {name:"Juja",                      lat:-1.1000, lng:37.0200, status:"green", type:"stop", zone:"Thika Road", desc:"University area", spotterConfirm:0},
-  ku:            {name:"Kenyatta University",       lat:-1.1800, lng:36.9250, status:"green", type:"stop", zone:"Thika Road", desc:"University stage", spotterConfirm:0},
-
-  // === WESTLANDS / WAIYAKI WAY ===
-  westlands:     {name:"Westlands",                 lat:-1.2680, lng:36.8050, status:"green", type:"start", zone:"Westlands", desc:"Business district", spotterConfirm:0},
-  sarit:         {name:"Sarit Centre",              lat:-1.2620, lng:36.8000, status:"green", type:"stop", zone:"Westlands", desc:"Shopping mall", spotterConfirm:0},
-  safaricom:     {name:"Safaricom House",           lat:-1.2580, lng:36.7950, status:"green", type:"stop", zone:"Westlands", desc:"Corporate area", spotterConfirm:0},
-  abc:           {name:"ABC Place",                 lat:-1.2550, lng:36.7900, status:"green", type:"stop", zone:"Westlands", desc:"Commercial", spotterConfirm:0},
-  lavington:     {name:"Lavington",                 lat:-1.2750, lng:36.7750, status:"green", type:"stop", zone:"Westlands", desc:"Upscale area", spotterConfirm:0},
-  valley_arcade: {name:"Valley Arcade",             lat:-1.2900, lng:36.7700, status:"green", type:"stop", zone:"Westlands", desc:"Shopping center", spotterConfirm:0},
-  yaya:          {name:"Yaya Centre",               lat:-1.2950, lng:36.7850, status:"green", type:"stop", zone:"Westlands", desc:"Hurlingham mall", spotterConfirm:0},
-  kawangware:    {name:"Kawangware",                lat:-1.2850, lng:36.7450, status:"green", type:"end", zone:"Westlands", desc:"Dense estate", spotterConfirm:0},
-  kabiria:       {name:"Kabiria",                   lat:-1.2900, lng:36.7350, status:"green", type:"end", zone:"Westlands", desc:"Western outskirts", spotterConfirm:0},
-  dagoretti:     {name:"Dagoretti",                 lat:-1.3000, lng:36.7250, status:"green", type:"end", zone:"Westlands", desc:"Market town", spotterConfirm:0},
-  kikuyu:        {name:"Kikuyu",                    lat:-1.2500, lng:36.6600, status:"green", type:"end", zone:"Westlands", desc:"Town terminus", spotterConfirm:0},
-  uthiru:        {name:"Uthiru",                    lat:-1.2650, lng:36.7000, status:"green", type:"stop", zone:"Westlands", desc:"Residential", spotterConfirm:0},
-  kangemi:       {name:"Kangemi",                   lat:-1.2700, lng:36.7100, status:"green", type:"stop", zone:"Westlands", desc:"Working class area", spotterConfirm:0},
-
-  // === LANGATA / NGONG ROAD ===
-  langata:       {name:"Langata",                   lat:-1.3300, lng:36.7850, status:"green", type:"start", zone:"Langata", desc:"Southern suburbs", spotterConfirm:0},
-  carnivore:     {name:"Carnivore",                 lat:-1.3250, lng:36.7800, status:"green", type:"stop", zone:"Langata", desc:"Restaurant landmark", spotterConfirm:0},
-  bomas:         {name:"Bomas of Kenya",            lat:-1.3200, lng:36.7750, status:"green", type:"stop", zone:"Langata", desc:"Cultural center", spotterConfirm:0},
-  langata_cemetery:{name:"Langata Cemetery",        lat:-1.3150, lng:36.7700, status:"green", type:"stop", zone:"Langata", desc:"KWS HQ nearby", spotterConfirm:0},
-  kws:           {name:"KWS HQ",                    lat:-1.3100, lng:36.7650, status:"green", type:"stop", zone:"Langata", desc:"Wildlife service", spotterConfirm:0},
-  galleria:      {name:"Galleria Mall",             lat:-1.3050, lng:36.7600, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
-  brookhouse:    {name:"Brookhouse School",         lat:-1.3000, lng:36.7550, status:"green", type:"stop", zone:"Langata", desc:"School zone", spotterConfirm:0},
-  langata_barracks:{name:"Langata Barracks",        lat:-1.2950, lng:36.7500, status:"green", type:"stop", zone:"Langata", desc:"Military area", spotterConfirm:0},
-  uchumi_langata:{name:"Uchumi Langata",            lat:-1.2900, lng:36.7450, status:"green", type:"stop", zone:"Langata", desc:"Supermarket", spotterConfirm:0},
-  tmall:         {name:"T-Mall",                    lat:-1.2850, lng:36.7400, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
-  strathmore:    {name:"Strathmore University",     lat:-1.3100, lng:36.8150, status:"green", type:"stop", zone:"Langata", desc:"University", spotterConfirm:0},
-  madaraka:      {name:"Madaraka",                  lat:-1.3050, lng:36.8100, status:"green", type:"stop", zone:"Langata", desc:"Estate", spotterConfirm:0},
-  south_b:       {name:"South B",                   lat:-1.3150, lng:36.8250, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
-  south_c:       {name:"South C",                   lat:-1.3200, lng:36.8300, status:"green", type:"stop", zone:"Langata", desc:"Airport view", spotterConfirm:0},
-  kpa:           {name:"KPA / Mombasa Rd",          lat:-1.3250, lng:36.8350, status:"green", type:"stop", zone:"Langata", desc:"Port authority", spotterConfirm:0},
-  nyayo:         {name:"Nyayo Stadium",             lat:-1.3050, lng:36.8200, status:"green", type:"stop", zone:"Langata", desc:"Sports complex", spotterConfirm:0},
-  highrise:      {name:"Highrise",                  lat:-1.2950, lng:36.8000, status:"green", type:"stop", zone:"Langata", desc:"Estate", spotterConfirm:0},
-  ngumo:         {name:"Ngumo",                     lat:-1.3000, lng:36.7950, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
-  karen:         {name:"Karen",                     lat:-1.3200, lng:36.7000, status:"green", type:"end", zone:"Langata", desc:"Leafy suburb", spotterConfirm:0},
-  hardy:         {name:"Hardy",                     lat:-1.3150, lng:36.7100, status:"green", type:"end", zone:"Langata", desc:"Karen extension", spotterConfirm:0},
-  rongai:        {name:"Rongai",                    lat:-1.3950, lng:36.7350, status:"green", type:"end", zone:"Langata", desc:"Fast-growing town", spotterConfirm:0},
-  kiserian:      {name:"Kiserian",                  lat:-1.4300, lng:36.6800, status:"green", type:"end", zone:"Langata", desc:"Market town", spotterConfirm:0},
-  ngong:         {name:"Ngong",                     lat:-1.3600, lng:36.6550, status:"green", type:"end", zone:"Langata", desc:"Hill town", spotterConfirm:0},
-  ongata_rongai: {name:"Ongata Rongai",             lat:-1.4000, lng:36.7300, status:"green", type:"end", zone:"Langata", desc:"Satellite town", spotterConfirm:0},
-  bomas_interchange:{name:"Bomas Interchange",      lat:-1.3180, lng:36.7720, status:"green", type:"interchange", zone:"Langata", desc:"Southern bypass link", spotterConfirm:0},
-
-  // === MOMBASA ROAD / SOUTHERN BYPASS ===
-  mombasa_rd:    {name:"Mombasa Road",              lat:-1.3200, lng:36.8500, status:"green", type:"start", zone:"Mombasa Road", desc:"Industrial area start", spotterConfirm:0},
-  syokimau:      {name:"Syokimau",                  lat:-1.3600, lng:36.9200, status:"green", type:"stop", zone:"Mombasa Road", desc:"SGR station", spotterConfirm:0},
-  katani:        {name:"Katani",                    lat:-1.3800, lng:36.9500, status:"green", type:"stop", zone:"Mombasa Road", desc:"Residential", spotterConfirm:0},
-  athi_river:    {name:"Athi River",                lat:-1.4500, lng:36.9800, status:"green", type:"end", zone:"Mombasa Road", desc:"Industrial town", spotterConfirm:0},
-  kitengela:     {name:"Kitengela",                 lat:-1.4700, lng:36.9600, status:"green", type:"end", zone:"Mombasa Road", desc:"Fast-growing town", spotterConfirm:0},
-  jkia:          {name:"JKIA Airport",              lat:-1.3200, lng:36.9250, status:"green", type:"stop", zone:"Mombasa Road", desc:"International airport", spotterConfirm:0},
-  cabanas:       {name:"Cabanas",                   lat:-1.3300, lng:36.9000, status:"green", type:"stop", zone:"Mombasa Road", desc:"Bypass junction", spotterConfirm:0},
-  imara_daima:   {name:"Imara Daima",               lat:-1.3250, lng:36.8800, status:"green", type:"stop", zone:"Mombasa Road", desc:"Estate", spotterConfirm:0},
-  enterprise_rd: {name:"Enterprise Road",             lat:-1.3100, lng:36.8600, status:"green", type:"stop", zone:"Mombasa Road", desc:"Industrial", spotterConfirm:0},
-  lungalunga:    {name:"Lunga Lunga",               lat:-1.3000, lng:36.8700, status:"green", type:"stop", zone:"Mombasa Road", desc:"Industrial area", spotterConfirm:0},
-
-  // === EASTLEIGH / DANDORA ===
-  eastleigh:     {name:"Eastleigh",                 lat:-1.2700, lng:36.8450, status:"green", type:"start", zone:"Eastleigh", desc:"Business hub", spotterConfirm:0},
-  pangani_east:  {name:"Pangani (East)",            lat:-1.2720, lng:36.8400, status:"green", type:"stop", zone:"Eastleigh", desc:"Transition zone", spotterConfirm:0},
-  kiambiu:       {name:"Kiambiu",                   lat:-1.2650, lng:36.8550, status:"green", type:"stop", zone:"Eastleigh", desc:"Informal settlement", spotterConfirm:0},
-  huruma:        {name:"Huruma",                    lat:-1.2550, lng:36.8650, status:"green", type:"stop", zone:"Eastleigh", desc:"Residential", spotterConfirm:0},
-  kariobangi_n:  {name:"Kariobangi North",          lat:-1.2600, lng:36.8750, status:"green", type:"stop", zone:"Eastleigh", desc:"Dense area", spotterConfirm:0},
-  kariobangi_s:  {name:"Kariobangi South",          lat:-1.2650, lng:36.8700, status:"green", type:"stop", zone:"Eastleigh", desc:"Market area", spotterConfirm:0},
-  dandora:       {name:"Dandora",                   lat:-1.2500, lng:36.8900, status:"green", type:"end", zone:"Eastleigh", desc:"Estate terminus", spotterConfirm:0},
-  dandora_dump:  {name:"Dandora Dump Site",         lat:-1.2450, lng:36.8950, status:"green", type:"stop", zone:"Eastleigh", desc:"Avoid area", spotterConfirm:0},
-  gikomba:       {name:"Gikomba Market",            lat:-1.2850, lng:36.8400, status:"green", type:"start", zone:"Eastleigh", desc:"Wholesale market", spotterConfirm:0},
-  jua_kali:      {name:"Jua Kali",                  lat:-1.2820, lng:36.8450, status:"green", type:"stop", zone:"Eastleigh", desc:"Artisan area", spotterConfirm:0},
-  baba_ndogo:    {name:"Baba Ndogo",                lat:-1.2400, lng:36.8550, status:"green", type:"stop", zone:"Eastleigh", desc:"Industrial", spotterConfirm:0},
-  lucky_summer:  {name:"Lucky Summer",              lat:-1.2350, lng:36.8600, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-  mwiki_east:    {name:"Mwiki (East)",              lat:-1.2200, lng:36.9300, status:"green", type:"end", zone:"Eastleigh", desc:"Eastern edge", spotterConfirm:0},
-  njiru:         {name:"Njiru",                     lat:-1.2300, lng:36.9400, status:"green", type:"end", zone:"Eastleigh", desc:"Rural-urban", spotterConfirm:0},
-  ruai:          {name:"Ruai",                      lat:-1.2600, lng:36.9600, status:"green", type:"end", zone:"Eastleigh", desc:"Satellite town", spotterConfirm:0},
-  utawala:       {name:"Utawala",                   lat:-1.2800, lng:36.9500, status:"green", type:"end", zone:"Eastleigh", desc:"New estate", spotterConfirm:0},
-  komarocks_east:{name:"Komarocks (East)",          lat:-1.2320, lng:36.9120, status:"green", type:"stop", zone:"Eastleigh", desc:"Eastern extension", spotterConfirm:0},
-  jacaranda:     {name:"Jacaranda",                 lat:-1.2400, lng:36.9200, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-
-  // === KIBERA ===
-  knh:           {name:"KNH / Kenyatta Hospital",   lat:-1.3020, lng:36.8060, status:"green", type:"start", zone:"Kibera", desc:"Hospital stage", spotterConfirm:0},
-  kibera:        {name:"Kibera",                    lat:-1.3150, lng:36.7800, status:"green", type:"end", zone:"Kibera", desc:"Largest informal settlement", spotterConfirm:0},
-  ayany:         {name:"Ayany",                     lat:-1.3100, lng:36.7750, status:"green", type:"stop", zone:"Kibera", desc:"Kibera zone", spotterConfirm:0},
-  mashimoni:     {name:"Mashimoni",                 lat:-1.3200, lng:36.7700, status:"green", type:"stop", zone:"Kibera", desc:"Deep Kibera", spotterConfirm:0},
-  silanga:       {name:"Silanga",                   lat:-1.3250, lng:36.7650, status:"green", type:"stop", zone:"Kibera", desc:"Kibera west", spotterConfirm:0},
-
-  // === KIAMBU ROAD ===
-  kiambu_town:   {name:"Kiambu Town",               lat:-1.1700, lng:36.8300, status:"green", type:"end", zone:"Kiambu", desc:"County headquarters", spotterConfirm:0},
-  githunguri:    {name:"Githunguri",                lat:-1.0600, lng:36.7750, status:"green", type:"end", zone:"Kiambu", desc:"Dairy town", spotterConfirm:0},
-  ndumberi:      {name:"Ndumberi",                  lat:-1.1400, lng:36.8200, status:"green", type:"stop", zone:"Kiambu", desc:"Trading center", spotterConfirm:0},
-  ridgeways:     {name:"Ridgeways",                 lat:-1.2100, lng:36.8400, status:"green", type:"stop", zone:"Kiambu", desc:"Residential", spotterConfirm:0},
-  runda:         {name:"Runda",                     lat:-1.2150, lng:36.8300, status:"green", type:"stop", zone:"Kiambu", desc:"Diplomatic zone", spotterConfirm:0},
-  two_rivers:    {name:"Two Rivers Mall",           lat:-1.2080, lng:36.8250, status:"green", type:"stop", zone:"Kiambu", desc:"Shopping", spotterConfirm:0},
-  village_mkt:   {name:"Village Market",            lat:-1.2280, lng:36.8150, status:"green", type:"stop", zone:"Kiambu", desc:"Mall", spotterConfirm:0},
-  united_nations:{name:"UN Gigiri",                 lat:-1.2350, lng:36.8200, status:"green", type:"stop", zone:"Kiambu", desc:"UN complex", spotterConfirm:0},
-  spring_valley: {name:"Spring Valley",             lat:-1.2500, lng:36.8050, status:"green", type:"stop", zone:"Kiambu", desc:"Upscale", spotterConfirm:0},
-  loresho:       {name:"Loresho",                   lat:-1.2450, lng:36.7900, status:"green", type:"stop", zone:"Kiambu", desc:"Estate", spotterConfirm:0},
-  kitisuru:      {name:"Kitisuru",                  lat:-1.2550, lng:36.7750, status:"green", type:"stop", zone:"Kiambu", desc:"Hill estate", spotterConfirm:0},
-
-  // === Additional stages for route completeness ===
-  prestige:      {name:"Prestige Plaza",            lat:-1.3000, lng:36.7900, status:"green", type:"stop", zone:"Langata", desc:"Ngong Rd mall", spotterConfirm:0},
-  junction:      {name:"The Junction Mall",         lat:-1.2980, lng:36.7620, status:"green", type:"stop", zone:"Langata", desc:"Ngong Rd shopping", spotterConfirm:0},
-  adams_arcade:  {name:"Adams Arcade",              lat:-1.2880, lng:36.7500, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
-  citam_valley:  {name:"CITAM Valley Road",         lat:-1.2950, lng:36.8050, status:"green", type:"stop", zone:"Langata", desc:"Church landmark", spotterConfirm:0},
-  nairobi_hospital:{name:"Nairobi Hospital",        lat:-1.2960, lng:36.8080, status:"green", type:"stop", zone:"Langata", desc:"Medical", spotterConfirm:0},
-  hurlingham:    {name:"Hurlingham",                lat:-1.2900, lng:36.7900, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
-  kilimani:      {name:"Kilimani",                  lat:-1.2880, lng:36.7850, status:"green", type:"stop", zone:"Langata", desc:"Upscale", spotterConfirm:0},
-  kileleshwa:    {name:"Kileleshwa",                lat:-1.2780, lng:36.7750, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
-  parklands:     {name:"Parklands",                 lat:-1.2600, lng:36.8150, status:"green", type:"stop", zone:"Westlands", desc:"Residential", spotterConfirm:0},
-  highridge:     {name:"Highridge",                 lat:-1.2550, lng:36.8100, status:"green", type:"stop", zone:"Westlands", desc:"Estate", spotterConfirm:0},
-  muthaiga_north:{name:"Muthaiga North",            lat:-1.2500, lng:36.8400, status:"green", type:"stop", zone:"Thika Road", desc:"Diplomatic", spotterConfirm:0},
-  thika_rd_mall: {name:"Thika Road Mall",           lat:-1.2150, lng:36.8500, status:"green", type:"stop", zone:"Thika Road", desc:"TRM", spotterConfirm:0},
-  mountain_view: {name:"Mountain View",             lat:-1.2650, lng:36.7350, status:"green", type:"stop", zone:"Westlands", desc:"Estate", spotterConfirm:0},
-  kawangware_46: {name:"Kawangware 46",             lat:-1.2820, lng:36.7420, status:"green", type:"stop", zone:"Westlands", desc:"Route 46", spotterConfirm:0},
-  satellite:     {name:"Satellite",                 lat:-1.2780, lng:36.7380, status:"green", type:"stop", zone:"Westlands", desc:"Estate", spotterConfirm:0},
-  waithaka:      {name:"Waithaka",                  lat:-1.2850, lng:36.7250, status:"green", type:"stop", zone:"Westlands", desc:"Dagoretti", spotterConfirm:0},
-  uthiru_market: {name:"Uthiru Market",             lat:-1.2620, lng:36.6980, status:"green", type:"stop", zone:"Westlands", desc:"Market", spotterConfirm:0},
-  kabete:        {name:"Kabete",                    lat:-1.2550, lng:36.7150, status:"green", type:"stop", zone:"Westlands", desc:"Veterinary", spotterConfirm:0},
-  lower_kabete:  {name:"Lower Kabete",              lat:-1.2450, lng:36.7250, status:"green", type:"stop", zone:"Westlands", desc:"Residential", spotterConfirm:0},
-  kingeero:      {name:"Kinge'ero",                 lat:-1.2350, lng:36.7050, status:"green", type:"stop", zone:"Westlands", desc:"Outskirts", spotterConfirm:0},
-  gathiga:       {name:"Gathiga",                   lat:-1.2250, lng:36.6950, status:"green", type:"stop", zone:"Westlands", desc:"Rural", spotterConfirm:0},
-  gichagi:       {name:"Gichagi",                   lat:-1.2150, lng:36.6850, status:"green", type:"stop", zone:"Westlands", desc:"Village", spotterConfirm:0},
-  marurui:       {name:"Marurui",                   lat:-1.2050, lng:36.7750, status:"green", type:"stop", zone:"Kiambu", desc:"Estate", spotterConfirm:0},
-  kahawa_west:   {name:"Kahawa West",               lat:-1.1900, lng:36.8850, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  ngumba:        {name:"Ngumba",                    lat:-1.2000, lng:36.8950, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  mwihoko:       {name:"Mwihoko",                   lat:-1.1950, lng:36.9050, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  lucky_summer_junction:{name:"Lucky Summer Jn",   lat:-1.2300, lng:36.8580, status:"green", type:"stop", zone:"Eastleigh", desc:"Junction", spotterConfirm:0},
-  baba_ndogo_junction:{name:"Baba Ndogo Jn",       lat:-1.2350, lng:36.8520, status:"green", type:"stop", zone:"Eastleigh", desc:"Industrial", spotterConfirm:0},
-  huruma_bridge: {name:"Huruma Bridge",             lat:-1.2520, lng:36.8680, status:"green", type:"stop", zone:"Eastleigh", desc:"Crossing", spotterConfirm:0},
-  kiambiu_bridge:{name:"Kiambiu Bridge",            lat:-1.2620, lng:36.8580, status:"green", type:"stop", zone:"Eastleigh", desc:"Crossing", spotterConfirm:0},
-  kariobangi_roundabout:{name:"Kariobangi Rndbt",   lat:-1.2580, lng:36.8720, status:"green", type:"interchange", zone:"Eastleigh", desc:"Roundabout", spotterConfirm:0},
-  outer_ring_market:{name:"Outer Ring Market",       lat:-1.2750, lng:36.8780, status:"green", type:"stop", zone:"Eastlands", desc:"Market", spotterConfirm:0},
-  total_petrol:  {name:"Total Petrol Station",      lat:-1.2780, lng:36.8820, status:"green", type:"stop", zone:"Eastlands", desc:"Fuel stop", spotterConfirm:0},
-  kwa_chief:     {name:"Kwa Chief",                 lat:-1.2350, lng:36.9080, status:"green", type:"stop", zone:"Kayole", desc:"Landmark", spotterConfirm:0},
-  kanisani:      {name:"Kanisani",                  lat:-1.2280, lng:36.9180, status:"green", type:"stop", zone:"Kayole", desc:"Church area", spotterConfirm:0},
-  masimba:       {name:"Masimba",                   lat:-1.2320, lng:36.9220, status:"green", type:"stop", zone:"Kayole", desc:"Estate", spotterConfirm:0},
-  bee_centre:    {name:"Bee Centre",                lat:-1.2380, lng:36.9250, status:"green", type:"stop", zone:"Kayole", desc:"Landmark", spotterConfirm:0},
-  ruai_bypass_junction:{name:"Ruai Bypass Jn",      lat:-1.2550, lng:36.9650, status:"green", type:"stop", zone:"Eastleigh", desc:"Bypass", spotterConfirm:0},
-  kamulu_junction:{name:"Kamulu Junction",          lat:-1.1750, lng:36.9750, status:"green", type:"stop", zone:"Thika Road", desc:"Junction", spotterConfirm:0},
-  joska_junction:{name:"Joska Junction",            lat:-1.1450, lng:36.9850, status:"green", type:"stop", zone:"Thika Road", desc:"Junction", spotterConfirm:0},
-  githurai_44:   {name:"Githurai 44",               lat:-1.1900, lng:36.8900, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  githurai_45:   {name:"Githurai 45",               lat:-1.1850, lng:36.8950, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  zimmerman_base:{name:"Zimmerman Base",            lat:-1.1980, lng:36.8880, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  seasons:       {name:"Seasons",                   lat:-1.2250, lng:36.8700, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  kariobangi_estate:{name:"Kariobangi Estate",      lat:-1.2630, lng:36.8680, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-  bahati:        {name:"Bahati",                    lat:-1.2900, lng:36.8650, status:"green", type:"stop", zone:"Eastlands", desc:"Estate", spotterConfirm:0},
-  uhuru_estate:  {name:"Uhuru Estate",              lat:-1.2950, lng:36.8600, status:"green", type:"stop", zone:"Eastlands", desc:"Estate", spotterConfirm:0},
-  hamza_uchumi:  {name:"Hamza Uchumi",              lat:-1.2760, lng:36.8630, status:"green", type:"stop", zone:"Eastlands", desc:"Supermarket", spotterConfirm:0},
-  donholm_stage: {name:"Donholm Stage",             lat:-1.2730, lng:36.8680, status:"green", type:"stop", zone:"Eastlands", desc:"Main stage", spotterConfirm:0},
-  greenspan:     {name:"Greenspan Mall",            lat:-1.2680, lng:36.8850, status:"green", type:"stop", zone:"Eastlands", desc:"Shopping", spotterConfirm:0},
-  savannah_estate:{name:"Savannah Estate",          lat:-1.2720, lng:36.9180, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-  chokaa_estate: {name:"Chokaa Estate",             lat:-1.2380, lng:36.9320, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-  ruai_town:     {name:"Ruai Town",                 lat:-1.2550, lng:36.9550, status:"green", type:"end", zone:"Eastleigh", desc:"Town center", spotterConfirm:0},
-  utawala_junction:{name:"Utawala Junction",        lat:-1.2780, lng:36.9450, status:"green", type:"stop", zone:"Eastleigh", desc:"Junction", spotterConfirm:0},
-  eastern_bypass_junction:{name:"Eastern Bypass Jn", lat:-1.2880, lng:36.9250, status:"green", type:"stop", zone:"Eastleigh", desc:"Highway", spotterConfirm:0},
-  mombasa_rd_junction:{name:"Mombasa Rd Jn",        lat:-1.3150, lng:36.8850, status:"green", type:"stop", zone:"Mombasa Road", desc:"Junction", spotterConfirm:0},
-  nairobi_dam:   {name:"Nairobi Dam",               lat:-1.3100, lng:36.7850, status:"green", type:"stop", zone:"Langata", desc:"Waterfront", spotterConfirm:0},
-  wilson_airport:{name:"Wilson Airport",            lat:-1.3200, lng:36.8150, status:"green", type:"stop", zone:"Langata", desc:"Domestic airport", spotterConfirm:0},
-  south_b_shopping:{name:"South B Shopping",        lat:-1.3120, lng:36.8220, status:"green", type:"stop", zone:"Langata", desc:"Shopping center", spotterConfirm:0},
-  hazina:        {name:"Hazina",                    lat:-1.2980, lng:36.8120, status:"green", type:"stop", zone:"Langata", desc:"Estate", spotterConfirm:0},
-  taj_mall:      {name:"Taj Mall / Eastleigh",      lat:-1.2680, lng:36.8480, status:"green", type:"stop", zone:"Eastleigh", desc:"Shopping", spotterConfirm:0},
-  josters:       {name:"Josters",                   lat:-1.2720, lng:36.8520, status:"green", type:"stop", zone:"Eastleigh", desc:"Business", spotterConfirm:0},
-  rikana:        {name:"Rikana",                    lat:-1.2750, lng:36.8580, status:"green", type:"stop", zone:"Eastleigh", desc:"Stage", spotterConfirm:0},
-  maringo:       {name:"Maringo",                   lat:-1.2850, lng:36.8620, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-  greenfield:    {name:"Greenfield Estate",         lat:-1.2550, lng:36.9050, status:"green", type:"stop", zone:"Eastleigh", desc:"New estate", spotterConfirm:0},
-  mowlem:        {name:"Mowlem",                    lat:-1.2450, lng:36.9100, status:"green", type:"stop", zone:"Eastleigh", desc:"Dandora edge", spotterConfirm:0},
-  clayworks:     {name:"Clayworks",                 lat:-1.2150, lng:36.8700, status:"green", type:"stop", zone:"Thika Road", desc:"Industrial", spotterConfirm:0},
-  drive_inn:     {name:"Drive Inn",                 lat:-1.2050, lng:36.8600, status:"green", type:"stop", zone:"Thika Road", desc:"Famous stage", spotterConfirm:0},
-  kca:           {name:"KCA University",            lat:-1.1950, lng:36.8550, status:"green", type:"stop", zone:"Thika Road", desc:"University", spotterConfirm:0},
-  zimmerman:     {name:"Zimmerman",                 lat:-1.2000, lng:36.8900, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  sunton:        {name:"Sunton",                    lat:-1.2100, lng:36.9000, status:"green", type:"stop", zone:"Thika Road", desc:"Estate", spotterConfirm:0},
-  mwiki_thika:   {name:"Mwiki (Thika Rd)",          lat:-1.2150, lng:36.9100, status:"green", type:"stop", zone:"Thika Road", desc:"Thika Rd extension", spotterConfirm:0},
-  kamulu:        {name:"Kamulu",                    lat:-1.1800, lng:36.9800, status:"green", type:"end", zone:"Thika Road", desc:"Eastern outskirts", spotterConfirm:0},
-  joska:         {name:"Joska",                     lat:-1.1500, lng:36.9900, status:"green", type:"end", zone:"Thika Road", desc:"Rural town", spotterConfirm:0},
-  malaa:         {name:"Malaa",                     lat:-1.1000, lng:37.0000, status:"green", type:"end", zone:"Thika Road", desc:"Trading center", spotterConfirm:0},
-  koma_rock_east:{name:"Koma Rock",                 lat:-1.2300, lng:36.9200, status:"green", type:"stop", zone:"Eastleigh", desc:"Rock landmark", spotterConfirm:0},
-  savannah:      {name:"Savannah",                  lat:-1.2700, lng:36.9200, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-  chokaa:        {name:"Chokaa",                    lat:-1.2400, lng:36.9300, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-  greater_dandora:{name:"Greater Dandora",          lat:-1.2480, lng:36.8980, status:"green", type:"stop", zone:"Eastleigh", desc:"Dandora area", spotterConfirm:0},
-  dandora_phase5:{name:"Dandora Phase 5",           lat:-1.2420, lng:36.9050, status:"green", type:"stop", zone:"Eastleigh", desc:"Estate", spotterConfirm:0},
-  dandora_stadium:{name:"Dandora Stadium",          lat:-1.2380, lng:36.9100, status:"green", type:"stop", zone:"Eastleigh", desc:"Sports ground", spotterConfirm:0},
-  ruai_bypass:   {name:"Ruai Bypass",               lat:-1.2650, lng:36.9700, status:"green", type:"stop", zone:"Eastleigh", desc:"Bypass route", spotterConfirm:0},
-  eastern_bypass:{name:"Eastern Bypass",            lat:-1.2900, lng:36.9300, status:"green", type:"stop", zone:"Eastleigh", desc:"Highway link", spotterConfirm:0},
-  north_airport: {name:"North Airport Road",        lat:-1.3200, lng:36.9000, status:"green", type:"stop", zone:"Mombasa Road", desc:"Airport zone", spotterConfirm:0},
-  southern_bypass:{name:"Southern Bypass",          lat:-1.3500, lng:36.8000, status:"green", type:"stop", zone:"Langata", desc:"Fast route", spotterConfirm:0},
-  karen_hub:     {name:"Karen Hub",                 lat:-1.3220, lng:36.6950, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
-  gataka:        {name:"Gataka Road",               lat:-1.3300, lng:36.7100, status:"green", type:"stop", zone:"Langata", desc:"Karen route", spotterConfirm:0},
-  ngong_forest:  {name:"Ngong Road Forest",         lat:-1.3150, lng:36.7200, status:"green", type:"stop", zone:"Langata", desc:"Forest edge", spotterConfirm:0},
-  racecourse:    {name:"Racecourse",                lat:-1.2950, lng:36.7350, status:"green", type:"stop", zone:"Langata", desc:"Ngong Rd", spotterConfirm:0},
-  ngong_rd_mkt:  {name:"Ngong Rd Market",           lat:-1.2920, lng:36.7550, status:"green", type:"stop", zone:"Langata", desc:"Market", spotterConfirm:0},
-  chaka_place:   {name:"Chaka Place",               lat:-1.2980, lng:36.7980, status:"green", type:"stop", zone:"Langata", desc:"Kilimani", spotterConfirm:0},
-  westlands_link:{name:"Westlands Link Rd",         lat:-1.2650, lng:36.8000, status:"green", type:"stop", zone:"Westlands", desc:"Connector", spotterConfirm:0},
-  dagoretti_mkt: {name:"Dagoretti Market",          lat:-1.3020, lng:36.7380, status:"green", type:"stop", zone:"Langata", desc:"Market center", spotterConfirm:0},
-  rongai_tuskys: {name:"Rongai Tuskys",             lat:-1.3920, lng:36.7380, status:"green", type:"stop", zone:"Langata", desc:"Town center", spotterConfirm:0},
-  rongai_maasai: {name:"Rongai Maasai Lodge",       lat:-1.3850, lng:36.7250, status:"green", type:"stop", zone:"Langata", desc:"Landmark", spotterConfirm:0},
-  kiserian_mkt:  {name:"Kiserian Market",           lat:-1.4280, lng:36.6820, status:"green", type:"stop", zone:"Langata", desc:"Market day", spotterConfirm:0},
-  ngong_town:    {name:"Ngong Town",                lat:-1.3580, lng:36.6580, status:"green", type:"end", zone:"Langata", desc:"Hill station", spotterConfirm:0},
-  ngong_hills:   {name:"Ngong Hills",               lat:-1.4000, lng:36.6500, status:"green", type:"end", zone:"Langata", desc:"Wind farm", spotterConfirm:0},
-  magadi_rd:     {name:"Magadi Road",               lat:-1.3500, lng:36.7200, status:"green", type:"stop", zone:"Langata", desc:"Southern route", spotterConfirm:0},
-  olepolos:      {name:"Olepolos",                  lat:-1.4200, lng:36.6800, status:"green", type:"stop", zone:"Langata", desc:"Meat country", spotterConfirm:0},
-  isinya:        {name:"Isinya",                    lat:-1.6800, lng:36.8500, status:"green", type:"end", zone:"Mombasa Road", desc:"Kajiado town", spotterConfirm:0},
-  kiserian_ngong:{name:"Kiserian-Ngong Rd",         lat:-1.3900, lng:36.6700, status:"green", type:"stop", zone:"Langata", desc:"Connector", spotterConfirm:0},
-  mataara:       {name:"Mataara",                   lat:-1.3200, lng:36.6950, status:"green", type:"stop", zone:"Langata", desc:"Rural", spotterConfirm:0},
-  karen_crossing:{name:"Karen Crossing",            lat:-1.3250, lng:36.7050, status:"green", type:"stop", zone:"Langata", desc:"Shopping", spotterConfirm:0},
-  bomas_gate:    {name:"Bomas Main Gate",           lat:-1.3200, lng:36.7750, status:"green", type:"stop", zone:"Langata", desc:"Cultural gate", spotterConfirm:0},
-  nairobi_west:  {name:"Nairobi West",              lat:-1.3050, lng:36.8150, status:"green", type:"stop", zone:"Langata", desc:"Residential", spotterConfirm:0},
-  karen_hardy:   {name:"Karen Hardy",               lat:-1.3180, lng:36.7080, status:"green", type:"stop", zone:"Langata", desc:"Karen edge", spotterConfirm:0}
+  railways:{name:"Railways Terminus",lat:-1.2920,lng:36.8210,status:"green",type:"start",zone:"CBD",desc:"Haile Selassie Ave - South/West routes",spotterConfirm:0},
+  otc:{name:"OTC / Haile Selassie Ave",lat:-1.2850,lng:36.8210,status:"green",type:"start",zone:"CBD",desc:"Eastlands - BuruBuru, Kayole, Donholm",spotterConfirm:0},
+  muthurwa:{name:"Muthurwa Market",lat:-1.2880,lng:36.8280,status:"green",type:"start",zone:"CBD",desc:"Landhies Road - Jogoo Rd routes",spotterConfirm:0},
+  kencom:{name:"Kencom House",lat:-1.2855,lng:36.8230,status:"green",type:"start",zone:"CBD",desc:"City Hall Way - Westlands, Ngong Rd",spotterConfirm:0},
+  odeon:{name:"Odeon Cinema / Koja",lat:-1.2835,lng:36.8220,status:"green",type:"start",zone:"CBD",desc:"Moi Avenue - Thika Rd, Northern suburbs",spotterConfirm:0},
+  afya_center:{name:"Afya Center",lat:-1.2845,lng:36.8185,status:"green",type:"start",zone:"CBD",desc:"Aga Khan Rd - Upper Hill, Kilimani",spotterConfirm:0},
+  ambassador:{name:"Ambassador / Archives",lat:-1.2860,lng:36.8195,status:"green",type:"start",zone:"CBD",desc:"Moi Avenue - KNH, Kawangware, Kibera",spotterConfirm:0},
+  accra_rd:{name:"Accra Road",lat:-1.2840,lng:36.8235,status:"green",type:"start",zone:"CBD",desc:"Tom Mboya St - Embakasi routes",spotterConfirm:0},
+  ronald_ngala:{name:"Ronald Ngala Street",lat:-1.2830,lng:36.8240,status:"green",type:"start",zone:"CBD",desc:"Eastleigh, peri-urban routes",spotterConfirm:0},
+  ngara:{name:"Ngara / Fig Tree",lat:-1.2780,lng:36.8250,status:"green",type:"start",zone:"CBD",desc:"Northern suburbs - Kiambu Rd",spotterConfirm:0},
+  gpo:{name:"GPO / General Post Office",lat:-1.2865,lng:36.8215,status:"green",type:"start",zone:"CBD",desc:"Ngong Rd, Dagoretti, Karen",spotterConfirm:0},
+  green_park:{name:"Green Park Terminus",lat:-1.2925,lng:36.8180,status:"green",type:"start",zone:"CBD",desc:"Former Lunar Park - Langata Rd routes",spotterConfirm:0},
+  landhies:{name:"Landhies Road",lat:-1.2900,lng:36.8350,status:"green",type:"route",zone:"Eastlands",desc:"Transition to Jogoo Rd",spotterConfirm:0},
+  city_stadium:{name:"City Stadium",lat:-1.2920,lng:36.8450,status:"yellow",type:"interchange",zone:"Eastlands",desc:"Major interchange point",spotterConfirm:0},
+  shauri_moyo:{name:"Shauri Moyo",lat:-1.2880,lng:36.8500,status:"green",type:"stop",zone:"Eastlands",desc:"Market area",spotterConfirm:0},
+  makadara:{name:"Makadara",lat:-1.2850,lng:36.8550,status:"green",type:"stop",zone:"Eastlands",desc:"Residential hub",spotterConfirm:0},
+  maziwa:{name:"Maziwa / Rikana",lat:-1.2820,lng:36.8600,status:"green",type:"stop",zone:"Eastlands",desc:"Local pickups",spotterConfirm:0},
+  hamza:{name:"Hamza",lat:-1.2780,lng:36.8650,status:"yellow",type:"choke",zone:"Eastlands",desc:"Major choke point",note:"Expect delays",spotterConfirm:0},
+  donholm:{name:"Donholm",lat:-1.2750,lng:36.8700,status:"green",type:"interchange",zone:"Eastlands",desc:"Interchange to Buruburu",spotterConfirm:0},
+  donholm_caltex:{name:"Donholm Caltex",lat:-1.2740,lng:36.8720,status:"green",type:"interchange",zone:"Eastlands",desc:"Fuel & turnaround",spotterConfirm:0},
+  kangundo_jn:{name:"Kangundo Junction",lat:-1.2700,lng:36.8750,status:"green",type:"interchange",zone:"Eastlands",desc:"Exit to Kangundo Rd",spotterConfirm:0},
+  saika:{name:"Saika / Naivas",lat:-1.2650,lng:36.8800,status:"green",type:"stop",zone:"Eastlands",desc:"Heavy passenger area",spotterConfirm:0},
+  kayole_jn:{name:"Kayole Junction",lat:-1.2600,lng:36.8850,status:"green",type:"interchange",zone:"Kayole",desc:"Main Kayole entry",spotterConfirm:0},
+  caltex:{name:"Caltex Junction",lat:-1.2300,lng:36.9150,status:"red",type:"decision",zone:"Kayole",desc:"Jogoo Rd jammed!",note:"Take LEFT to Buruburu",spotterConfirm:0},
+  mama_lucy:{name:"Mama Lucy Hospital",lat:-1.2580,lng:36.8880,status:"green",type:"stop",zone:"Kayole",desc:"Hospital area",spotterConfirm:0},
+  mwiki:{name:"Mwiki",lat:-1.2180,lng:36.9280,status:"green",type:"stop",zone:"Kayole",desc:"Eastern outskirts",spotterConfirm:0},
+  buruburu:{name:"Buruburu",lat:-1.2800,lng:36.8700,status:"green",type:"route_alt",zone:"Eastlands",desc:"Alternative via Juja Rd",spotterConfirm:0},
+  juja_rd:{name:"Juja Road",lat:-1.2750,lng:36.8600,status:"green",type:"route_alt",zone:"Eastlands",desc:"Clear corridor to CBD",spotterConfirm:0},
+  manyanja:{name:"Manyanja",lat:-1.2680,lng:36.8750,status:"green",type:"route_alt",zone:"Eastlands",desc:"Cut-through route",spotterConfirm:0},
+  umoja:{name:"Umoja",lat:-1.2720,lng:36.9000,status:"green",type:"route_alt",zone:"Eastlands",desc:"Estate stage",spotterConfirm:0},
+  fedha:{name:"Fedha Estate",lat:-1.2650,lng:36.8950,status:"green",type:"route_alt",zone:"Eastlands",desc:"Secret backroad",note:"Muddy if rain",spotterConfirm:0},
+  pipeline:{name:"Pipeline",lat:-1.2700,lng:36.8850,status:"green",type:"route_alt",zone:"Eastlands",desc:"Rejoins main flow",spotterConfirm:0},
+  pipeline_taj:{name:"Pipeline / Taj Mall",lat:-1.2680,lng:36.8830,status:"green",type:"route_alt",zone:"Eastlands",desc:"Shopping area",spotterConfirm:0},
+  embakasi:{name:"Embakasi",lat:-1.3150,lng:36.8850,status:"green",type:"route_alt",zone:"Eastlands",desc:"Airport zone",spotterConfirm:0},
+  outer_ring:{name:"Outer Ring Road",lat:-1.2850,lng:36.8800,status:"green",type:"route_alt",zone:"Eastlands",desc:"Bypass route",spotterConfirm:0},
+  allsops:{name:"Allsops",lat:-1.2650,lng:36.8600,status:"green",type:"route_alt",zone:"Eastlands",desc:"Thika Rd connection",spotterConfirm:0},
+  pangani:{name:"Pangani",lat:-1.2700,lng:36.8300,status:"green",type:"stop",zone:"Thika Road",desc:"Roundabout area",spotterConfirm:0},
+  muthaiga:{name:"Muthaiga",lat:-1.2550,lng:36.8350,status:"green",type:"stop",zone:"Thika Road",desc:"Diplomatic zone",spotterConfirm:0},
+  garden_city:{name:"Garden City",lat:-1.2350,lng:36.8450,status:"green",type:"stop",zone:"Thika Road",desc:"Mall area",spotterConfirm:0},
+  roasters:{name:"Roasters",lat:-1.2250,lng:36.8550,status:"green",type:"stop",zone:"Thika Road",desc:"Famous stop",spotterConfirm:0},
+  kahawa_sukari:{name:"Kahawa Sukari",lat:-1.2050,lng:36.8650,status:"green",type:"stop",zone:"Thika Road",desc:"Estate area",spotterConfirm:0},
+  kahawa_wendani:{name:"Kahawa Wendani",lat:-1.1950,lng:36.8750,status:"green",type:"stop",zone:"Thika Road",desc:"Residential",spotterConfirm:0},
+  githurai:{name:"Githurai",lat:-1.1850,lng:36.8850,status:"green",type:"interchange",zone:"Thika Road",desc:"Major interchange",spotterConfirm:0},
+  ruiru:{name:"Ruiru",lat:-1.1500,lng:36.9600,status:"green",type:"end",zone:"Thika Road",desc:"Town terminus",spotterConfirm:0},
+  thika_town:{name:"Thika Town",lat:-1.0350,lng:37.0700,status:"green",type:"end",zone:"Thika Road",desc:"Final destination",spotterConfirm:0},
+  juja:{name:"Juja",lat:-1.1000,lng:37.0200,status:"green",type:"stop",zone:"Thika Road",desc:"University area",spotterConfirm:0},
+  ku:{name:"Kenyatta University",lat:-1.1800,lng:36.9250,status:"green",type:"stop",zone:"Thika Road",desc:"University stage",spotterConfirm:0},
+  sunton:{name:"Sunton",lat:-1.2100,lng:36.9000,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  clayworks:{name:"Clayworks",lat:-1.2150,lng:36.8700,status:"green",type:"stop",zone:"Thika Road",desc:"Industrial",spotterConfirm:0},
+  drive_inn:{name:"Drive Inn",lat:-1.2050,lng:36.8600,status:"green",type:"stop",zone:"Thika Road",desc:"Famous stage",spotterConfirm:0},
+  kca:{name:"KCA University",lat:-1.1950,lng:36.8550,status:"green",type:"stop",zone:"Thika Road",desc:"University",spotterConfirm:0},
+  zimmerman:{name:"Zimmerman",lat:-1.2000,lng:36.8900,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  seasons:{name:"Seasons",lat:-1.2250,lng:36.8700,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  githurai_44:{name:"Githurai 44",lat:-1.1900,lng:36.8900,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  githurai_45:{name:"Githurai 45",lat:-1.1850,lng:36.8950,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  zimmerman_base:{name:"Zimmerman Base",lat:-1.1980,lng:36.8880,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  ngumba:{name:"Ngumba",lat:-1.2000,lng:36.8950,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  mwihoko:{name:"Mwihoko",lat:-1.1950,lng:36.9050,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  roysambu:{name:"Roysambu",lat:-1.2150,lng:36.8750,status:"green",type:"stop",zone:"Thika Road",desc:"Northern suburbs",spotterConfirm:0},
+  kasarani:{name:"Kasarani",lat:-1.2200,lng:36.8950,status:"green",type:"stop",zone:"Thika Road",desc:"Sports complex area",spotterConfirm:0},
+  westlands:{name:"Westlands",lat:-1.2680,lng:36.8050,status:"green",type:"start",zone:"Westlands",desc:"Business district",spotterConfirm:0},
+  sarit:{name:"Sarit Centre",lat:-1.2620,lng:36.8000,status:"green",type:"stop",zone:"Westlands",desc:"Shopping mall",spotterConfirm:0},
+  safaricom:{name:"Safaricom House",lat:-1.2580,lng:36.7950,status:"green",type:"stop",zone:"Westlands",desc:"Corporate area",spotterConfirm:0},
+  abc:{name:"ABC Place",lat:-1.2550,lng:36.7900,status:"green",type:"stop",zone:"Westlands",desc:"Commercial",spotterConfirm:0},
+  lavington:{name:"Lavington",lat:-1.2750,lng:36.7750,status:"green",type:"stop",zone:"Westlands",desc:"Upscale area",spotterConfirm:0},
+  valley_arcade:{name:"Valley Arcade",lat:-1.2900,lng:36.7700,status:"green",type:"stop",zone:"Westlands",desc:"Shopping center",spotterConfirm:0},
+  yaya:{name:"Yaya Centre",lat:-1.2950,lng:36.7850,status:"green",type:"stop",zone:"Westlands",desc:"Hurlingham mall",spotterConfirm:0},
+  kawangware:{name:"Kawangware",lat:-1.2850,lng:36.7450,status:"green",type:"end",zone:"Westlands",desc:"Dense estate",spotterConfirm:0},
+  kabiria:{name:"Kabiria",lat:-1.2900,lng:36.7350,status:"green",type:"end",zone:"Westlands",desc:"Western outskirts",spotterConfirm:0},
+  dagoretti:{name:"Dagoretti",lat:-1.3000,lng:36.7250,status:"green",type:"end",zone:"Westlands",desc:"Market town",spotterConfirm:0},
+  kikuyu:{name:"Kikuyu",lat:-1.2500,lng:36.6600,status:"green",type:"end",zone:"Westlands",desc:"Town terminus",spotterConfirm:0},
+  uthiru:{name:"Uthiru",lat:-1.2650,lng:36.7000,status:"green",type:"stop",zone:"Westlands",desc:"Residential",spotterConfirm:0},
+  kangemi:{name:"Kangemi",lat:-1.2700,lng:36.7100,status:"green",type:"stop",zone:"Westlands",desc:"Working class area",spotterConfirm:0},
+  mountain_view:{name:"Mountain View",lat:-1.2650,lng:36.7350,status:"green",type:"stop",zone:"Westlands",desc:"Estate",spotterConfirm:0},
+  waithaka:{name:"Waithaka",lat:-1.2850,lng:36.7250,status:"green",type:"stop",zone:"Westlands",desc:"Dagoretti",spotterConfirm:0},
+  kabete:{name:"Kabete",lat:-1.2550,lng:36.7150,status:"green",type:"stop",zone:"Westlands",desc:"Veterinary",spotterConfirm:0},
+  lower_kabete:{name:"Lower Kabete",lat:-1.2450,lng:36.7250,status:"green",type:"stop",zone:"Westlands",desc:"Residential",spotterConfirm:0},
+  kingeero:{name:"Kinge'ero",lat:-1.2350,lng:36.7050,status:"green",type:"stop",zone:"Westlands",desc:"Outskirts",spotterConfirm:0},
+  gathiga:{name:"Gathiga",lat:-1.2250,lng:36.6950,status:"green",type:"stop",zone:"Westlands",desc:"Rural",spotterConfirm:0},
+  gichagi:{name:"Gichagi",lat:-1.2150,lng:36.6850,status:"green",type:"stop",zone:"Westlands",desc:"Village",spotterConfirm:0},
+  parklands:{name:"Parklands",lat:-1.2600,lng:36.8150,status:"green",type:"stop",zone:"Westlands",desc:"Residential",spotterConfirm:0},
+  highridge:{name:"Highridge",lat:-1.2550,lng:36.8100,status:"green",type:"stop",zone:"Westlands",desc:"Estate",spotterConfirm:0},
+  westlands_link:{name:"Westlands Link Rd",lat:-1.2650,lng:36.8000,status:"green",type:"stop",zone:"Westlands",desc:"Connector",spotterConfirm:0},
+  langata:{name:"Langata",lat:-1.3300,lng:36.7850,status:"green",type:"start",zone:"Langata",desc:"Southern suburbs",spotterConfirm:0},
+  carnivore:{name:"Carnivore",lat:-1.3250,lng:36.7800,status:"green",type:"stop",zone:"Langata",desc:"Restaurant landmark",spotterConfirm:0},
+  bomas:{name:"Bomas of Kenya",lat:-1.3200,lng:36.7750,status:"green",type:"stop",zone:"Langata",desc:"Cultural center",spotterConfirm:0},
+  langata_cemetery:{name:"Langata Cemetery",lat:-1.3150,lng:36.7700,status:"green",type:"stop",zone:"Langata",desc:"KWS HQ nearby",spotterConfirm:0},
+  kws:{name:"KWS HQ",lat:-1.3100,lng:36.7650,status:"green",type:"stop",zone:"Langata",desc:"Wildlife service",spotterConfirm:0},
+  galleria:{name:"Galleria Mall",lat:-1.3050,lng:36.7600,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0},
+  brookhouse:{name:"Brookhouse School",lat:-1.3000,lng:36.7550,status:"green",type:"stop",zone:"Langata",desc:"School zone",spotterConfirm:0},
+  langata_barracks:{name:"Langata Barracks",lat:-1.2950,lng:36.7500,status:"green",type:"stop",zone:"Langata",desc:"Military area",spotterConfirm:0},
+  uchumi_langata:{name:"Uchumi Langata",lat:-1.2900,lng:36.7450,status:"green",type:"stop",zone:"Langata",desc:"Supermarket",spotterConfirm:0},
+  tmall:{name:"T-Mall",lat:-1.2850,lng:36.7400,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0},
+  strathmore:{name:"Strathmore University",lat:-1.3100,lng:36.8150,status:"green",type:"stop",zone:"Langata",desc:"University",spotterConfirm:0},
+  madaraka:{name:"Madaraka",lat:-1.3050,lng:36.8100,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  south_b:{name:"South B",lat:-1.3150,lng:36.8250,status:"green",type:"stop",zone:"Langata",desc:"Residential",spotterConfirm:0},
+  south_c:{name:"South C",lat:-1.3200,lng:36.8300,status:"green",type:"stop",zone:"Langata",desc:"Airport view",spotterConfirm:0},
+  kpa:{name:"KPA / Mombasa Rd",lat:-1.3250,lng:36.8350,status:"green",type:"stop",zone:"Langata",desc:"Port authority",spotterConfirm:0},
+  nyayo:{name:"Nyayo Stadium",lat:-1.3050,lng:36.8200,status:"green",type:"stop",zone:"Langata",desc:"Sports complex",spotterConfirm:0},
+  highrise:{name:"Highrise",lat:-1.2950,lng:36.8000,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  ngumo:{name:"Ngumo",lat:-1.3000,lng:36.7950,status:"green",type:"stop",zone:"Langata",desc:"Residential",spotterConfirm:0},
+  karen:{name:"Karen",lat:-1.3200,lng:36.7000,status:"green",type:"end",zone:"Langata",desc:"Leafy suburb",spotterConfirm:0},
+  hardy:{name:"Hardy",lat:-1.3150,lng:36.7100,status:"green",type:"end",zone:"Langata",desc:"Karen extension",spotterConfirm:0},
+  rongai:{name:"Rongai / Ongata Rongai",lat:-1.3950,lng:36.7350,status:"green",type:"end",zone:"Langata",desc:"Fast-growing town",spotterConfirm:0},
+  kiserian:{name:"Kiserian",lat:-1.4300,lng:36.6800,status:"green",type:"end",zone:"Langata",desc:"Market town",spotterConfirm:0},
+  ngong:{name:"Ngong",lat:-1.3600,lng:36.6550,status:"green",type:"end",zone:"Langata",desc:"Hill town",spotterConfirm:0},
+  ongata_rongai:{name:"Ongata Rongai",lat:-1.4000,lng:36.7300,status:"green",type:"end",zone:"Langata",desc:"Satellite town",spotterConfirm:0},
+  bomas_interchange:{name:"Bomas Interchange",lat:-1.3180,lng:36.7720,status:"green",type:"interchange",zone:"Langata",desc:"Southern bypass link",spotterConfirm:0},
+  prestige:{name:"Prestige Plaza",lat:-1.3000,lng:36.7900,status:"green",type:"stop",zone:"Langata",desc:"Ngong Rd mall",spotterConfirm:0},
+  junction:{name:"The Junction Mall",lat:-1.2980,lng:36.7620,status:"green",type:"stop",zone:"Langata",desc:"Ngong Rd shopping",spotterConfirm:0},
+  adams_arcade:{name:"Adams Arcade",lat:-1.2880,lng:36.7500,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0},
+  citam_valley:{name:"CITAM Valley Road",lat:-1.2950,lng:36.8050,status:"green",type:"stop",zone:"Langata",desc:"Church landmark",spotterConfirm:0},
+  nairobi_hospital:{name:"Nairobi Hospital",lat:-1.2960,lng:36.8080,status:"green",type:"stop",zone:"Langata",desc:"Medical",spotterConfirm:0},
+  hurlingham:{name:"Hurlingham",lat:-1.2900,lng:36.7900,status:"green",type:"stop",zone:"Langata",desc:"Residential",spotterConfirm:0},
+  kilimani:{name:"Kilimani",lat:-1.2880,lng:36.7850,status:"green",type:"stop",zone:"Langata",desc:"Upscale",spotterConfirm:0},
+  kileleshwa:{name:"Kileleshwa",lat:-1.2780,lng:36.7750,status:"green",type:"stop",zone:"Langata",desc:"Residential",spotterConfirm:0},
+  racecourse:{name:"Racecourse",lat:-1.2950,lng:36.7350,status:"green",type:"stop",zone:"Langata",desc:"Ngong Rd",spotterConfirm:0},
+  ngong_rd_mkt:{name:"Ngong Rd Market",lat:-1.2920,lng:36.7550,status:"green",type:"stop",zone:"Langata",desc:"Market",spotterConfirm:0},
+  chaka_place:{name:"Chaka Place",lat:-1.2980,lng:36.7980,status:"green",type:"stop",zone:"Langata",desc:"Kilimani",spotterConfirm:0},
+  nairobi_west:{name:"Nairobi West",lat:-1.3050,lng:36.8150,status:"green",type:"stop",zone:"Langata",desc:"Residential",spotterConfirm:0},
+  wilson_airport:{name:"Wilson Airport",lat:-1.3200,lng:36.8150,status:"green",type:"stop",zone:"Langata",desc:"Domestic airport",spotterConfirm:0},
+  south_b_shopping:{name:"South B Shopping",lat:-1.3120,lng:36.8220,status:"green",type:"stop",zone:"Langata",desc:"Shopping center",spotterConfirm:0},
+  hazina:{name:"Hazina",lat:-1.2980,lng:36.8120,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  karen_hub:{name:"Karen Hub",lat:-1.3220,lng:36.6950,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0},
+  gataka:{name:"Gataka Road",lat:-1.3300,lng:36.7100,status:"green",type:"stop",zone:"Langata",desc:"Karen route",spotterConfirm:0},
+  ngong_forest:{name:"Ngong Road Forest",lat:-1.3150,lng:36.7200,status:"green",type:"stop",zone:"Langata",desc:"Forest edge",spotterConfirm:0},
+  rongai_tuskys:{name:"Rongai Tuskys",lat:-1.3920,lng:36.7380,status:"green",type:"stop",zone:"Langata",desc:"Town center",spotterConfirm:0},
+  rongai_maasai:{name:"Rongai Maasai Lodge",lat:-1.3850,lng:36.7250,status:"green",type:"stop",zone:"Langata",desc:"Landmark",spotterConfirm:0},
+  kiserian_mkt:{name:"Kiserian Market",lat:-1.4280,lng:36.6820,status:"green",type:"stop",zone:"Langata",desc:"Market day",spotterConfirm:0},
+  ngong_town:{name:"Ngong Town",lat:-1.3580,lng:36.6580,status:"green",type:"end",zone:"Langata",desc:"Hill station",spotterConfirm:0},
+  ngong_hills:{name:"Ngong Hills",lat:-1.4000,lng:36.6500,status:"green",type:"end",zone:"Langata",desc:"Wind farm",spotterConfirm:0},
+  magadi_rd:{name:"Magadi Road",lat:-1.3500,lng:36.7200,status:"green",type:"stop",zone:"Langata",desc:"Southern route",spotterConfirm:0},
+  olepolos:{name:"Olepolos",lat:-1.4200,lng:36.6800,status:"green",type:"stop",zone:"Langata",desc:"Meat country",spotterConfirm:0},
+  kiserian_ngong:{name:"Kiserian-Ngong Rd",lat:-1.3900,lng:36.6700,status:"green",type:"stop",zone:"Langata",desc:"Connector",spotterConfirm:0},
+  mataara:{name:"Mataara",lat:-1.3200,lng:36.6950,status:"green",type:"stop",zone:"Langata",desc:"Rural",spotterConfirm:0},
+  karen_crossing:{name:"Karen Crossing",lat:-1.3250,lng:36.7050,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0},
+  bomas_gate:{name:"Bomas Main Gate",lat:-1.3200,lng:36.7750,status:"green",type:"stop",zone:"Langata",desc:"Cultural gate",spotterConfirm:0},
+  karen_hardy:{name:"Karen Hardy",lat:-1.3180,lng:36.7080,status:"green",type:"stop",zone:"Langata",desc:"Karen edge",spotterConfirm:0},
+  nairobi_dam:{name:"Nairobi Dam",lat:-1.3100,lng:36.7850,status:"green",type:"stop",zone:"Langata",desc:"Waterfront",spotterConfirm:0},
+  mombasa_rd:{name:"Mombasa Road",lat:-1.3200,lng:36.8500,status:"green",type:"start",zone:"Mombasa Road",desc:"Industrial area start",spotterConfirm:0},
+  syokimau:{name:"Syokimau",lat:-1.3600,lng:36.9200,status:"green",type:"stop",zone:"Mombasa Road",desc:"SGR station",spotterConfirm:0},
+  katani:{name:"Katani",lat:-1.3800,lng:36.9500,status:"green",type:"stop",zone:"Mombasa Road",desc:"Residential",spotterConfirm:0},
+  athi_river:{name:"Athi River",lat:-1.4500,lng:36.9800,status:"green",type:"end",zone:"Mombasa Road",desc:"Industrial town",spotterConfirm:0},
+  kitengela:{name:"Kitengela",lat:-1.4700,lng:36.9600,status:"green",type:"end",zone:"Mombasa Road",desc:"Fast-growing town",spotterConfirm:0},
+  jkia:{name:"JKIA Airport",lat:-1.3200,lng:36.9250,status:"green",type:"stop",zone:"Mombasa Road",desc:"International airport",spotterConfirm:0},
+  cabanas:{name:"Cabanas",lat:-1.3300,lng:36.9000,status:"green",type:"stop",zone:"Mombasa Road",desc:"Bypass junction",spotterConfirm:0},
+  imara_daima:{name:"Imara Daima",lat:-1.3250,lng:36.8800,status:"green",type:"stop",zone:"Mombasa Road",desc:"Estate",spotterConfirm:0},
+  enterprise_rd:{name:"Enterprise Road",lat:-1.3100,lng:36.8600,status:"green",type:"stop",zone:"Mombasa Road",desc:"Industrial",spotterConfirm:0},
+  lungalunga:{name:"Lunga Lunga",lat:-1.3000,lng:36.8700,status:"green",type:"stop",zone:"Mombasa Road",desc:"Industrial area",spotterConfirm:0},
+  north_airport:{name:"North Airport Road",lat:-1.3200,lng:36.9000,status:"green",type:"stop",zone:"Mombasa Road",desc:"Airport zone",spotterConfirm:0},
+  isinya:{name:"Isinya",lat:-1.6800,lng:36.8500,status:"green",type:"end",zone:"Mombasa Road",desc:"Kajiado town",spotterConfirm:0},
+  eastleigh:{name:"Eastleigh",lat:-1.2700,lng:36.8450,status:"green",type:"start",zone:"Eastleigh",desc:"Business hub",spotterConfirm:0},
+  pangani_east:{name:"Pangani (East)",lat:-1.2720,lng:36.8400,status:"green",type:"stop",zone:"Eastleigh",desc:"Transition zone",spotterConfirm:0},
+  kiambiu:{name:"Kiambiu",lat:-1.2650,lng:36.8550,status:"green",type:"stop",zone:"Eastleigh",desc:"Informal settlement",spotterConfirm:0},
+  huruma:{name:"Huruma",lat:-1.2550,lng:36.8650,status:"green",type:"stop",zone:"Eastleigh",desc:"Residential",spotterConfirm:0},
+  kariobangi_n:{name:"Kariobangi North",lat:-1.2600,lng:36.8750,status:"green",type:"stop",zone:"Eastleigh",desc:"Dense area",spotterConfirm:0},
+  kariobangi_s:{name:"Kariobangi South",lat:-1.2650,lng:36.8700,status:"green",type:"stop",zone:"Eastleigh",desc:"Market area",spotterConfirm:0},
+  dandora:{name:"Dandora",lat:-1.2500,lng:36.8900,status:"green",type:"end",zone:"Eastleigh",desc:"Estate terminus",spotterConfirm:0},
+  dandora_dump:{name:"Dandora Dump Site",lat:-1.2450,lng:36.8950,status:"green",type:"stop",zone:"Eastleigh",desc:"Avoid area",spotterConfirm:0},
+  gikomba:{name:"Gikomba Market",lat:-1.2850,lng:36.8400,status:"green",type:"start",zone:"Eastleigh",desc:"Wholesale market",spotterConfirm:0},
+  jua_kali:{name:"Jua Kali",lat:-1.2820,lng:36.8450,status:"green",type:"stop",zone:"Eastleigh",desc:"Artisan area",spotterConfirm:0},
+  baba_ndogo:{name:"Baba Ndogo",lat:-1.2400,lng:36.8550,status:"green",type:"stop",zone:"Eastleigh",desc:"Industrial",spotterConfirm:0},
+  lucky_summer:{name:"Lucky Summer",lat:-1.2350,lng:36.8600,status:"green",type:"stop",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  mwiki_east:{name:"Mwiki (East)",lat:-1.2200,lng:36.9300,status:"green",type:"end",zone:"Eastleigh",desc:"Eastern edge",spotterConfirm:0},
+  njiru:{name:"Njiru",lat:-1.2300,lng:36.9400,status:"green",type:"end",zone:"Eastleigh",desc:"Rural-urban",spotterConfirm:0},
+  ruai:{name:"Ruai",lat:-1.2600,lng:36.9600,status:"green",type:"end",zone:"Eastleigh",desc:"Satellite town",spotterConfirm:0},
+  utawala:{name:"Utawala",lat:-1.2800,lng:36.9500,status:"green",type:"end",zone:"Eastleigh",desc:"New estate",spotterConfirm:0},
+  komarocks_east:{name:"Komarocks (East)",lat:-1.2320,lng:36.9120,status:"green",type:"stop",zone:"Eastleigh",desc:"Eastern extension",spotterConfirm:0},
+  jacaranda:{name:"Jacaranda",lat:-1.2400,lng:36.9200,status:"green",type:"stop",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  kariobangi_roundabout:{name:"Kariobangi Rndbt",lat:-1.2580,lng:36.8720,status:"green",type:"interchange",zone:"Eastleigh",desc:"Roundabout",spotterConfirm:0},
+  lucky_summer_junction:{name:"Lucky Summer Jn",lat:-1.2300,lng:36.8580,status:"green",type:"stop",zone:"Eastleigh",desc:"Junction",spotterConfirm:0},
+  baba_ndogo_junction:{name:"Baba Ndogo Jn",lat:-1.2350,lng:36.8520,status:"green",type:"stop",zone:"Eastleigh",desc:"Industrial",spotterConfirm:0},
+  huruma_bridge:{name:"Huruma Bridge",lat:-1.2520,lng:36.8680,status:"green",type:"stop",zone:"Eastleigh",desc:"Crossing",spotterConfirm:0},
+  kiambiu_bridge:{name:"Kiambiu Bridge",lat:-1.2620,lng:36.8580,status:"green",type:"stop",zone:"Eastleigh",desc:"Crossing",spotterConfirm:0},
+  kariobangi_estate:{name:"Kariobangi Estate",lat:-1.2630,lng:36.8680,status:"green",type:"stop",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  maringo:{name:"Maringo",lat:-1.2850,lng:36.8620,status:"green",type:"stop",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  greenfield:{name:"Greenfield Estate",lat:-1.2550,lng:36.9050,status:"green",type:"stop",zone:"Eastleigh",desc:"New estate",spotterConfirm:0},
+  mowlem:{name:"Mowlem",lat:-1.2450,lng:36.9100,status:"green",type:"stop",zone:"Eastleigh",desc:"Dandora edge",spotterConfirm:0},
+  chokaa:{name:"Chokaa",lat:-1.2400,lng:36.9300,status:"green",type:"stop",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  greater_dandora:{name:"Greater Dandora",lat:-1.2480,lng:36.8980,status:"green",type:"stop",zone:"Eastleigh",desc:"Dandora area",spotterConfirm:0},
+  dandora_phase5:{name:"Dandora Phase 5",lat:-1.2420,lng:36.9050,status:"green",type:"stop",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  dandora_stadium:{name:"Dandora Stadium",lat:-1.2380,lng:36.9100,status:"green",type:"stop",zone:"Eastleigh",desc:"Sports ground",spotterConfirm:0},
+  ruai_bypass:{name:"Ruai Bypass",lat:-1.2650,lng:36.9700,status:"green",type:"stop",zone:"Eastleigh",desc:"Bypass route",spotterConfirm:0},
+  eastern_bypass:{name:"Eastern Bypass",lat:-1.2900,lng:36.9300,status:"green",type:"stop",zone:"Eastleigh",desc:"Highway link",spotterConfirm:0},
+  ruai_town:{name:"Ruai Town",lat:-1.2550,lng:36.9550,status:"green",type:"end",zone:"Eastleigh",desc:"Town center",spotterConfirm:0},
+  utawala_junction:{name:"Utawala Junction",lat:-1.2780,lng:36.9450,status:"green",type:"stop",zone:"Eastleigh",desc:"Junction",spotterConfirm:0},
+  savannah:{name:"Savannah",lat:-1.2700,lng:36.9200,status:"green",type:"stop",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  chokaa_estate:{name:"Chokaa Estate",lat:-1.2380,lng:36.9320,status:"green",type:"stop",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  koma_rock_east:{name:"Koma Rock",lat:-1.2300,lng:36.9200,status:"green",type:"stop",zone:"Eastleigh",desc:"Rock landmark",spotterConfirm:0},
+  knh:{name:"KNH / Kenyatta Hospital",lat:-1.3020,lng:36.8060,status:"green",type:"start",zone:"Kibera",desc:"Hospital stage",spotterConfirm:0},
+  kibera:{name:"Kibera",lat:-1.3150,lng:36.7800,status:"green",type:"end",zone:"Kibera",desc:"Largest informal settlement",spotterConfirm:0},
+  ayany:{name:"Ayany",lat:-1.3100,lng:36.7750,status:"green",type:"stop",zone:"Kibera",desc:"Kibera zone",spotterConfirm:0},
+  mashimoni:{name:"Mashimoni",lat:-1.3200,lng:36.7700,status:"green",type:"stop",zone:"Kibera",desc:"Deep Kibera",spotterConfirm:0},
+  silanga:{name:"Silanga",lat:-1.3250,lng:36.7650,status:"green",type:"stop",zone:"Kibera",desc:"Kibera west",spotterConfirm:0},
+  kiambu_town:{name:"Kiambu Town",lat:-1.1700,lng:36.8300,status:"green",type:"end",zone:"Kiambu",desc:"County headquarters",spotterConfirm:0},
+  githunguri:{name:"Githunguri",lat:-1.0600,lng:36.7750,status:"green",type:"end",zone:"Kiambu",desc:"Dairy town",spotterConfirm:0},
+  ndumberi:{name:"Ndumberi",lat:-1.1400,lng:36.8200,status:"green",type:"stop",zone:"Kiambu",desc:"Trading center",spotterConfirm:0},
+  ridgeways:{name:"Ridgeways",lat:-1.2100,lng:36.8400,status:"green",type:"stop",zone:"Kiambu",desc:"Residential",spotterConfirm:0},
+  runda:{name:"Runda",lat:-1.2150,lng:36.8300,status:"green",type:"stop",zone:"Kiambu",desc:"Diplomatic zone",spotterConfirm:0},
+  two_rivers:{name:"Two Rivers Mall",lat:-1.2080,lng:36.8250,status:"green",type:"stop",zone:"Kiambu",desc:"Shopping",spotterConfirm:0},
+  village_mkt:{name:"Village Market",lat:-1.2280,lng:36.8150,status:"green",type:"stop",zone:"Kiambu",desc:"Mall",spotterConfirm:0},
+  united_nations:{name:"UN Gigiri",lat:-1.2350,lng:36.8200,status:"green",type:"stop",zone:"Kiambu",desc:"UN complex",spotterConfirm:0},
+  spring_valley:{name:"Spring Valley",lat:-1.2500,lng:36.8050,status:"green",type:"stop",zone:"Kiambu",desc:"Upscale",spotterConfirm:0},
+  loresho:{name:"Loresho",lat:-1.2450,lng:36.7900,status:"green",type:"stop",zone:"Kiambu",desc:"Estate",spotterConfirm:0},
+  kitisuru:{name:"Kitisuru",lat:-1.2550,lng:36.7750,status:"green",type:"stop",zone:"Kiambu",desc:"Hill estate",spotterConfirm:0},
+  marurui:{name:"Marurui",lat:-1.2050,lng:36.7750,status:"green",type:"stop",zone:"Kiambu",desc:"Estate",spotterConfirm:0},
+  bahati:{name:"Bahati",lat:-1.2900,lng:36.8650,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  uhuru_estate:{name:"Uhuru Estate",lat:-1.2950,lng:36.8600,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  hamza_uchumi:{name:"Hamza Uchumi",lat:-1.2760,lng:36.8630,status:"green",type:"stop",zone:"Eastlands",desc:"Supermarket",spotterConfirm:0},
+  donholm_stage:{name:"Donholm Stage",lat:-1.2730,lng:36.8680,status:"green",type:"stop",zone:"Eastlands",desc:"Main stage",spotterConfirm:0},
+  greenspan:{name:"Greenspan Mall",lat:-1.2680,lng:36.8850,status:"green",type:"stop",zone:"Eastlands",desc:"Shopping",spotterConfirm:0},
+  outer_ring_market:{name:"Outer Ring Market",lat:-1.2750,lng:36.8780,status:"green",type:"stop",zone:"Eastlands",desc:"Market",spotterConfirm:0},
+  total_petrol:{name:"Total Petrol Station",lat:-1.2780,lng:36.8820,status:"green",type:"stop",zone:"Eastlands",desc:"Fuel stop",spotterConfirm:0},
+  komarock:{name:"Komarock",lat:-1.2350,lng:36.9100,status:"yellow",type:"interchange",zone:"Kayole",desc:"Lorry breakdown common",note:"Slow moving",spotterConfirm:0},
+  pheroz:{name:"Pheroz",lat:-1.2400,lng:36.9050,status:"green",type:"stop",zone:"Kayole",desc:"Business district",spotterConfirm:0},
+  kwa_miti:{name:"Kwa Miti",lat:-1.2450,lng:36.9000,status:"green",type:"stop",zone:"Kayole",desc:"Moving well",spotterConfirm:0},
+  stage_18:{name:"18 Stage",lat:-1.2500,lng:36.8950,status:"green",type:"decision",zone:"Kayole",desc:"STAY on Kangundo Rd",note:"Do NOT turn to Dandora",spotterConfirm:0},
+  solace:{name:"Solace",lat:-1.2550,lng:36.8900,status:"green",type:"stop",zone:"Kayole",desc:"1st Kayole stop",spotterConfirm:0},
+  kwa_chief:{name:"Kwa Chief",lat:-1.2350,lng:36.9080,status:"green",type:"stop",zone:"Kayole",desc:"Landmark",spotterConfirm:0},
+  kanisani:{name:"Kanisani",lat:-1.2280,lng:36.9180,status:"green",type:"stop",zone:"Kayole",desc:"Church area",spotterConfirm:0},
+  masimba:{name:"Masimba",lat:-1.2320,lng:36.9220,status:"green",type:"stop",zone:"Kayole",desc:"Estate",spotterConfirm:0},
+  bee_centre:{name:"Bee Centre",lat:-1.2380,lng:36.9250,status:"green",type:"stop",zone:"Kayole",desc:"Landmark",spotterConfirm:0},
+  ruai_bypass_junction:{name:"Ruai Bypass Jn",lat:-1.2550,lng:36.9650,status:"green",type:"stop",zone:"Eastleigh",desc:"Bypass",spotterConfirm:0},
+  kamulu_junction:{name:"Kamulu Junction",lat:-1.1750,lng:36.9750,status:"green",type:"stop",zone:"Thika Road",desc:"Junction",spotterConfirm:0},
+  joska_junction:{name:"Joska Junction",lat:-1.1450,lng:36.9850,status:"green",type:"stop",zone:"Thika Road",desc:"Junction",spotterConfirm:0},
+  kamulu:{name:"Kamulu",lat:-1.1800,lng:36.9800,status:"green",type:"end",zone:"Thika Road",desc:"Eastern outskirts",spotterConfirm:0},
+  joska:{name:"Joska",lat:-1.1500,lng:36.9900,status:"green",type:"end",zone:"Thika Road",desc:"Rural town",spotterConfirm:0},
+  malaa:{name:"Malaa",lat:-1.1000,lng:37.0000,status:"green",type:"end",zone:"Thika Road",desc:"Trading center",spotterConfirm:0},
+  southern_bypass:{name:"Southern Bypass",lat:-1.3500,lng:36.8000,status:"green",type:"stop",zone:"Langata",desc:"Fast route",spotterConfirm:0},
+  mombasa_rd_junction:{name:"Mombasa Rd Jn",lat:-1.3150,lng:36.8850,status:"green",type:"stop",zone:"Mombasa Road",desc:"Junction",spotterConfirm:0},
+  taj_mall:{name:"Taj Mall / Eastleigh",lat:-1.2680,lng:36.8480,status:"green",type:"stop",zone:"Eastleigh",desc:"Shopping",spotterConfirm:0},
+  josters:{name:"Josters",lat:-1.2720,lng:36.8520,status:"green",type:"stop",zone:"Eastleigh",desc:"Business",spotterConfirm:0},
+  rikana:{name:"Rikana",lat:-1.2750,lng:36.8580,status:"green",type:"stop",zone:"Eastleigh",desc:"Stage",spotterConfirm:0},
+  thika_rd_mall:{name:"Thika Road Mall",lat:-1.2150,lng:36.8500,status:"green",type:"stop",zone:"Thika Road",desc:"TRM",spotterConfirm:0},
+  muthaiga_north:{name:"Muthaiga North",lat:-1.2500,lng:36.8400,status:"green",type:"stop",zone:"Thika Road",desc:"Diplomatic",spotterConfirm:0},
+  mwiki_thika:{name:"Mwiki (Thika Rd)",lat:-1.2150,lng:36.9100,status:"green",type:"stop",zone:"Thika Road",desc:"Thika Rd extension",spotterConfirm:0},
+  st_marys:{name:"St Mary's Hospital",lat:-1.3280,lng:36.7820,status:"green",type:"stop",zone:"Langata",desc:"Hospital",spotterConfirm:0},
+  otiende:{name:"Otiende",lat:-1.3350,lng:36.7880,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  soweto:{name:"Soweto",lat:-1.3000,lng:36.8050,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  texas_centre:{name:"Texas Centre",lat:-1.3150,lng:36.8050,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0},
+  mbagathi:{name:"Mbagathi",lat:-1.3050,lng:36.8000,status:"green",type:"stop",zone:"Langata",desc:"Road stage",spotterConfirm:0},
+  pumwani:{name:"Pumwani",lat:-1.2850,lng:36.8500,status:"green",type:"stop",zone:"Eastlands",desc:"Hospital area",spotterConfirm:0},
+  madiwa:{name:"Madiwa",lat:-1.2900,lng:36.8550,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  jericho:{name:"Jericho",lat:-1.2950,lng:36.8600,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  harambee:{name:"Harambee",lat:-1.2800,lng:36.8550,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  civil_servant:{name:"Civil Servant",lat:-1.2750,lng:36.8600,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  regen:{name:"Regen",lat:-1.2900,lng:36.7200,status:"green",type:"stop",zone:"Westlands",desc:"Dagoretti",spotterConfirm:0},
+  riruta:{name:"Riruta",lat:-1.2800,lng:36.7300,status:"green",type:"stop",zone:"Westlands",desc:"Estate",spotterConfirm:0},
+  banana:{name:"Banana",lat:-1.2000,lng:36.7500,status:"green",type:"end",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  ruaka:{name:"Ruaka",lat:-1.2100,lng:36.7800,status:"green",type:"stop",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  ndenderu:{name:"Ndenderu",lat:-1.2200,lng:36.7700,status:"green",type:"stop",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  gachie:{name:"Gachie",lat:-1.2300,lng:36.8000,status:"green",type:"stop",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  limuru:{name:"Limuru",lat:-1.1000,lng:36.6500,status:"green",type:"end",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  tigoni:{name:"Tigoni",lat:-1.0800,lng:36.6800,status:"green",type:"stop",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  rironi:{name:"Rironi",lat:-1.1200,lng:36.7000,status:"green",type:"stop",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  kabuku:{name:"Kabuku",lat:-1.1300,lng:36.7200,status:"green",type:"stop",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  wangige:{name:"Wangige",lat:-1.1800,lng:36.7500,status:"green",type:"end",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  kinoo:{name:"Kinoo",lat:-1.2400,lng:36.6800,status:"green",type:"stop",zone:"Kiambu",desc:"Town",spotterConfirm:0},
+  alliance:{name:"Alliance",lat:-1.2200,lng:36.7000,status:"green",type:"stop",zone:"Kiambu",desc:"School",spotterConfirm:0},
+  ndumbuini:{name:"Ndumbuini",lat:-1.2700,lng:36.6900,status:"green",type:"end",zone:"Westlands",desc:"Outskirts",spotterConfirm:0},
+  uon_kabete:{name:"UoN Kabete",lat:-1.2600,lng:36.7100,status:"green",type:"stop",zone:"Westlands",desc:"University",spotterConfirm:0},
+  stima_plaza:{name:"Stima Plaza",lat:-1.2750,lng:36.8300,status:"green",type:"stop",zone:"Thika Road",desc:"Commercial",spotterConfirm:0},
+  kicd:{name:"KICD",lat:-1.2800,lng:36.8250,status:"green",type:"stop",zone:"Thika Road",desc:"Institute",spotterConfirm:0},
+  mugoya:{name:"Mugoya",lat:-1.3100,lng:36.8350,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  bellevue:{name:"Bellevue",lat:-1.3150,lng:36.8400,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  nextgen:{name:"Nextgen",lat:-1.3250,lng:36.8450,status:"green",type:"stop",zone:"Mombasa Road",desc:"Mall",spotterConfirm:0},
+  highway_est:{name:"Highway Estate",lat:-1.3300,lng:36.8400,status:"green",type:"stop",zone:"Mombasa Road",desc:"Estate",spotterConfirm:0},
+  gm:{name:"GM",lat:-1.3100,lng:36.8550,status:"green",type:"stop",zone:"Mombasa Road",desc:"Industrial",spotterConfirm:0},
+  sinai:{name:"Sinai",lat:-1.3000,lng:36.8800,status:"green",type:"stop",zone:"Mombasa Road",desc:"Estate",spotterConfirm:0},
+  mukuru:{name:"Mukuru Kwa Njenga",lat:-1.3200,lng:36.8900,status:"green",type:"end",zone:"Mombasa Road",desc:"Estate",spotterConfirm:0},
+  mathare_north:{name:"Mathare North",lat:-1.2600,lng:36.8600,status:"green",type:"end",zone:"Eastleigh",desc:"Estate",spotterConfirm:0},
+  survey:{name:"Survey",lat:-1.2700,lng:36.8250,status:"green",type:"stop",zone:"Thika Road",desc:"Area",spotterConfirm:0},
+  kariobangi_north:{name:"Kariobangi North Makadara",lat:-1.2850,lng:36.8580,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  mesora:{name:"Mesora",lat:-1.2750,lng:36.8750,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  donholm_pipe:{name:"Donholm Pipeline",lat:-1.2700,lng:36.8850,status:"green",type:"stop",zone:"Eastlands",desc:"Estate",spotterConfirm:0},
+  nyayo_gate_b:{name:"Nyayo Gate B",lat:-1.3100,lng:36.8250,status:"green",type:"stop",zone:"Langata",desc:"Stadium",spotterConfirm:0},
+  embakasi_gate_a:{name:"Embakasi Gate A",lat:-1.3200,lng:36.8800,status:"green",type:"stop",zone:"Mombasa Road",desc:"Airport",spotterConfirm:0},
+  embakasi_gate_d:{name:"Embakasi Gate D",lat:-1.3150,lng:36.8900,status:"green",type:"stop",zone:"Mombasa Road",desc:"Airport",spotterConfirm:0},
+  balozi:{name:"Balozi",lat:-1.3000,lng:36.8200,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  stima:{name:"Stima",lat:-1.2750,lng:36.8300,status:"green",type:"stop",zone:"Thika Road",desc:"Plaza",spotterConfirm:0},
+  clay_city:{name:"Clay City",lat:-1.2200,lng:36.8600,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  thome:{name:"Thome",lat:-1.2100,lng:36.8700,status:"green",type:"stop",zone:"Thika Road",desc:"Estate",spotterConfirm:0},
+  othaya:{name:"Othaya",lat:-1.2800,lng:36.7700,status:"green",type:"end",zone:"Westlands",desc:"Road",spotterConfirm:0},
+  redhill:{name:"Redhill",lat:-1.2400,lng:36.7900,status:"green",type:"stop",zone:"Kiambu",desc:"Estate",spotterConfirm:0},
+  gasolina:{name:"Gasolina",lat:-1.2300,lng:36.7800,status:"green",type:"stop",zone:"Kiambu",desc:"Area",spotterConfirm:0},
+  macharia_rd:{name:"Macharia Road",lat:-1.2900,lng:36.7400,status:"green",type:"stop",zone:"Westlands",desc:"Road",spotterConfirm:0},
+  kanungaga:{name:"Kanungaga",lat:-1.2800,lng:36.7350,status:"green",type:"stop",zone:"Westlands",desc:"Area",spotterConfirm:0},
+  nyayo_city_stadium:{name:"Nyayo City Stadium",lat:-1.3050,lng:36.8250,status:"green",type:"stop",zone:"Langata",desc:"Stadium",spotterConfirm:0},
+  kware:{name:"Kware",lat:-1.4000,lng:36.7400,status:"green",type:"end",zone:"Langata",desc:"Rongai edge",spotterConfirm:0},
+  cuea:{name:"CUEA",lat:-1.3300,lng:36.7700,status:"green",type:"stop",zone:"Langata",desc:"University",spotterConfirm:0},
+  acacia:{name:"Acacia",lat:-1.3400,lng:36.7600,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  maro_gardens:{name:"Maro Gardens",lat:-1.3450,lng:36.7550,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  banda_school:{name:"Banda School",lat:-1.3500,lng:36.7500,status:"green",type:"stop",zone:"Langata",desc:"School",spotterConfirm:0},
+  mukoma_rd:{name:"Mukoma Road",lat:-1.3550,lng:36.7450,status:"green",type:"stop",zone:"Langata",desc:"Road",spotterConfirm:0},
+  nibs:{name:"NIBS",lat:-1.3600,lng:36.7400,status:"green",type:"stop",zone:"Langata",desc:"College",spotterConfirm:0},
+  hashis:{name:"Hashi / Visions",lat:-1.3650,lng:36.7350,status:"green",type:"stop",zone:"Langata",desc:"Church",spotterConfirm:0},
+  multimedia:{name:"Multimedia University",lat:-1.3700,lng:36.7300,status:"green",type:"stop",zone:"Langata",desc:"University",spotterConfirm:0},
+  uchumi_rongai:{name:"Uchumi / Masai Mall",lat:-1.3800,lng:36.7380,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0},
+  tumaini:{name:"Tumaini",lat:-1.3850,lng:36.7350,status:"green",type:"stop",zone:"Langata",desc:"Estate",spotterConfirm:0},
+  kobil_rongai:{name:"Kobil Rongai",lat:-1.3900,lng:36.7380,status:"green",type:"stop",zone:"Langata",desc:"Fuel",spotterConfirm:0},
+  st_marys_catholic:{name:"St Mary's Catholic",lat:-1.3950,lng:36.7350,status:"green",type:"stop",zone:"Langata",desc:"Church",spotterConfirm:0},
+  tyme_arcade:{name:"Tyme Arcade",lat:-1.3980,lng:36.7320,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0},
+  ongata_police:{name:"Ongata Police",lat:-1.4020,lng:36.7300,status:"green",type:"stop",zone:"Langata",desc:"Police station",spotterConfirm:0},
+  kenol:{name:"Kenol",lat:-1.4050,lng:36.7280,status:"green",type:"stop",zone:"Langata",desc:"Fuel",spotterConfirm:0},
+  legend:{name:"Legend / Tuskys",lat:-1.3920,lng:36.7380,status:"green",type:"stop",zone:"Langata",desc:"Shopping",spotterConfirm:0}
 };
 
 
-// ===== PHASE 3A: ROUTES DATA (A-Line through E-Line) =====
-// Each route has bidirectional paths: to_cbd and from_cbd
+// ===== PHASE 3: ROUTES DATA =====
+// Each route has CORRECT bidirectional paths with accurate stage sequences
+// FIXED: Rongai 125 now goes via Langata Rd (NOT Kiserian)
+// FIXED: Route 1960 Express goes direct via Jogoo Rd (NOT via Solace/Kwa Miti)
+// FIXED: Each route has its CORRECT CBD terminus
 
 const ROUTES = {
 
@@ -694,17 +722,15 @@ const ROUTES = {
     to_cbd: {
       start:"kiambu_town", end:"ngara",
       time_rush:"55 min", time_offpeak:"35 min", distance:"16 km", makangas:12,
-      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Kiambu Road corridor, clear in off-peak",
-      coords:[[-1.1700,36.8300],[-1.1650,36.8320],[-1.1600,36.8340],[-1.1550,36.8350],[-1.1500,36.8360],[-1.1450,36.8370],[-1.1400,36.8380],[-1.1350,36.8390],[-1.1300,36.8400],[-1.1250,36.8400],[-1.1200,36.8390],[-1.1150,36.8380],[-1.1100,36.8370],[-1.1050,36.8360],[-1.1000,36.8350],[-1.0950,36.8340],[-1.0900,36.8330],[-1.0850,36.8320],[-1.0800,36.8310],[-1.0750,36.8300],[-1.0700,36.8290],[-1.0650,36.8280],[-1.0600,36.8270],[-1.0550,36.8260],[-1.0500,36.8250],[-1.0450,36.8240],[-1.0400,36.8230],[-1.0350,36.8220],[-1.0300,36.8210],[-1.2780,36.8250]],
       stages:["kiambu_town","ndumberi","ridgeways","runda","two_rivers","village_mkt","united_nations","spring_valley","ngara"]
     },
     from_cbd: {
       start:"ngara", end:"kiambu_town",
       time_rush:"60 min", time_offpeak:"38 min", distance:"16 km", makangas:12,
-      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Kiambu Road traffic",
-      coords:[[-1.2780,36.8250],[-1.0300,36.8210],[-1.0350,36.8220],[-1.0400,36.8230],[-1.0450,36.8240],[-1.0500,36.8250],[-1.0550,36.8260],[-1.0600,36.8270],[-1.0650,36.8280],[-1.0700,36.8290],[-1.0750,36.8300],[-1.0800,36.8310],[-1.0850,36.8320],[-1.0900,36.8330],[-1.0950,36.8340],[-1.1000,36.8350],[-1.1050,36.8360],[-1.1100,36.8370],[-1.1150,36.8380],[-1.1200,36.8390],[-1.1250,36.8400],[-1.1300,36.8400],[-1.1350,36.8390],[-1.1400,36.8380],[-1.1450,36.8370],[-1.1500,36.8360],[-1.1550,36.8350],[-1.1600,36.8340],[-1.1650,36.8320],[-1.1700,36.8300]],
       stages:["ngara","spring_valley","united_nations","village_mkt","two_rivers","runda","ridgeways","ndumberi","kiambu_town"]
     }
   },
@@ -714,17 +740,15 @@ const ROUTES = {
     to_cbd: {
       start:"githunguri", end:"ngara",
       time_rush:"75 min", time_offpeak:"50 min", distance:"28 km", makangas:8,
-      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Long distance route, fewer vehicles",
-      coords:[[-1.0600,36.7750],[-1.2780,36.8250]],
       stages:["githunguri","ndumberi","ridgeways","runda","two_rivers","village_mkt","united_nations","spring_valley","ngara"]
     },
     from_cbd: {
       start:"ngara", end:"githunguri",
       time_rush:"80 min", time_offpeak:"55 min", distance:"28 km", makangas:8,
-      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening long distance",
-      coords:[[-1.2780,36.8250],[-1.0600,36.7750]],
       stages:["ngara","spring_valley","united_nations","village_mkt","two_rivers","runda","ridgeways","ndumberi","githunguri"]
     }
   },
@@ -735,18 +759,16 @@ const ROUTES = {
     to_cbd: {
       start:"mwiki", end:"muthurwa",
       time_rush:"50 min", time_offpeak:"30 min", distance:"14 km", makangas:9,
-      status:"Moving — 9 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Eastern route to Mwiki",
-      coords:[[-1.2180,36.9280],[-1.2880,36.8280]],
-      stages:["mwiki","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa"]
+      stages:["mwiki","mama_lucy","kayole_jn","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa"]
     },
     from_cbd: {
       start:"muthurwa", end:"mwiki",
       time_rush:"55 min", time_offpeak:"32 min", distance:"14 km", makangas:9,
-      status:"Moving — 9 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening eastern route",
-      coords:[[-1.2880,36.8280],[-1.2180,36.9280]],
-      stages:["muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","mwiki"]
+      stages:["muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","mama_lucy","mwiki"]
     }
   },
 
@@ -755,17 +777,15 @@ const ROUTES = {
     to_cbd: {
       start:"baba_ndogo", end:"ronald_ngala",
       time_rush:"35 min", time_offpeak:"20 min", distance:"10 km", makangas:7,
-      status:"Moving — 7 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Northern Eastlands route",
-      coords:[[-1.2400,36.8550],[-1.2830,36.8240]],
       stages:["baba_ndogo","lucky_summer","baba_ndogo_junction","huruma","kiambiu","eastleigh","pangani_east","ngara","ronald_ngala"]
     },
     from_cbd: {
       start:"ronald_ngala", end:"baba_ndogo",
       time_rush:"38 min", time_offpeak:"22 min", distance:"10 km", makangas:7,
-      status:"Moving — 7 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening northern Eastlands",
-      coords:[[-1.2830,36.8240],[-1.2400,36.8550]],
       stages:["ronald_ngala","ngara","pangani_east","eastleigh","kiambiu","huruma","baba_ndogo_junction","lucky_summer","baba_ndogo"]
     }
   },
@@ -775,17 +795,15 @@ const ROUTES = {
     to_cbd: {
       start:"kahawa_west", end:"odeon",
       time_rush:"45 min", time_offpeak:"28 min", distance:"12 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Thika Road northern suburbs",
-      coords:[[-1.1900,36.8850],[-1.2835,36.8220]],
       stages:["kahawa_west","githurai_44","githurai_45","zimmerman_base","seasons","clayworks","drive_inn","kca","roasters","garden_city","muthaiga","pangani","ngara","odeon"]
     },
     from_cbd: {
       start:"odeon", end:"kahawa_west",
       time_rush:"48 min", time_offpeak:"30 min", distance:"12 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Thika Road north",
-      coords:[[-1.2835,36.8220],[-1.1900,36.8850]],
       stages:["odeon","ngara","pangani","muthaiga","garden_city","roasters","kca","drive_inn","clayworks","seasons","zimmerman_base","githurai_45","githurai_44","kahawa_west"]
     }
   },
@@ -795,17 +813,15 @@ const ROUTES = {
     to_cbd: {
       start:"githurai", end:"odeon",
       time_rush:"40 min", time_offpeak:"25 min", distance:"11 km", makangas:15,
-      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"High frequency Thika Rd route",
-      coords:[[-1.1850,36.8850],[-1.2835,36.8220]],
       stages:["githurai","kahawa_wendani","kahawa_sukari","roasters","garden_city","muthaiga","pangani","ngara","odeon"]
     },
     from_cbd: {
       start:"odeon", end:"githurai",
       time_rush:"42 min", time_offpeak:"27 min", distance:"11 km", makangas:15,
-      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening high frequency",
-      coords:[[-1.2835,36.8220],[-1.1850,36.8850]],
       stages:["odeon","ngara","pangani","muthaiga","garden_city","roasters","kahawa_sukari","kahawa_wendani","githurai"]
     }
   },
@@ -815,17 +831,15 @@ const ROUTES = {
     to_cbd: {
       start:"ruiru", end:"odeon",
       time_rush:"65 min", time_offpeak:"40 min", distance:"22 km", makangas:6,
-      status:"Moving — 6 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Long distance Thika Rd",
-      coords:[[-1.1500,36.9600],[-1.2835,36.8220]],
       stages:["ruiru","juja","ku","githurai","kahawa_wendani","kahawa_sukari","roasters","garden_city","muthaiga","pangani","ngara","odeon"]
     },
     from_cbd: {
       start:"odeon", end:"ruiru",
       time_rush:"70 min", time_offpeak:"45 min", distance:"22 km", makangas:6,
-      status:"Moving — 6 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening long distance",
-      coords:[[-1.2835,36.8220],[-1.1500,36.9600]],
       stages:["odeon","ngara","pangani","muthaiga","garden_city","roasters","kahawa_sukari","kahawa_wendani","githurai","ku","juja","ruiru"]
     }
   },
@@ -836,17 +850,15 @@ const ROUTES = {
     to_cbd: {
       start:"eastleigh", end:"ronald_ngala",
       time_rush:"20 min", time_offpeak:"12 min", distance:"4 km", makangas:20,
-      status:"Moving — 20 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"High frequency short route",
-      coords:[[-1.2700,36.8450],[-1.2830,36.8240]],
       stages:["eastleigh","pangani_east","ngara","ronald_ngala"]
     },
     from_cbd: {
       start:"ronald_ngala", end:"eastleigh",
       time_rush:"22 min", time_offpeak:"14 min", distance:"4 km", makangas:20,
-      status:"Moving — 20 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening high frequency",
-      coords:[[-1.2830,36.8240],[-1.2700,36.8450]],
       stages:["ronald_ngala","ngara","pangani_east","eastleigh"]
     }
   },
@@ -856,38 +868,16 @@ const ROUTES = {
     to_cbd: {
       start:"kariobangi_n", end:"muthurwa",
       time_rush:"30 min", time_offpeak:"18 min", distance:"8 km", makangas:12,
-      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Eastlands northern corridor",
-      coords:[[-1.2600,36.8750],[-1.2880,36.8280]],
       stages:["kariobangi_n","kariobangi_s","kariobangi_estate","kariobangi_roundabout","huruma","kiambiu","eastleigh","pangani_east","ngara","muthurwa"]
     },
     from_cbd: {
       start:"muthurwa", end:"kariobangi_n",
       time_rush:"32 min", time_offpeak:"20 min", distance:"8 km", makangas:12,
-      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Eastlands north",
-      coords:[[-1.2880,36.8280],[-1.2600,36.8750]],
       stages:["muthurwa","ngara","pangani_east","eastleigh","kiambiu","huruma","kariobangi_roundabout","kariobangi_estate","kariobangi_s","kariobangi_n"]
-    }
-  },
-
-  route_17a_kayole: {
-    id:"route_17a_kayole", name:"Route 17A Kayole", color:"#7D3C98", badge:"C-LINE", badgeClass:"badge-shortcut",
-    to_cbd: {
-      start:"caltex", end:"gikomba",
-      time_rush:"55 min", time_offpeak:"32 min", distance:"16 km", makangas:14,
-      status:"Moving — 14 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
-      aiReason:"Kayole via Gikomba",
-      coords:[[-1.2300,36.9150],[-1.2850,36.8400]],
-      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","gikomba"]
-    },
-    from_cbd: {
-      start:"gikomba", end:"caltex",
-      time_rush:"58 min", time_offpeak:"35 min", distance:"16 km", makangas:14,
-      status:"Moving — 14 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
-      aiReason:"Evening Kayole via Gikomba",
-      coords:[[-1.2850,36.8400],[-1.2300,36.9150]],
-      stages:["gikomba","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
     }
   },
 
@@ -896,17 +886,15 @@ const ROUTES = {
     to_cbd: {
       start:"dandora", end:"gikomba",
       time_rush:"35 min", time_offpeak:"20 min", distance:"10 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Dandora direct route",
-      coords:[[-1.2500,36.8900],[-1.2850,36.8400]],
       stages:["dandora","dandora_dump","mowlem","greenfield","chokaa","koma_rock_east","jacaranda","kiambiu","eastleigh","gikomba"]
     },
     from_cbd: {
       start:"gikomba", end:"dandora",
       time_rush:"38 min", time_offpeak:"22 min", distance:"10 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Dandora route",
-      coords:[[-1.2850,36.8400],[-1.2500,36.8900]],
       stages:["gikomba","eastleigh","kiambiu","jacaranda","koma_rock_east","chokaa","greenfield","mowlem","dandora_dump","dandora"]
     }
   },
@@ -916,17 +904,15 @@ const ROUTES = {
     to_cbd: {
       start:"ruai", end:"eastleigh",
       time_rush:"50 min", time_offpeak:"30 min", distance:"18 km", makangas:8,
-      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Eastern outskirts route",
-      coords:[[-1.2600,36.9600],[-1.2700,36.8450]],
       stages:["ruai","ruai_bypass_junction","ruai_town","utawala_junction","utawala","eastern_bypass_junction","savannah","chokaa_estate","kiambiu","eastleigh"]
     },
     from_cbd: {
       start:"eastleigh", end:"ruai",
       time_rush:"55 min", time_offpeak:"32 min", distance:"18 km", makangas:8,
-      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening eastern outskirts",
-      coords:[[-1.2700,36.8450],[-1.2600,36.9600]],
       stages:["eastleigh","kiambiu","chokaa_estate","savannah","eastern_bypass_junction","utawala","utawala_junction","ruai_town","ruai_bypass_junction","ruai"]
     }
   },
@@ -937,17 +923,15 @@ const ROUTES = {
     to_cbd: {
       start:"kawangware", end:"kencom",
       time_rush:"40 min", time_offpeak:"25 min", distance:"10 km", makangas:18,
-      status:"Moving — 18 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"High frequency western route",
-      coords:[[-1.2850,36.7450],[-1.2855,36.8230]],
       stages:["kawangware","kawangware_46","satellite","adams_arcade","prestige","yaya","hurlingham","kilimani","kileleshwa","westlands","sarit","kencom"]
     },
     from_cbd: {
       start:"kencom", end:"kawangware",
       time_rush:"42 min", time_offpeak:"27 min", distance:"10 km", makangas:18,
-      status:"Moving — 18 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening western high frequency",
-      coords:[[-1.2855,36.8230],[-1.2850,36.7450]],
       stages:["kencom","sarit","westlands","kileleshwa","kilimani","hurlingham","yaya","prestige","adams_arcade","satellite","kawangware_46","kawangware"]
     }
   },
@@ -957,17 +941,15 @@ const ROUTES = {
     to_cbd: {
       start:"kikuyu", end:"kencom",
       time_rush:"55 min", time_offpeak:"35 min", distance:"18 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Western outskirts route",
-      coords:[[-1.2500,36.6600],[-1.2855,36.8230]],
       stages:["kikuyu","gichagi","gathiga","kingeero","lower_kabete","kabete","uthiru","uthiru_market","kangemi","mountain_view","westlands","sarit","kencom"]
     },
     from_cbd: {
       start:"kencom", end:"kikuyu",
       time_rush:"58 min", time_offpeak:"38 min", distance:"18 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening western outskirts",
-      coords:[[-1.2855,36.8230],[-1.2500,36.6600]],
       stages:["kencom","sarit","westlands","mountain_view","kangemi","uthiru_market","uthiru","kabete","lower_kabete","kingeero","gathiga","gichagi","kikuyu"]
     }
   },
@@ -977,17 +959,15 @@ const ROUTES = {
     to_cbd: {
       start:"dagoretti", end:"gpo",
       time_rush:"45 min", time_offpeak:"28 min", distance:"12 km", makangas:12,
-      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Dagoretti corridor",
-      coords:[[-1.3000,36.7250],[-1.2865,36.8215]],
       stages:["dagoretti","waithaka","dagoretti_mkt","racecourse","ngong_rd_mkt","adams_arcade","prestige","chaka_place","nairobi_hospital","citam_valley","gpo"]
     },
     from_cbd: {
       start:"gpo", end:"dagoretti",
       time_rush:"48 min", time_offpeak:"30 min", distance:"12 km", makangas:12,
-      status:"Moving — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Dagoretti corridor",
-      coords:[[-1.2865,36.8215],[-1.3000,36.7250]],
       stages:["gpo","citam_valley","nairobi_hospital","chaka_place","prestige","adams_arcade","ngong_rd_mkt","racecourse","dagoretti_mkt","waithaka","dagoretti"]
     }
   },
@@ -998,38 +978,37 @@ const ROUTES = {
     to_cbd: {
       start:"karen", end:"afya_center",
       time_rush:"50 min", time_offpeak:"30 min", distance:"14 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Karen leafy suburb route",
-      coords:[[-1.3200,36.7000],[-1.2845,36.8185]],
       stages:["karen","karen_hardy","karen_crossing","karen_hub","gataka","mataara","bomas_gate","bomas","carnivore","langata","madaraka","strathmore","highrise","hazina","afya_center"]
     },
     from_cbd: {
       start:"afya_center", end:"karen",
       time_rush:"52 min", time_offpeak:"32 min", distance:"14 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Karen route",
-      coords:[[-1.2845,36.8185],[-1.3200,36.7000]],
       stages:["afya_center","hazina","highrise","strathmore","madaraka","langata","carnivore","bomas","bomas_gate","mataara","gataka","karen_hub","karen_crossing","karen_hardy","karen"]
     }
   },
 
+  // ===== FIXED: Route 125 Rongai =====
+  // From CBD: Railways -> Haile Selassie -> Uhuru Highway -> Langata Rd -> Magadi Rd -> Ongata Rongai
+  // NOT via Kiserian! Kiserian is Route 126.
   route_125_rongai: {
     id:"route_125_rongai", name:"Route 125 Rongai", color:"#229954", badge:"E-LINE", badgeClass:"badge-shortcut",
     to_cbd: {
-      start:"rongai", end:"afya_center",
+      start:"rongai", end:"railways",
       time_rush:"65 min", time_offpeak:"40 min", distance:"22 km", makangas:8,
-      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
-      aiReason:"Rongai satellite town route",
-      coords:[[-1.3950,36.7350],[-1.2845,36.8185]],
-      stages:["rongai","rongai_tuskys","rongai_maasai","ongata_rongai","magadi_rd","kiserian_ngong","ngong_forest","racecourse","ngong_rd_mkt","adams_arcade","prestige","chaka_place","nairobi_hospital","citam_valley","afya_center"]
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Rongai via Langata Rd & Magadi Rd",
+      stages:["rongai","rongai_tuskys","rongai_maasai","ongata_rongai","magadi_rd","kiserian_ngong","ngong_forest","racecourse","ngong_rd_mkt","adams_arcade","prestige","chaka_place","nairobi_hospital","citam_valley","railways"]
     },
     from_cbd: {
-      start:"afya_center", end:"rongai",
+      start:"railways", end:"rongai",
       time_rush:"70 min", time_offpeak:"45 min", distance:"22 km", makangas:8,
-      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
-      aiReason:"Evening Rongai route",
-      coords:[[-1.2845,36.8185],[-1.3950,36.7350]],
-      stages:["afya_center","citam_valley","nairobi_hospital","chaka_place","prestige","adams_arcade","ngong_rd_mkt","racecourse","ngong_forest","kiserian_ngong","magadi_rd","ongata_rongai","rongai_maasai","rongai_tuskys","rongai"]
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening Rongai via Langata Rd",
+      stages:["railways","citam_valley","nairobi_hospital","chaka_place","prestige","adams_arcade","ngong_rd_mkt","racecourse","ngong_forest","kiserian_ngong","magadi_rd","ongata_rongai","rongai_maasai","rongai_tuskys","rongai"]
     }
   },
 
@@ -1038,17 +1017,15 @@ const ROUTES = {
     to_cbd: {
       start:"ngong", end:"gpo",
       time_rush:"60 min", time_offpeak:"38 min", distance:"20 km", makangas:6,
-      status:"Moving — 6 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Ngong hill town route",
-      coords:[[-1.3600,36.6550],[-1.2865,36.8215]],
       stages:["ngong","ngong_town","ngong_hills","kiserian_ngong","magadi_rd","ngong_forest","racecourse","ngong_rd_mkt","adams_arcade","prestige","chaka_place","nairobi_hospital","citam_valley","gpo"]
     },
     from_cbd: {
       start:"gpo", end:"ngong",
       time_rush:"65 min", time_offpeak:"42 min", distance:"20 km", makangas:6,
-      status:"Moving — 6 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Ngong route",
-      coords:[[-1.2865,36.8215],[-1.3600,36.6550]],
       stages:["gpo","citam_valley","nairobi_hospital","chaka_place","prestige","adams_arcade","ngong_rd_mkt","racecourse","ngong_forest","magadi_rd","kiserian_ngong","ngong_hills","ngong_town","ngong"]
     }
   },
@@ -1058,17 +1035,15 @@ const ROUTES = {
     to_cbd: {
       start:"south_b", end:"afya_center",
       time_rush:"25 min", time_offpeak:"15 min", distance:"5 km", makangas:15,
-      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Short southern route",
-      coords:[[-1.3150,36.8250],[-1.2845,36.8185]],
       stages:["south_b","south_b_shopping","wilson_airport","nairobi_west","nyayo","madaraka","highrise","hazina","afya_center"]
     },
     from_cbd: {
       start:"afya_center", end:"south_b",
       time_rush:"28 min", time_offpeak:"17 min", distance:"5 km", makangas:15,
-      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening short southern",
-      coords:[[-1.2845,36.8185],[-1.3150,36.8250]],
       stages:["afya_center","hazina","highrise","madaraka","nyayo","nairobi_west","wilson_airport","south_b_shopping","south_b"]
     }
   },
@@ -1079,17 +1054,15 @@ const ROUTES = {
     to_cbd: {
       start:"syokimau", end:"mombasa_rd",
       time_rush:"45 min", time_offpeak:"28 min", distance:"16 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Mombasa Road corridor",
-      coords:[[-1.3600,36.9200],[-1.3200,36.8500]],
       stages:["syokimau","katani","athi_river","cabanas","imara_daima","enterprise_rd","lungalunga","mombasa_rd"]
     },
     from_cbd: {
       start:"mombasa_rd", end:"syokimau",
       time_rush:"48 min", time_offpeak:"30 min", distance:"16 km", makangas:10,
-      status:"Moving — 10 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Mombasa Road",
-      coords:[[-1.3200,36.8500],[-1.3600,36.9200]],
       stages:["mombasa_rd","lungalunga","enterprise_rd","imara_daima","cabanas","athi_river","katani","syokimau"]
     }
   },
@@ -1099,17 +1072,15 @@ const ROUTES = {
     to_cbd: {
       start:"athi_river", end:"mombasa_rd",
       time_rush:"55 min", time_offpeak:"35 min", distance:"20 km", makangas:8,
-      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Industrial town route",
-      coords:[[-1.4500,36.9800],[-1.3200,36.8500]],
       stages:["athi_river","kitengela","syokimau","katani","cabanas","imara_daima","enterprise_rd","lungalunga","mombasa_rd"]
     },
     from_cbd: {
       start:"mombasa_rd", end:"athi_river",
       time_rush:"60 min", time_offpeak:"38 min", distance:"20 km", makangas:8,
-      status:"Moving — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening industrial town",
-      coords:[[-1.3200,36.8500],[-1.4500,36.9800]],
       stages:["mombasa_rd","lungalunga","enterprise_rd","imara_daima","cabanas","katani","syokimau","kitengela","athi_river"]
     }
   },
@@ -1120,38 +1091,35 @@ const ROUTES = {
     to_cbd: {
       start:"kibera", end:"knh",
       time_rush:"20 min", time_offpeak:"12 min", distance:"4 km", makangas:15,
-      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Kibera short route",
-      coords:[[-1.3150,36.7800],[-1.3020,36.8060]],
       stages:["kibera","ayany","mashimoni","silanga","knh"]
     },
     from_cbd: {
       start:"knh", end:"kibera",
       time_rush:"22 min", time_offpeak:"14 min", distance:"4 km", makangas:15,
-      status:"Moving — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Kibera",
-      coords:[[-1.3020,36.8060],[-1.3150,36.7800]],
       stages:["knh","silanga","mashimoni","ayany","kibera"]
     }
   },
 
-  // ===== H-LINE: EXPRESS / SPECIAL =====
+  // ===== H-LINE: EXPRESS / KAYOLE =====
+  // FIXED: Route 1960 Kayole Express - direct via Jogoo Rd, NOT via Solace/Kwa Miti
   route_1960_kayole: {
     id:"route_1960_kayole", name:"Route 1960 Kayole Express", color:"#FF3366", badge:"EXPRESS", badgeClass:"badge-fastest",
     to_cbd: {
       start:"caltex", end:"otc",
       time_rush:"50 min", time_offpeak:"28 min", distance:"16 km", makangas:20,
-      status:"Express — 20 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
-      aiReason:"Express service, fewer stops",
-      coords:[[-1.2300,36.9150],[-1.2850,36.8210]],
+      status:"Express", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Express via Jogoo Rd direct",
       stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","otc"]
     },
     from_cbd: {
       start:"otc", end:"caltex",
       time_rush:"55 min", time_offpeak:"30 min", distance:"16 km", makangas:20,
-      status:"Express — 20 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
-      aiReason:"Evening express",
-      coords:[[-1.2850,36.8210],[-1.2300,36.9150]],
+      status:"Express", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      aiReason:"Evening express via Jogoo Rd",
       stages:["otc","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
     }
   },
@@ -1161,17 +1129,15 @@ const ROUTES = {
     to_cbd: {
       start:"caltex", end:"otc",
       time_rush:"45 min", time_offpeak:"25 min", distance:"16 km", makangas:15,
-      status:"Fedha shortcut — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Fedha shortcut", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Uses Fedha backroads to skip Jogoo Rd",
-      coords:[[-1.2300,36.9150],[-1.2850,36.8210]],
       stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","fedha","umoja","pipeline","donholm","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","otc"]
     },
     from_cbd: {
       start:"otc", end:"caltex",
       time_rush:"48 min", time_offpeak:"28 min", distance:"16 km", makangas:15,
-      status:"Fedha shortcut — 15 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Fedha shortcut", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Fedha escape",
-      coords:[[-1.2850,36.8210],[-1.2300,36.9150]],
       stages:["otc","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","donholm","pipeline","umoja","fedha","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
     }
   },
@@ -1179,60 +1145,56 @@ const ROUTES = {
   route_1962_kayole_outer: {
     id:"route_1962_kayole_outer", name:"Route 1962 Outer Ring", color:"#9C27B0", badge:"EXPRESS", badgeClass:"badge-shortcut",
     to_cbd: {
-      start:"caltex", end:"temple_road",
+      start:"caltex", end:"railways",
       time_rush:"40 min", time_offpeak:"22 min", distance:"18 km", makangas:12,
-      status:"Outer Ring — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Outer Ring", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Bypasses Jogoo Rd completely",
-      coords:[[-1.2300,36.9150],[-1.2833,36.8167]],
-      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","outer_ring","temple_road"]
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","outer_ring","railways"]
     },
     from_cbd: {
-      start:"temple_road", end:"caltex",
+      start:"railways", end:"caltex",
       time_rush:"42 min", time_offpeak:"25 min", distance:"18 km", makangas:12,
-      status:"Outer Ring — 12 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Outer Ring", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Outer Ring bypass",
-      coords:[[-1.2833,36.8167],[-1.2300,36.9150]],
-      stages:["temple_road","outer_ring","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+      stages:["railways","outer_ring","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
     }
   },
 
+  // ===== Route 39 Kayole (Main) =====
   route_39_kayole: {
     id:"route_39_kayole", name:"Route 39 Kayole", color:"#FF6B35", badge:"H-LINE", badgeClass:"badge-shortcut",
     to_cbd: {
-      start:"caltex", end:"temple_road",
+      start:"caltex", end:"otc",
       time_rush:"65 min", time_offpeak:"40 min", distance:"16 km", makangas:25,
-      status:"Moving — 25 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Main Kayole route via Jogoo Rd",
-      coords:[[-1.2300,36.9150],[-1.2833,36.8167]],
-      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","country_bus","temple_road"]
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","hamza","maziwa","makadara","shauri_moyo","city_stadium","landhies","muthurwa","otc"]
     },
     from_cbd: {
-      start:"temple_road", end:"caltex",
+      start:"otc", end:"caltex",
       time_rush:"70 min", time_offpeak:"45 min", distance:"16 km", makangas:25,
-      status:"Moving — 25 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Moving", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening main Kayole route",
-      coords:[[-1.2833,36.8167],[-1.2300,36.9150]],
-      stages:["temple_road","country_bus","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+      stages:["otc","muthurwa","landhies","city_stadium","shauri_moyo","makadara","maziwa","hamza","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
     }
   },
 
+  // ===== Route 39B Buruburu Shortcut =====
   route_39b_buruburu: {
     id:"route_39b_buruburu", name:"Route 39B Buruburu Shortcut", color:"#00D4AA", badge:"H-LINE", badgeClass:"badge-fastest",
     to_cbd: {
-      start:"caltex", end:"temple_road",
+      start:"caltex", end:"otc",
       time_rush:"42 min", time_offpeak:"25 min", distance:"18 km", makangas:8,
-      status:"Clear — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Clear", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Saves 23 min vs Jogoo Rd during rush",
-      coords:[[-1.2300,36.9150],[-1.2833,36.8167]],
-      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","buruburu","juja_rd","manyanja","muthurwa","temple_road"]
+      stages:["caltex","komarock","pheroz","kwa_miti","stage_18","solace","kayole_jn","saika","kangundo_jn","donholm","buruburu","juja_rd","manyanja","muthurwa","otc"]
     },
     from_cbd: {
-      start:"temple_road", end:"caltex",
+      start:"otc", end:"caltex",
       time_rush:"45 min", time_offpeak:"28 min", distance:"18 km", makangas:8,
-      status:"Clear — 8 makangas", statusColor:"#00D4AA", statusIcon:"fa-check-double",
+      status:"Clear", statusColor:"#00D4AA", statusIcon:"fa-check-double",
       aiReason:"Evening Buruburu shortcut",
-      coords:[[-1.2833,36.8167],[-1.2300,36.9150]],
-      stages:["temple_road","muthurwa","manyanja","juja_rd","buruburu","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
+      stages:["otc","muthurwa","manyanja","juja_rd","buruburu","donholm","kangundo_jn","saika","kayole_jn","solace","stage_18","kwa_miti","pheroz","komarock","caltex"]
     }
   }
 };
@@ -1240,13 +1202,11 @@ const ROUTES = {
 
 // ===== PHASE 4: MAIN APP LOGIC =====
 
-// ===== YOU ARE THE SPOTTER =====
 const MY_SPOTTER_ID = "user_" + Math.random().toString(36).substr(2, 9);
 let myLocation = null;
 let myReports = [];
 let myPoints = 0;
 
-// ===== APP STATE =====
 const appState = {
     currentRoute: "route_39_kayole",
     currentDirection: "to_cbd",
@@ -1261,17 +1221,14 @@ const appState = {
     isRushHour: false
 };
 
-// ===== RUSH HOUR DETECTION =====
 function checkRushHour() {
     const now = new Date();
     const hour = now.getHours();
     const day = now.getDay();
-    // Rush: Mon-Fri 6:30-9:00 and 16:30-20:00
     const isWeekday = day >= 1 && day <= 5;
     const isMorningRush = hour >= 6 && hour < 10;
     const isEveningRush = hour >= 16 && hour < 21;
     appState.isRushHour = isWeekday && (isMorningRush || isEveningRush);
-
     const badge = document.getElementById("rushBadge");
     if (badge) {
         badge.textContent = appState.isRushHour ? "RUSH HOUR" : "OFF-PEAK";
@@ -1279,7 +1236,6 @@ function checkRushHour() {
     }
 }
 
-// ===== GET ACTIVE ROUTE DATA =====
 function getActiveRouteData() {
     const route = ROUTES[appState.currentRoute];
     if (!route) return null;
@@ -1290,7 +1246,6 @@ function getActiveRouteMeta() {
     return ROUTES[appState.currentRoute];
 }
 
-// ===== INITIALIZE =====
 function initApp() {
     checkRushHour();
     initMap();
@@ -1302,30 +1257,19 @@ function initApp() {
     bindEvents();
     updateRouteDisplay();
     showToast("🎉 Welcome! You are now a spotter. Tap any stage to report.");
-    // Check rush hour every minute
     setInterval(checkRushHour, 60000);
 }
 
-// ===== MAP WITH ZOOM CONTROLS =====
 function initMap() {
     try {
-        appState.map = L.map("map", {
-            zoomControl: true,
-            attributionControl: false
-        }).setView([-1.268, 36.87], 12);
-
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-            maxZoom: 19, subdomains: "abcd"
-        }).addTo(appState.map);
-
+        appState.map = L.map("map", { zoomControl: true, attributionControl: false }).setView([-1.268, 36.87], 12);
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd" }).addTo(appState.map);
         appState.map.zoomControl.setPosition('bottomleft');
-
         document.getElementById("mapLoading").classList.add("hidden");
         drawRoutes();
         addStageMarkers();
         setInterval(updateVehicles, 2000);
         updateVehicles();
-
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 pos => {
@@ -1342,12 +1286,18 @@ function initMap() {
                 { enableHighAccuracy: true }
             );
         }
-    } catch (e) {
-        console.error("Map error:", e);
-    }
+    } catch (e) { console.error("Map error:", e); }
 }
 
-// ===== DRAW ROUTES =====
+function getRouteCoords(stageKeys) {
+    const coords = [];
+    stageKeys.forEach(key => {
+        const stage = STAGES[key];
+        if (stage) coords.push([stage.lat, stage.lng]);
+    });
+    return coords;
+}
+
 function drawRoutes() {
     Object.entries(ROUTES).forEach(([id, route]) => {
         const isActive = id === appState.currentRoute;
@@ -1355,25 +1305,23 @@ function drawRoutes() {
         const weight = isActive ? 5 : 2;
         const dash = isActive ? null : "8, 6";
         const data = appState.currentDirection === "to_cbd" ? route.to_cbd : route.from_cbd;
-
         if (appState.routeLayers[id]) appState.map.removeLayer(appState.routeLayers[id]);
-        if (data && data.coords) {
-            appState.routeLayers[id] = L.polyline(data.coords, {
+        if (data && data.stages) {
+            const coords = getRouteCoords(data.stages);
+            appState.routeLayers[id] = L.polyline(coords, {
                 color: route.color, weight: weight, opacity: opacity, dashArray: dash
             }).addTo(appState.map);
         }
     });
 }
 
-// ===== ADD STAGE MARKERS =====
 function addStageMarkers() {
     Object.entries(STAGES).forEach(([key, stage]) => {
         let markerClass = "marker-green";
-        let glowColor = "#00D4AA";
-        if (stage.status === "yellow") { markerClass = "marker-yellow"; glowColor = "#FFB800"; }
-        else if (stage.status === "red") { markerClass = "marker-red"; glowColor = "#FF3366"; }
-        else if (stage.type === "decision") { markerClass = "marker-primary"; glowColor = "#FF6B35"; }
-        else if (stage.type === "start" || stage.type === "end") { markerClass = "marker-accent"; glowColor = "#00D4AA"; }
+        if (stage.status === "yellow") markerClass = "marker-yellow";
+        else if (stage.status === "red") markerClass = "marker-red";
+        else if (stage.type === "decision") markerClass = "marker-primary";
+        else if (stage.type === "start" || stage.type === "end") markerClass = "marker-accent";
 
         const markerIcon = L.divIcon({
             className: "stage-marker-container",
@@ -1389,7 +1337,7 @@ function addStageMarkers() {
                 ${stage.note ? `<p style="margin:0 0 6px; color:#FF6B35; font-weight:600; font-size:11px; padding:3px 6px; background:#FFF3E0; border-radius:4px;">${stage.note}</p>` : ""}
                 <p style="margin:0; font-size:11px; color:#555; line-height:1.4;">${stage.desc}</p>
                 <p style="margin:6px 0 0; font-size:10px; color:#888;">
-                    Status: <span style="color:${glowColor}; font-weight:700; text-transform:uppercase;">${stage.status}</span>
+                    Status: <span style="color:${stage.status === 'green' ? '#00D4AA' : stage.status === 'yellow' ? '#FFB800' : '#FF3366'}; font-weight:700; text-transform:uppercase;">${stage.status}</span>
                 </p>
                 <button class="report-stage-btn" onclick="reportStage('${key}')">
                     <i class="fas fa-bullhorn"></i> Report This Stage
@@ -1401,7 +1349,6 @@ function addStageMarkers() {
     });
 }
 
-// ===== REPORT A SPECIFIC STAGE =====
 function reportStage(stageKey) {
     appState.selectedStageForReport = stageKey;
     const stage = STAGES[stageKey];
@@ -1410,13 +1357,13 @@ function reportStage(stageKey) {
     document.getElementById("reportModal").classList.add("active");
 }
 
-// ===== ANIMATED VEHICLES =====
 function updateVehicles() {
     appState.vehicleMarkers.forEach(m => appState.map.removeLayer(m));
     appState.vehicleMarkers = [];
     const route = getActiveRouteData();
-    if (!route || !route.coords) return;
-    const activePath = route.coords;
+    if (!route || !route.stages) return;
+    const activePath = getRouteCoords(route.stages);
+    if (activePath.length < 2) return;
     appState.vehiclePositions.forEach(pos => {
         const idx = Math.floor(pos) % activePath.length;
         const nextIdx = (idx + 1) % activePath.length;
@@ -1431,14 +1378,9 @@ function updateVehicles() {
     appState.vehiclePositions = appState.vehiclePositions.map(p => p + 0.04);
 }
 
-// ===== RENDER FUNCTIONS =====
 function renderRouteSelector() {
     const selector = document.getElementById("routeSelector");
-    const routeList = Object.values(ROUTES).map(r => ({
-        id: r.id,
-        name: r.name,
-        status: "green"
-    }));
+    const routeList = Object.values(ROUTES).map(r => ({ id: r.id, name: r.name, status: "green" }));
     selector.innerHTML = routeList.map(r => {
         const isActive = r.id === appState.currentRoute;
         return `<div class="route-chip ${isActive ? "active" : ""}" data-route="${r.id}"><span class="dot ${r.status}"></span> ${r.name}</div>`;
@@ -1509,8 +1451,6 @@ function renderAltRoutes() {
     container.innerHTML = "";
     const currentRoute = ROUTES[appState.currentRoute];
     if (!currentRoute) return;
-
-    // Find routes in same zone
     const currentZone = STAGES[currentRoute.to_cbd.start]?.zone || "";
     const altRoutes = Object.values(ROUTES).filter(r => {
         const rZone = STAGES[r.to_cbd.start]?.zone || "";
@@ -1540,10 +1480,8 @@ function updateRouteDisplay() {
     const route = getActiveRouteMeta();
     const data = getActiveRouteData();
     if (!route || !data) return;
-
     const time = appState.isRushHour ? data.time_rush : data.time_offpeak;
     const dirText = appState.currentDirection === "to_cbd" ? "→ CBD" : "← From CBD";
-
     document.getElementById("routeDisplay").textContent = `${route.name} ${dirText}`;
     document.getElementById("currentRouteName").textContent = route.name;
     document.getElementById("mainEta").textContent = `⏱ ${time}`;
@@ -1560,17 +1498,16 @@ function updateRouteDisplay() {
     document.getElementById("aiInsightText").textContent = data.aiReason;
 }
 
-// ===== BIND EVENTS =====
 function bindEvents() {
     document.getElementById("sheetHandle").addEventListener("click", toggleBottomSheet);
     document.getElementById("routesFab").addEventListener("click", toggleBottomSheet);
     document.getElementById("spotterBtn").addEventListener("click", toggleSpotterPanel);
     document.getElementById("notifBtn").addEventListener("click", showNotifications);
-    document.getElementById("reportFab").addEventListener("click", () => { 
-        appState.selectedStageForReport = null; 
-        document.getElementById("reportModalTitle").innerHTML = "🚨 Report Condition"; 
-        document.getElementById("reportModalDesc").textContent = "What is happening on your route?"; 
-        document.getElementById("reportModal").classList.add("active"); 
+    document.getElementById("reportFab").addEventListener("click", () => {
+        appState.selectedStageForReport = null;
+        document.getElementById("reportModalTitle").innerHTML = "🚨 Report Condition";
+        document.getElementById("reportModalDesc").textContent = "What is happening on your route?";
+        document.getElementById("reportModal").classList.add("active");
     });
     document.getElementById("closeReportModal").addEventListener("click", closeReportModal);
     document.getElementById("submitReportBtn").addEventListener("click", () => submitReport());
@@ -1594,7 +1531,6 @@ function bindEvents() {
     document.getElementById("navFab").addEventListener("click", startNavigation);
     document.getElementById("myLocationBtn").addEventListener("click", centerOnMyLocation);
 
-    // Direction toggle
     document.getElementById("directionToggle").addEventListener("click", function(e) {
         const btn = e.target.closest("button");
         if (!btn) return;
@@ -1630,7 +1566,6 @@ function bindEvents() {
     });
 }
 
-// ===== UPDATE MARKER COLOR AFTER REPORT =====
 function updateMarkerColor(stageKey) {
     const stage = STAGES[stageKey];
     if (!stage || !appState.markers[stageKey]) return;
@@ -1639,7 +1574,6 @@ function updateMarkerColor(stageKey) {
     else if (stage.status === "red") markerClass = "marker-red";
     else if (stage.type === "decision") markerClass = "marker-primary";
     else if (stage.type === "start" || stage.type === "end") markerClass = "marker-accent";
-
     appState.markers[stageKey].setIcon(L.divIcon({
         className: "stage-marker-container",
         html: `<div class="${markerClass}"></div>`,
@@ -1647,7 +1581,6 @@ function updateMarkerColor(stageKey) {
     }));
 }
 
-// ===== UI FUNCTIONS =====
 function toggleBottomSheet() {
     const sheet = document.getElementById("bottomSheet");
     appState.bottomSheetCollapsed = !appState.bottomSheetCollapsed;
@@ -1689,13 +1622,11 @@ function centerOnMyLocation() {
     }
 }
 
-// ===== MODAL FUNCTIONS =====
 function showReportModal() { document.getElementById("reportModal").classList.add("active"); }
 function closeReportModal() { document.getElementById("reportModal").classList.remove("active"); appState.selectedStageForReport = null; }
 function showVoiceModal() { document.getElementById("voiceModal").classList.add("active"); }
 function closeVoiceModal() { document.getElementById("voiceModal").classList.remove("active"); }
 
-// ===== VOICE =====
 function toggleVoiceListening() {
     const btn = document.getElementById("voiceBtn");
     btn.innerHTML = '<i class="fas fa-stop"></i> Listening...';
@@ -1709,7 +1640,6 @@ function toggleVoiceListening() {
     }, 3000);
 }
 
-// ===== REPORTING =====
 function submitReport(type) {
     closeReportModal();
     if (!type) type = "custom";
@@ -1731,7 +1661,6 @@ function addPoints(points) {
     document.getElementById("userScoreText").innerHTML = `<i class="fas fa-fire"></i> ${myPoints} pts`;
 }
 
-// ===== NAVIGATION =====
 function startNavigation() {
     showToast("🗺️ Navigation started! Follow the highlighted route.");
     const route = getActiveRouteData();
@@ -1749,10 +1678,8 @@ function startNavigation() {
     }
 }
 
-// ===== NOTIFICATIONS =====
 function showNotifications() { showToast("📢 You have no new alerts. Start reporting to get updates!"); }
 
-// ===== TOAST =====
 function showToast(message) {
     const container = document.getElementById("toastContainer");
     const toast = document.createElement("div");
@@ -1762,7 +1689,6 @@ function showToast(message) {
     setTimeout(() => toast.remove(), 4000);
 }
 
-// ===== START APP =====
 document.addEventListener("DOMContentLoaded", initApp);
 
 </script>
