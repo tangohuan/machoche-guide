@@ -2592,6 +2592,57 @@ function simulateSpotterActivity() {
 }
 
 // ===== INIT =====
+
+// ===== LOCALSTORAGE PERSISTENCE =====
+function loadPersistedData() {
+    try {
+        const saved = localStorage.getItem('mtaawatch_data');
+        if (saved) {
+            const data = JSON.parse(saved);
+            myPoints = data.myPoints || 0;
+            myReports = data.myReports || [];
+            // Restore stage statuses if they exist and are recent (< 30 min old)
+            if (data.stageStatuses) {
+                const now = Date.now();
+                Object.entries(data.stageStatuses).forEach(([key, statusData]) => {
+                    if (STAGES[key] && statusData.time && (now - statusData.time) < 30 * 60 * 1000) {
+                        STAGES[key].status = statusData.status;
+                        STAGES[key].spotterConfirm = statusData.spotterConfirm || 0;
+                        STAGES[key].lastReportTime = statusData.lastReportTime;
+                        if (statusData.reportHistory) {
+                            STAGES[key].reportHistory = statusData.reportHistory;
+                        }
+                    }
+                });
+            }
+            const scoreEl = document.getElementById("userScoreText");
+            if (scoreEl) scoreEl.innerHTML = myPoints + " pts";
+        }
+    } catch (e) { console.log("No persisted data"); }
+}
+
+function savePersistedData() {
+    try {
+        const stageStatuses = {};
+        Object.entries(STAGES).forEach(([key, stage]) => {
+            if (stage.lastReportTime) {
+                stageStatuses[key] = {
+                    status: stage.status,
+                    spotterConfirm: stage.spotterConfirm,
+                    lastReportTime: stage.lastReportTime,
+                    reportHistory: stage.reportHistory,
+                    time: Date.now()
+                };
+            }
+        });
+        localStorage.setItem('mtaawatch_data', JSON.stringify({
+            myPoints: myPoints,
+            myReports: myReports,
+            stageStatuses: stageStatuses
+        }));
+    } catch (e) { console.log("Could not save data"); }
+}
+
 function initApp() {
     checkRushHour();
 
