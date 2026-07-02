@@ -345,6 +345,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 </div>
 </div>
 
+<div class="modal-overlay" id="leaderboardModal">
+<div class="modal">
+<div class="modal-header"><h2>Makanga Leaderboard</h2><button class="modal-close" id="closeLeaderboard"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px">Top reporters this week. Earn points by sharing accurate road conditions!</p>
+<div id="leaderboardList"></div>
+<div style="margin-top:16px;padding:12px;background:var(--bg-dark);border-radius:12px;border:1px solid var(--border)">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">YOU</div>
+<div style="flex:1"><h4 style="font-size:13px">Your Rank</h4><p style="font-size:11px;color:var(--text-muted)">0 pts • 0 reports</p></div>
+<span style="font-size:14px;font-weight:700;color:var(--accent)" id="yourLeaderboardScore">Start reporting!</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
 <div class="toast-container" id="toastContainer"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
