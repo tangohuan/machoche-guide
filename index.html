@@ -2110,6 +2110,8 @@ const ROUTES = {
     }
   },
 
+};
+
 // ==================== APP STATE ====================
 let map = null;
 let currentRoute = 'route_39_kayole';
@@ -2123,7 +2125,6 @@ let selectedStageForReport = null;
 let isRushHour = false;
 let tomtomApiKey = 'HD4LCWRqniFGkLgFRwYMnKkXc9eNTaO8';
 let useRealTraffic = false;
-let weatherData = null;
 
 // ==================== LEADERBOARD DATA ====================
 const LEADERBOARD = [
@@ -2146,25 +2147,15 @@ function getCurrentHour() {
 }
 
 function checkRushHour() {
-  const hour = getCurrentHour();
-  const day = new Date().getDay();
-  // Rush: Mon-Fri 6-9 AM and 4-8 PM, Sat 8-11 AM
+  var hour = getCurrentHour();
+  var day = new Date().getDay();
   isRushHour = (day >= 1 && day <= 5 && ((hour >= 6 && hour <= 9) || (hour >= 16 && hour <= 20))) ||
                (day === 6 && hour >= 8 && hour <= 11);
   return isRushHour;
 }
 
-function getTimeIcon() {
-  const hour = getCurrentHour();
-  if (hour >= 5 && hour < 12) return 'fa-sun';
-  if (hour >= 12 && hour < 17) return 'fa-cloud-sun';
-  if (hour >= 17 && hour < 20) return 'fa-cloud';
-  return 'fa-moon';
-}
-
 function getWeatherCondition() {
-  const hour = getCurrentHour();
-  // Realistic Nairobi weather patterns
+  var hour = getCurrentHour();
   if (hour >= 0 && hour < 6) return { icon: 'fa-moon', condition: 'Clear Night', temp: 18 };
   if (hour >= 6 && hour < 9) return { icon: 'fa-sun', condition: 'Cool Morning', temp: 20 };
   if (hour >= 9 && hour < 13) return { icon: 'fa-sun', condition: 'Sunny', temp: 26 };
@@ -2173,15 +2164,16 @@ function getWeatherCondition() {
   return { icon: 'fa-moon', condition: 'Clear Night', temp: 20 };
 }
 
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
+function showToast(message, type) {
+  type = type || 'info';
+  var container = document.getElementById('toastContainer');
+  var toast = document.createElement('div');
   toast.className = 'toast';
-  const icons = { info: 'fa-info-circle', success: 'fa-check-circle', warning: 'fa-exclamation-triangle', danger: 'fa-times-circle' };
-  const colors = { info: '#4A90E2', success: '#00D4AA', warning: '#FFB800', danger: '#FF3366' };
-  toast.innerHTML = `<i class="fas ${icons[type]}" style="color:${colors[type]}"></i><span>${message}</span>`;
+  var icons = { info: 'fa-info-circle', success: 'fa-check-circle', warning: 'fa-exclamation-triangle', danger: 'fa-times-circle' };
+  var colors = { info: '#4A90E2', success: '#00D4AA', warning: '#FFB800', danger: '#FF3366' };
+  toast.innerHTML = '<i class="fas ' + icons[type] + '" style="color:' + colors[type] + '"></i><span>' + message + '</span>';
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+  setTimeout(function() { toast.remove(); }, 4000);
 }
 
 // ==================== MAP INITIALIZATION ====================
@@ -2192,7 +2184,6 @@ function initMap() {
       attributionControl: false
     }).setView([-1.2865, 36.8172], 12);
 
-    // Dark theme tile layer
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
       subdomains: 'abcd',
@@ -2200,52 +2191,48 @@ function initMap() {
     }).addTo(map);
 
     document.getElementById('mapLoading').classList.add('hidden');
-    console.log('✅ Map initialized successfully');
+    console.log('Map initialized');
   } catch (e) {
-    console.error('❌ Map init failed:', e);
+    console.error('Map init failed:', e);
     document.getElementById('mapLoading').innerHTML = '<span style="color:#FF3366">Map failed to load</span>';
   }
 }
 
 // ==================== WEATHER ====================
 function updateWeather() {
-  const weather = getWeatherCondition();
-  const hour = getCurrentHour();
+  var weather = getWeatherCondition();
+  var hour = getCurrentHour();
 
   document.getElementById('weatherTemp').textContent = weather.temp + '°C';
   document.getElementById('weatherCondition').textContent = weather.condition;
   document.getElementById('weatherTime').textContent = getCurrentTime();
 
-  const iconEl = document.getElementById('weatherIcon');
+  var iconEl = document.getElementById('weatherIcon');
   iconEl.className = 'fas ' + weather.icon;
 
-  // Color based on time
   if (hour >= 6 && hour < 18) {
-    iconEl.style.color = '#FFB800'; // Sun color
+    iconEl.style.color = '#FFB800';
   } else {
-    iconEl.style.color = '#A0A0B8'; // Moon color
+    iconEl.style.color = '#A0A0B8';
   }
 }
 
 // ==================== ROUTE CHIPS ====================
 function renderRouteChips() {
-  const container = document.getElementById('routeSelector');
+  var container = document.getElementById('routeSelector');
   container.innerHTML = '';
 
-  Object.keys(ROUTES).forEach(routeKey => {
-    const route = ROUTES[routeKey];
-    const chip = document.createElement('div');
+  Object.keys(ROUTES).forEach(function(routeKey) {
+    var route = ROUTES[routeKey];
+    var chip = document.createElement('div');
     chip.className = 'route-chip' + (routeKey === currentRoute ? ' active' : '');
     chip.dataset.route = routeKey;
 
-    const dir = route[currentDirection];
-    const statusColor = dir && dir.statusColor ? dir.statusColor.replace('#', '') : '00D4AA';
+    var dir = route[currentDirection];
+    var statusColor = (dir && dir.statusColor) ? dir.statusColor.replace('#', '') : '00D4AA';
 
-    chip.innerHTML = `
-      <div class="dot" style="background:#${statusColor};box-shadow:0 0 6px #${statusColor}"></div>
-      <span>${route.badge}</span>
-    `;
-    chip.addEventListener('click', () => selectRoute(routeKey));
+    chip.innerHTML = '<div class="dot" style="background:#' + statusColor + ';box-shadow:0 0 6px #' + statusColor + '"></div><span>' + route.badge + '</span>';
+    chip.addEventListener('click', function() { selectRoute(routeKey); });
     container.appendChild(chip);
   });
 }
@@ -2259,16 +2246,14 @@ function selectRoute(routeKey) {
   drawRouteOnMap();
   updateDebugPanel();
 
-  const route = ROUTES[routeKey];
-  document.getElementById('routeDisplay').textContent = 
-    `${route.name} — ${route[currentDirection].start} to ${route[currentDirection].end}`;
-
-  showToast(`Switched to ${route.name}`, 'info');
+  var route = ROUTES[routeKey];
+  document.getElementById('routeDisplay').textContent = route.name + ' — ' + route[currentDirection].start + ' to ' + route[currentDirection].end;
+  showToast('Switched to ' + route.name, 'info');
 }
 
 function toggleDirection() {
   currentDirection = currentDirection === 'to_cbd' ? 'from_cbd' : 'to_cbd';
-  document.querySelectorAll('#directionToggle button').forEach(btn => {
+  document.querySelectorAll('#directionToggle button').forEach(function(btn) {
     btn.classList.toggle('active', btn.dataset.dir === currentDirection);
   });
   selectRoute(currentRoute);
@@ -2276,73 +2261,69 @@ function toggleDirection() {
 
 // ==================== BOTTOM SHEET ====================
 function renderBottomSheet() {
-  const route = ROUTES[currentRoute];
-  const dir = route[currentDirection];
+  var route = ROUTES[currentRoute];
+  var dir = route[currentDirection];
 
   document.getElementById('currentRouteName').textContent = route.name + ' Live';
   document.getElementById('rushBadge').textContent = isRushHour ? 'RUSH HOUR' : 'OFF-PEAK';
   document.getElementById('rushBadge').className = 'rush-badge ' + (isRushHour ? 'rush' : 'offpeak');
 
-  const eta = isRushHour ? dir.time_rush : dir.time_offpeak;
+  var eta = isRushHour ? dir.time_rush : dir.time_offpeak;
   document.getElementById('mainEta').textContent = '⏱ ' + eta;
   document.getElementById('smartEta').textContent = eta;
   document.getElementById('smartRoutePath').textContent = dir.aiReason;
   document.getElementById('makangaCount').textContent = dir.makangas + ' makangas';
   document.getElementById('distanceKm').textContent = dir.distance;
 
-  // Calculate time saved
-  const baseTime = parseInt(dir.time_rush);
-  const saved = Math.floor(baseTime * 0.35);
+  var baseTime = parseInt(dir.time_rush);
+  var saved = Math.floor(baseTime * 0.35);
   document.getElementById('timeSaved').textContent = 'Save ' + saved + ' min';
 
-  // Timeline
   renderTimeline(dir.stages);
-
-  // Alternative routes
   renderAltRoutes(route.altRoutes);
 }
 
 function renderTimeline(stages) {
-  const container = document.getElementById('routeTimeline');
+  var container = document.getElementById('routeTimeline');
   container.innerHTML = '';
 
-  stages.forEach((stageKey, index) => {
-    const stage = STAGES[stageKey];
+  stages.forEach(function(stageKey, index) {
+    var stage = STAGES[stageKey];
     if (!stage) return;
 
-    const item = document.createElement('div');
+    var item = document.createElement('div');
     item.className = 'timeline-item';
     item.dataset.stage = stageKey;
 
-    let dotClass = stage.status;
+    var dotClass = stage.status;
     if (index === 0) dotClass = 'start';
     if (index === stages.length - 1) dotClass = 'end';
     if (stage.type === 'decision') dotClass = 'decision';
 
-    const statusText = stage.status === 'green' ? 'Clear' : stage.status === 'yellow' ? 'Slow' : 'Jam';
-    const statusClass = stage.status;
+    var statusText = stage.status === 'green' ? 'Clear' : stage.status === 'yellow' ? 'Slow' : 'Jam';
+    var statusClass = stage.status;
 
-    item.innerHTML = `
-      <div class="timeline-dot ${dotClass}"></div>
-      <div class="timeline-content">
-        <div class="timeline-info">
-          <h3>${stage.name}</h3>
-          <p>${stage.desc}${stage.note ? ' • ' + stage.note : ''}</p>
-          ${stage.spotterConfirm > 0 ? `<span class="spotter-confirm"><i class="fas fa-check-double" style="font-size:9px"></i> ${stage.spotterConfirm} spotters</span>` : ''}
-        </div>
-        <div class="timeline-status ${statusClass}">
-          <i class="fas fa-circle" style="font-size:6px"></i> ${statusText}
-        </div>
-      </div>
-    `;
+    var spotterHtml = stage.spotterConfirm > 0 ? '<span class="spotter-confirm"><i class="fas fa-check-double" style="font-size:9px"></i> ' + stage.spotterConfirm + ' spotters</span>' : '';
 
-    item.addEventListener('click', () => openReportModal(stageKey));
+    item.innerHTML = '<div class="timeline-dot ' + dotClass + '"></div>' +
+      '<div class="timeline-content">' +
+        '<div class="timeline-info">' +
+          '<h3>' + stage.name + '</h3>' +
+          '<p>' + stage.desc + (stage.note ? ' • ' + stage.note : '') + '</p>' +
+          spotterHtml +
+        '</div>' +
+        '<div class="timeline-status ' + statusClass + '">' +
+          '<i class="fas fa-circle" style="font-size:6px"></i> ' + statusText +
+        '</div>' +
+      '</div>';
+
+    item.addEventListener('click', function() { openReportModal(stageKey); });
     container.appendChild(item);
   });
 }
 
 function renderAltRoutes(altRouteKeys) {
-  const container = document.getElementById('altRoutesContainer');
+  var container = document.getElementById('altRoutesContainer');
   container.innerHTML = '';
 
   if (!altRouteKeys || altRouteKeys.length === 0) {
@@ -2350,186 +2331,166 @@ function renderAltRoutes(altRouteKeys) {
     return;
   }
 
-  altRouteKeys.forEach(altKey => {
-    const alt = ROUTES[altKey];
+  altRouteKeys.forEach(function(altKey) {
+    var alt = ROUTES[altKey];
     if (!alt) return;
 
-    const card = document.createElement('div');
+    var card = document.createElement('div');
     card.className = 'alt-route-card';
-    card.innerHTML = `
-      <div class="route-name">
-        ${alt.name}
-        <span class="badge ${alt.badgeClass}">${alt.badge}</span>
-      </div>
-      <div class="alt-route-details">
-        <span><i class="fas fa-clock"></i> ${isRushHour ? alt[currentDirection].time_rush : alt[currentDirection].time_offpeak}</span>
-        <span><i class="fas fa-road"></i> ${alt[currentDirection].distance}</span>
-        <span><i class="fas fa-users"></i> ${alt[currentDirection].makangas} makangas</span>
-      </div>
-    `;
-    card.addEventListener('click', () => selectRoute(altKey));
+    card.innerHTML = '<div class="route-name">' + alt.name + '<span class="badge ' + alt.badgeClass + '">' + alt.badge + '</span></div>' +
+      '<div class="alt-route-details">' +
+        '<span><i class="fas fa-clock"></i> ' + (isRushHour ? alt[currentDirection].time_rush : alt[currentDirection].time_offpeak) + '</span>' +
+        '<span><i class="fas fa-road"></i> ' + alt[currentDirection].distance + '</span>' +
+        '<span><i class="fas fa-users"></i> ' + alt[currentDirection].makangas + ' makangas</span>' +
+      '</div>';
+    card.addEventListener('click', function() { selectRoute(altKey); });
     container.appendChild(card);
   });
 }
 
 function renderRouteInfo() {
-  const route = ROUTES[currentRoute];
-  const dir = route[currentDirection];
-  const bar = document.getElementById('routeBar');
+  var route = ROUTES[currentRoute];
+  var dir = route[currentDirection];
+  var bar = document.getElementById('routeBar');
 
-  bar.innerHTML = `
-    <div class="route-pill">
-      <div class="dot ${dir.status === 'Moving' || dir.status === 'Express' || dir.status === 'Clear' ? 'green' : 'yellow'}"></div>
-      <span>${dir.status}</span>
-    </div>
-    <div class="route-pill">
-      <i class="fas fa-clock" style="font-size:10px;color:var(--text-muted)"></i>
-      <span>${isRushHour ? dir.time_rush : dir.time_offpeak}</span>
-    </div>
-    <div class="route-pill">
-      <i class="fas fa-road" style="font-size:10px;color:var(--text-muted)"></i>
-      <span>${dir.distance}</span>
-    </div>
-    <div class="route-pill">
-      <i class="fas fa-users" style="font-size:10px;color:var(--text-muted)"></i>
-      <span>${dir.makangas} makangas</span>
-    </div>
-  `;
+  var isGood = dir.status === 'Moving' || dir.status === 'Express' || dir.status === 'Clear';
+  var dotColor = isGood ? 'green' : 'yellow';
+
+  bar.innerHTML = '<div class="route-pill"><div class="dot ' + dotColor + '"></div><span>' + dir.status + '</span></div>' +
+    '<div class="route-pill"><i class="fas fa-clock" style="font-size:10px;color:var(--text-muted)"></i><span>' + (isRushHour ? dir.time_rush : dir.time_offpeak) + '</span></div>' +
+    '<div class="route-pill"><i class="fas fa-road" style="font-size:10px;color:var(--text-muted)"></i><span>' + dir.distance + '</span></div>' +
+    '<div class="route-pill"><i class="fas fa-users" style="font-size:10px;color:var(--text-muted)"></i><span>' + dir.makangas + ' makangas</span></div>';
 }
 
 // ==================== MAP DRAWING ====================
 function drawRouteOnMap() {
-  // Clear existing
-  routePolylines.forEach(p => map.removeLayer(p));
-  mapMarkers.forEach(m => map.removeLayer(m));
+  routePolylines.forEach(function(p) { map.removeLayer(p); });
+  mapMarkers.forEach(function(m) { map.removeLayer(m); });
   routePolylines = [];
   mapMarkers = [];
 
-  const route = ROUTES[currentRoute];
-  const dir = route[currentDirection];
-  const stages = dir.stages;
+  var route = ROUTES[currentRoute];
+  var dir = route[currentDirection];
+  var stages = dir.stages;
 
-  // Draw polyline
-  const latlngs = stages.map(key => {
-    const s = STAGES[key];
-    return s ? [s.lat, s.lng] : null;
-  }).filter(Boolean);
+  var latlngs = [];
+  stages.forEach(function(key) {
+    var s = STAGES[key];
+    if (s) latlngs.push([s.lat, s.lng]);
+  });
 
   if (latlngs.length > 1) {
-    const polyline = L.polyline(latlngs, {
+    var polyline = L.polyline(latlngs, {
       color: route.color,
       weight: 4,
       opacity: 0.8,
       dashArray: '10, 5'
     }).addTo(map);
     routePolylines.push(polyline);
-
-    // Fit bounds
     map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
   }
 
-  // Add markers
-  stages.forEach((key, index) => {
-    const stage = STAGES[key];
+  stages.forEach(function(key, index) {
+    var stage = STAGES[key];
     if (!stage) return;
 
-    let markerClass = 'marker-' + stage.status;
+    var markerClass = 'marker-' + stage.status;
     if (index === 0) markerClass = 'marker-primary';
     if (index === stages.length - 1) markerClass = 'marker-accent';
 
-    const icon = L.divIcon({
+    var icon = L.divIcon({
       className: '',
-      html: `<div class="${markerClass}"></div>`,
+      html: '<div class="' + markerClass + '"></div>',
       iconSize: [20, 20],
       iconAnchor: [10, 10]
     });
 
-    const marker = L.marker([stage.lat, stage.lng], { icon }).addTo(map);
+    var marker = L.marker([stage.lat, stage.lng], { icon: icon }).addTo(map);
 
-    // Popup
-    const popupContent = `
-      <div style="font-family:Inter,sans-serif;min-width:180px">
-        <h4 style="margin:0 0 4px;font-size:13px">${stage.name}</h4>
-        <p style="margin:0 0 6px;font-size:11px;color:#666">${stage.desc}</p>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span style="width:8px;height:8px;border-radius:50%;background:${stage.status === 'green' ? '#00D4AA' : stage.status === 'yellow' ? '#FFB800' : '#FF3366'}"></span>
-          <span style="font-size:11px">${stage.status === 'green' ? 'Clear' : stage.status === 'yellow' ? 'Slow' : 'Jam'}</span>
-        </div>
-        ${stage.note ? `<p style="margin:4px 0 0;font-size:10px;color:#FF6B35">⚠️ ${stage.note}</p>` : ''}
-      </div>
-    `;
+    var popupContent = '<div style="font-family:Inter,sans-serif;min-width:180px">' +
+      '<h4 style="margin:0 0 4px;font-size:13px">' + stage.name + '</h4>' +
+      '<p style="margin:0 0 6px;font-size:11px;color:#666">' + stage.desc + '</p>' +
+      '<div style="display:flex;gap:6px;align-items:center">' +
+        '<span style="width:8px;height:8px;border-radius:50%;background:' + (stage.status === 'green' ? '#00D4AA' : stage.status === 'yellow' ? '#FFB800' : '#FF3366') + '"></span>' +
+        '<span style="font-size:11px">' + (stage.status === 'green' ? 'Clear' : stage.status === 'yellow' ? 'Slow' : 'Jam') + '</span>' +
+      '</div>' +
+      (stage.note ? '<p style="margin:4px 0 0;font-size:10px;color:#FF6B35">⚠️ ' + stage.note + '</p>' : '') +
+    '</div>';
 
     marker.bindPopup(popupContent);
-    marker.on('click', () => openReportModal(key));
+    marker.on('click', function() { openReportModal(key); });
     mapMarkers.push(marker);
   });
 
-  // Add stage labels
-  stages.forEach((key, index) => {
+  stages.forEach(function(key, index) {
     if (index % 3 !== 0 && index !== 0 && index !== stages.length - 1) return;
-    const stage = STAGES[key];
+    var stage = STAGES[key];
     if (!stage) return;
 
-    const label = L.divIcon({
+    var label = L.divIcon({
       className: 'stage-label',
       html: stage.name,
       iconSize: [100, 20],
       iconAnchor: [50, 30]
     });
 
-    const labelMarker = L.marker([stage.lat, stage.lng], { icon: label, interactive: false }).addTo(map);
+    var labelMarker = L.marker([stage.lat, stage.lng], { icon: label, interactive: false }).addTo(map);
     mapMarkers.push(labelMarker);
   });
 }
 
 // ==================== SPOTTERS ====================
 function generateSpotters() {
-  const names = ["Mwangi", "Kamau", "Otieno", "Wanjiku", "Njoroge", "Akinyi", "Mutua", "Achieng", "Kipchoge", "Wambui"];
-  const routes = Object.keys(ROUTES);
+  var names = ["Mwangi", "Kamau", "Otieno", "Wanjiku", "Njoroge", "Akinyi", "Mutua", "Achieng", "Kipchoge", "Wambui"];
+  var routeKeys = Object.keys(ROUTES);
+  var stageKeys = Object.keys(STAGES);
 
-  spotters = names.map((name, i) => ({
-    name: name + ' (' + (i + 1) + ')',
-    route: routes[Math.floor(Math.random() * routes.length)],
-    status: Math.random() > 0.3 ? 'online' : Math.random() > 0.5 ? 'busy' : 'offline',
-    location: Object.keys(STAGES)[Math.floor(Math.random() * Object.keys(STAGES).length)],
-    lastActive: Math.floor(Math.random() * 30) + ' min ago'
-  }));
+  spotters = names.map(function(name, i) {
+    var statusRand = Math.random();
+    var status = statusRand > 0.3 ? 'online' : (statusRand > 0.5 ? 'busy' : 'offline');
+    return {
+      name: name + ' (' + (i + 1) + ')',
+      route: routeKeys[Math.floor(Math.random() * routeKeys.length)],
+      status: status,
+      location: stageKeys[Math.floor(Math.random() * stageKeys.length)],
+      lastActive: Math.floor(Math.random() * 30) + ' min ago'
+    };
+  });
 
   renderSpotters();
 }
 
 function renderSpotters() {
-  const list = document.getElementById('spotterList');
-  const online = spotters.filter(s => s.status === 'online');
+  var list = document.getElementById('spotterList');
+  var online = spotters.filter(function(s) { return s.status === 'online'; });
   document.getElementById('spotterBadge').textContent = online.length;
 
-  list.innerHTML = spotters.map(s => {
-    const stage = STAGES[s.location];
-    return `
-      <div class="spotter-item">
-        <div class="spotter-avatar">${s.name.charAt(0)}</div>
-        <div class="spotter-info">
-          <div class="name">${s.name}</div>
-          <div class="location">${stage ? stage.name : s.location} • ${s.lastActive}</div>
-        </div>
-        <div class="spotter-status ${s.status}"></div>
-      </div>
-    `;
+  list.innerHTML = spotters.map(function(s) {
+    var stage = STAGES[s.location];
+    return '<div class="spotter-item">' +
+      '<div class="spotter-avatar">' + s.name.charAt(0) + '</div>' +
+      '<div class="spotter-info">' +
+        '<div class="name">' + s.name + '</div>' +
+        '<div class="location">' + (stage ? stage.name : s.location) + ' • ' + s.lastActive + '</div>' +
+      '</div>' +
+      '<div class="spotter-status ' + s.status + '"></div>' +
+    '</div>';
   }).join('');
 }
 
 function toggleSpotterPanel() {
-  const panel = document.getElementById('spotterPanel');
+  var panel = document.getElementById('spotterPanel');
   panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
 
 // ==================== REPORTING ====================
 function openReportModal(stageKey) {
   selectedStageForReport = stageKey;
-  const stage = STAGES[stageKey];
+  var stage = STAGES[stageKey];
   document.getElementById('reportModalTitle').textContent = 'Report: ' + stage.name;
   document.getElementById('reportModalDesc').textContent = 'What is the traffic condition at ' + stage.name + '?';
   document.getElementById('reportDetails').value = '';
+  document.querySelectorAll('.report-option').forEach(function(o) { o.classList.remove('selected'); });
   document.getElementById('reportModal').classList.add('active');
 }
 
@@ -2541,30 +2502,27 @@ function closeReportModal() {
 function submitReport(reportType) {
   if (!selectedStageForReport) return;
 
-  const stage = STAGES[selectedStageForReport];
-  const details = document.getElementById('reportDetails').value;
+  var stage = STAGES[selectedStageForReport];
+  var details = document.getElementById('reportDetails').value;
 
-  // Update stage status
   stage.status = reportType === 'clear' ? 'green' : reportType === 'slow' ? 'yellow' : reportType === 'jam' ? 'red' : 'red';
   stage.lastReportTime = new Date().toISOString();
   stage.spotterConfirm++;
-  stage.reportHistory.push({ type: reportType, time: stage.lastReportTime, details });
+  stage.reportHistory.push({ type: reportType, time: stage.lastReportTime, details: details });
 
-  // Update user score
   userScore += 50;
   userReports++;
   document.getElementById('userScoreText').textContent = userScore + ' pts';
 
-  // Refresh
   renderBottomSheet();
   drawRouteOnMap();
   updateDebugPanel();
 
-  const messages = {
-    clear: '✅ Road clear reported at ' + stage.name,
-    slow: '⚠️ Slow traffic reported at ' + stage.name,
-    jam: '🚨 Heavy jam reported at ' + stage.name,
-    accident: '🚔 Accident/police reported at ' + stage.name
+  var messages = {
+    clear: 'Road clear reported at ' + stage.name,
+    slow: 'Slow traffic reported at ' + stage.name,
+    jam: 'Heavy jam reported at ' + stage.name,
+    accident: 'Accident/police reported at ' + stage.name
   };
 
   showToast(messages[reportType] + (details ? ': ' + details : ''), 'success');
@@ -2582,19 +2540,17 @@ function closeVoiceModal() {
 
 // ==================== LEADERBOARD ====================
 function openLeaderboard() {
-  const list = document.getElementById('leaderboardList');
-  list.innerHTML = LEADERBOARD.map((entry, i) => {
-    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
-    return `
-      <div class="leaderboard-item">
-        <div class="leaderboard-rank ${rankClass}">${i + 1}</div>
-        <div class="leaderboard-info">
-          <h4>${entry.name}</h4>
-          <p>${entry.reports} reports • ${entry.route}</p>
-        </div>
-        <span class="leaderboard-score">${entry.score}</span>
-      </div>
-    `;
+  var list = document.getElementById('leaderboardList');
+  list.innerHTML = LEADERBOARD.map(function(entry, i) {
+    var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
+    return '<div class="leaderboard-item">' +
+      '<div class="leaderboard-rank ' + rankClass + '">' + (i + 1) + '</div>' +
+      '<div class="leaderboard-info">' +
+        '<h4>' + entry.name + '</h4>' +
+        '<p>' + entry.reports + ' reports • ' + entry.route + '</p>' +
+      '</div>' +
+      '<span class="leaderboard-score">' + entry.score + '</span>' +
+    '</div>';
   }).join('');
 
   document.getElementById('yourLeaderboardScore').textContent = userScore + ' pts';
@@ -2614,9 +2570,9 @@ function toggleBottomSheet() {
 function goToMyLocation() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      pos => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
+      function(pos) {
+        var lat = pos.coords.latitude;
+        var lng = pos.coords.longitude;
         map.setView([lat, lng], 15);
 
         L.circleMarker([lat, lng], {
@@ -2628,27 +2584,26 @@ function goToMyLocation() {
           fillOpacity: 0.8
         }).addTo(map).bindPopup('You are here').openPopup();
 
-        showToast('📍 Location found!', 'success');
+        showToast('Location found!', 'success');
       },
-      err => {
-        showToast('❌ Location access denied', 'danger');
+      function(err) {
+        showToast('Location access denied', 'danger');
       }
     );
   } else {
-    showToast('❌ Geolocation not supported', 'danger');
+    showToast('Geolocation not supported', 'danger');
   }
 }
 
 // ==================== SIMULATION ====================
 function simulateTrafficChanges() {
-  // Randomly change some stage statuses to simulate real traffic
-  const stageKeys = Object.keys(STAGES);
-  const numChanges = Math.floor(Math.random() * 5) + 2;
+  var stageKeys = Object.keys(STAGES);
+  var numChanges = Math.floor(Math.random() * 5) + 2;
 
-  for (let i = 0; i < numChanges; i++) {
-    const key = stageKeys[Math.floor(Math.random() * stageKeys.length)];
-    const stage = STAGES[key];
-    const rand = Math.random();
+  for (var i = 0; i < numChanges; i++) {
+    var key = stageKeys[Math.floor(Math.random() * stageKeys.length)];
+    var stage = STAGES[key];
+    var rand = Math.random();
 
     if (rand < 0.6) stage.status = 'green';
     else if (rand < 0.85) stage.status = 'yellow';
@@ -2662,39 +2617,36 @@ function simulateTrafficChanges() {
 
 // ==================== DEBUG PANEL ====================
 function toggleDebugPanel() {
-  const panel = document.getElementById('debugPanel');
+  var panel = document.getElementById('debugPanel');
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
   if (panel.style.display === 'block') updateDebugPanel();
 }
 
 function updateDebugPanel() {
-  const route = ROUTES[currentRoute];
-  const dir = route[currentDirection];
-  const stages = dir.stages;
+  var route = ROUTES[currentRoute];
+  var dir = route[currentDirection];
+  var stages = dir.stages;
 
-  let html = `
-    <div class="debug-row"><span class="debug-label">Route:</span><span class="debug-value">${route.name}</span></div>
-    <div class="debug-row"><span class="debug-label">Direction:</span><span class="debug-value">${currentDirection}</span></div>
-    <div class="debug-row"><span class="debug-label">Rush Hour:</span><span class="debug-value ${isRushHour ? 'red' : 'green'}">${isRushHour ? 'YES' : 'NO'}</span></div>
-    <div class="debug-row"><span class="debug-label">Time:</span><span class="debug-value">${getCurrentTime()}</span></div>
-    <div class="debug-row"><span class="debug-label">Data Source:</span><span class="debug-value ${useRealTraffic ? 'green' : 'yellow'}">${useRealTraffic ? 'TomTom API' : 'Spotter Simulation'}</span></div>
-    <div class="debug-row"><span class="debug-label">Stages:</span><span class="debug-value">${stages.length}</span></div>
-    <hr>
-    <b>Stage Status:</b>
-  `;
+  var html = '<div class="debug-row"><span class="debug-label">Route:</span><span class="debug-value">' + route.name + '</span></div>' +
+    '<div class="debug-row"><span class="debug-label">Direction:</span><span class="debug-value">' + currentDirection + '</span></div>' +
+    '<div class="debug-row"><span class="debug-label">Rush Hour:</span><span class="debug-value ' + (isRushHour ? 'red' : 'green') + '">' + (isRushHour ? 'YES' : 'NO') + '</span></div>' +
+    '<div class="debug-row"><span class="debug-label">Time:</span><span class="debug-value">' + getCurrentTime() + '</span></div>' +
+    '<div class="debug-row"><span class="debug-label">Data Source:</span><span class="debug-value ' + (useRealTraffic ? 'green' : 'yellow') + '">' + (useRealTraffic ? 'TomTom API' : 'Spotter Simulation') + '</span></div>' +
+    '<div class="debug-row"><span class="debug-label">Stages:</span><span class="debug-value">' + stages.length + '</span></div>' +
+    '<hr><b>Stage Status:</b>';
 
-  stages.forEach(key => {
-    const s = STAGES[key];
+  stages.forEach(function(key) {
+    var s = STAGES[key];
     if (!s) return;
-    const color = s.status === 'green' ? 'green' : s.status === 'yellow' ? 'yellow' : 'red';
-    html += `<div class="debug-stage"><span class="debug-stage-name">${s.name}</span> <span class="debug-stage-source ${color}">[${s.status.toUpperCase()}]</span> <span class="debug-stage-time">conf:${s.spotterConfirm}</span></div>`;
+    var color = s.status === 'green' ? 'green' : s.status === 'yellow' ? 'yellow' : 'red';
+    html += '<div class="debug-stage"><span class="debug-stage-name">' + s.name + '</span> <span class="debug-stage-source ' + color + '">[' + s.status.toUpperCase() + ']</span> <span class="debug-stage-time">conf:' + s.spotterConfirm + '</span></div>';
   });
 
   document.getElementById('debugContent').innerHTML = html;
 }
 
-// ==================== TOMTom API (Optional) ====================
-async function fetchTomTomTraffic() {
+// ==================== TOMTOM API ====================
+function fetchTomTomTraffic() {
   if (!tomtomApiKey || tomtomApiKey === 'YOUR_TOMTOM_API_KEY') {
     useRealTraffic = false;
     document.getElementById('liveIndicator').style.display = 'none';
@@ -2702,152 +2654,121 @@ async function fetchTomTomTraffic() {
     return;
   }
 
-  try {
-    // TomTom Flow Segment Data for Nairobi area
-    const url = `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?key=${tomtomApiKey}&point=-1.2865,36.8172&unit=KMPH`;
-    const response = await fetch(url);
+  var url = 'https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?key=' + tomtomApiKey + '&point=-1.2865,36.8172&unit=KMPH';
 
-    if (!response.ok) throw new Error('API Error');
-
-    const data = await response.json();
-    useRealTraffic = true;
-    document.getElementById('liveIndicator').style.display = 'inline';
-    document.getElementById('simIndicator').style.display = 'none';
-    document.getElementById('apiStatus').textContent = '● TomTom';
-    document.getElementById('apiStatus').style.color = '#00D4AA';
-
-    showToast('✅ Connected to TomTom live traffic', 'success');
-  } catch (e) {
-    useRealTraffic = false;
-    document.getElementById('liveIndicator').style.display = 'none';
-    document.getElementById('simIndicator').style.display = 'inline';
-    document.getElementById('apiStatus').textContent = '● Simulation';
-    document.getElementById('apiStatus').style.color = '#FFB800';
-    console.log('TomTom API not available, using simulation');
-  }
+  fetch(url)
+    .then(function(response) {
+      if (!response.ok) throw new Error('API Error');
+      return response.json();
+    })
+    .then(function(data) {
+      useRealTraffic = true;
+      document.getElementById('liveIndicator').style.display = 'inline';
+      document.getElementById('simIndicator').style.display = 'none';
+      document.getElementById('apiStatus').textContent = '● TomTom';
+      document.getElementById('apiStatus').style.color = '#00D4AA';
+      showToast('Connected to TomTom live traffic', 'success');
+    })
+    .catch(function(e) {
+      useRealTraffic = false;
+      document.getElementById('liveIndicator').style.display = 'none';
+      document.getElementById('simIndicator').style.display = 'inline';
+      document.getElementById('apiStatus').textContent = '● Simulation';
+      document.getElementById('apiStatus').style.color = '#FFB800';
+      console.log('TomTom API not available, using simulation');
+    });
 }
 
 // ==================== EVENT LISTENERS ====================
 function setupEventListeners() {
-  // Direction toggle
-  document.querySelectorAll('#directionToggle button').forEach(btn => {
-    btn.addEventListener('click', () => toggleDirection());
+  document.querySelectorAll('#directionToggle button').forEach(function(btn) {
+    btn.addEventListener('click', function() { toggleDirection(); });
   });
 
-  // Spotter button
   document.getElementById('spotterBtn').addEventListener('click', toggleSpotterPanel);
-
-  // User score / leaderboard
   document.getElementById('userScoreBtn').addEventListener('click', openLeaderboard);
 
-  // FAB buttons
-  document.getElementById('routesFab').addEventListener('click', () => {
+  document.getElementById('routesFab').addEventListener('click', function() {
     document.getElementById('bottomSheet').classList.remove('collapsed');
   });
 
-  document.getElementById('reportFab').addEventListener('click', () => {
-    // Open report for first stage of current route
-    const route = ROUTES[currentRoute];
+  document.getElementById('reportFab').addEventListener('click', function() {
+    var route = ROUTES[currentRoute];
     openReportModal(route[currentDirection].stages[0]);
   });
 
   document.getElementById('navFab').addEventListener('click', goToMyLocation);
-
   document.getElementById('voiceFab').addEventListener('click', openVoiceModal);
-
-  // Bottom sheet handle
   document.getElementById('sheetHandle').addEventListener('click', toggleBottomSheet);
-
-  // My location
   document.getElementById('myLocationBtn').addEventListener('click', goToMyLocation);
 
-  // Report modal
   document.getElementById('closeReportModal').addEventListener('click', closeReportModal);
-  document.getElementById('submitReportBtn').addEventListener('click', () => {
-    const selected = document.querySelector('.report-option.selected');
+  document.getElementById('submitReportBtn').addEventListener('click', function() {
+    var selected = document.querySelector('.report-option.selected');
     if (selected) submitReport(selected.dataset.report);
     else showToast('Please select a condition', 'warning');
   });
 
-  document.querySelectorAll('.report-option').forEach(opt => {
+  document.querySelectorAll('.report-option').forEach(function(opt) {
     opt.addEventListener('click', function() {
-      document.querySelectorAll('.report-option').forEach(o => o.classList.remove('selected'));
+      document.querySelectorAll('.report-option').forEach(function(o) { o.classList.remove('selected'); });
       this.classList.add('selected');
     });
   });
 
-  // Voice modal
   document.getElementById('closeVoiceModal').addEventListener('click', closeVoiceModal);
-  document.getElementById('voiceBtn').addEventListener('click', () => {
-    showToast('🎤 Voice recognition started (simulated)', 'info');
-    setTimeout(() => {
-      showToast('✅ "Jam hapa Caltex" detected!', 'success');
+  document.getElementById('voiceBtn').addEventListener('click', function() {
+    showToast('Voice recognition started (simulated)', 'info');
+    setTimeout(function() {
+      showToast('"Jam hapa Caltex" detected!', 'success');
       closeVoiceModal();
     }, 2000);
   });
 
-  // Leaderboard modal
   document.getElementById('closeLeaderboard').addEventListener('click', closeLeaderboard);
 
-  // Close modals on overlay click
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', (e) => {
+  document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+    overlay.addEventListener('click', function(e) {
       if (e.target === overlay) overlay.classList.remove('active');
     });
   });
 
-  // Notification button
-  document.getElementById('notifBtn').addEventListener('click', () => {
-    showToast('🔔 No new notifications', 'info');
+  document.getElementById('notifBtn').addEventListener('click', function() {
+    showToast('No new notifications', 'info');
   });
 }
 
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 MtaaWatch initializing...');
+  console.log('MtaaWatch initializing...');
 
-  // Check rush hour
   checkRushHour();
-
-  // Init map
   initMap();
-
-  // Update weather
   updateWeather();
-  setInterval(updateWeather, 60000); // Every minute
+  setInterval(updateWeather, 60000);
 
-  // Generate spotters
   generateSpotters();
-
-  // Render UI
   renderRouteChips();
   renderRouteInfo();
   renderBottomSheet();
 
-  // Draw initial route
-  setTimeout(() => {
+  setTimeout(function() {
     drawRouteOnMap();
   }, 500);
 
-  // Setup events
   setupEventListeners();
-
-  // Try TomTom API
   fetchTomTomTraffic();
 
-  // Start simulation
-  setInterval(simulateTrafficChanges, 30000); // Every 30 seconds
-
-  // Update rush hour check every minute
+  setInterval(simulateTrafficChanges, 30000);
   setInterval(checkRushHour, 60000);
 
-  // Welcome toast
-  setTimeout(() => {
-    showToast('🚌 Welcome to MtaaWatch! Tap any stage to report traffic.', 'info');
+  setTimeout(function() {
+    showToast('Welcome to MtaaWatch! Tap any stage to report traffic.', 'info');
   }, 1000);
 
-  console.log('✅ MtaaWatch ready!');
+  console.log('MtaaWatch ready!');
 });
+
 </script>
 </body>
 </html>
